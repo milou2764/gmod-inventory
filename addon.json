@@ -1,0 +1,14 @@
+{
+	"title"		:	"Advanced Inventory System",
+	"type"		:	"entity",
+	"tags"		:	[ "roleplay", "realism" ],
+	"ignore"	:
+	[
+		"*.md",
+		"tools/*",
+		"tests/*",
+		"workshop/*",
+		".git*",
+		"*.psd"
+	]
+}

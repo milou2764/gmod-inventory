@@ -1,0 +1,96 @@
+[h1]Advanced Inventory System[/h1]
+An Arma 3-style inventory for Garry's Mod: what you wear is what you carry. Uniform pockets, vest, backpack, helmet and weapons all have their place on your character, and every item takes room according to its size, not a slot.
+
+[b]Source code, developer guide and issues: [url=https://github.com/milou2764/gmod-inventory]github.com/milou2764/gmod-inventory[/url][/b]
+
+[h2]Inventory[/h2]
+[list]
+[*][b]Equipment slots:[/b] uniform, vest, backpack, helmet, night vision, gas mask, radio headset, primary weapon, sidearm and launcher.
+[*][b]Capacity, not slots:[/b] every item has a weight in points, every container a capacity. Two pistol magazines don't take the room of two drum magazines. Bars show what is used.
+[*][b]Containers:[/b] uniform pockets (capacity set by the uniform worn), vest pockets and backpack. A vest or backpack keeps its contents when dropped or stored.
+[*]Drag and drop, right-click menus, double-click to equip or use, Shift + drag for a whole stack, store or drop an amount, split ammo boxes.
+[*]Character preview you can turn with the mouse, showing your gear and the weapon in your hands.
+[*]Tooltips: weight, slot, rarity, rounds, ammunition, armour, capacity, carry modes, "Illegal".
+[*]Rarity colours, three themes (dark, light, military), five languages (English, French, German, Spanish, Russian).
+[*]Opens with I (rebindable), chat commands !inventory / !inv, or the Inventory tool.
+[/list]
+
+[h2]Gear and weapons on the body[/h2]
+[list]
+[*]Worn gear is shown on the player and fitted to each of the 87 default playermodels; rigged vests and backpacks bend with the body and adapt to its build.
+[*]Your own helmet or mask never blocks your first-person view.
+[*]Equipped weapons are shown on the body. Long guns are carried in one of five ways: slung muzzle up or down, across the body, across the back, hanging in front. One weapon per body zone; a backpack takes the back, a chest rig the front.
+[*]Armour by body part: helmets protect the head, vests the chest and stomach, and wear down as they are hit.
+[*]Optional: the load slows the player down.
+[/list]
+
+[h2]Ammunition[/h2]
+[list]
+[*]Your reserve is the ammo boxes in your inventory: reloading uses them up, unloading a weapon fills them.
+[*]Every ammo type has a box, including those of other weapon bases.
+[/list]
+
+[h2]Items in the world[/h2]
+[list]
+[*]Weapons and items are taken with Use, not by walking over them. Any weapon from any addon becomes an inventory item, with its magazine and attachments.
+[*]Health kits, vials, batteries and HL2 ammo are taken into the inventory and used from it.
+[*]Identical items dropped together lie as one stack.
+[*]Looking at an item shows what it is (can be turned off for immersion).
+[*]Dropped items disappear after a delay set by the server.
+[/list]
+
+[h2]Death and looting[/h2]
+[list]
+[*]A dead player's body keeps everything he wore and carried: helmet, vest, backpack, pockets, weapons on his back. The weapon in his hands falls to the ground.
+[*]Anyone can search the body and take items one by one: a helmet taken disappears from his head.
+[*]The server chooses what stays on the body, how long bodies last and how many there can be.
+[/list]
+
+[h2]Searching players[/h2]
+[list]
+[*]Search another player from the context menu: police jobs, everyone or nobody.
+[*]Illegal items show in red; the searcher may confiscate them. The searched player is told.
+[/list]
+
+[h2]Storage[/h2]
+[list]
+[*]Crates: permanent (saved with the map), shared between crates of the same name, personal (each player has his own contents), with their own capacity.
+[*]Locks with optional codes, set by the owner or admins.
+[*]Banks: every bank opens the player's own store, kept between sessions.
+[*]Loot tables: crates refill with random items, and invisible loot points spawn items again after they are taken.
+[*]Vehicle trunks (simfphys), Wiremod outputs on crates.
+[/list]
+
+[h2]Administration[/h2]
+[list]
+[*]Admin menu: see and change any player's inventory, give any item, place loot points, change every server setting in game.
+[*]CAMI privilege (works with ULX, SAM, serverguard...), and every admin action is logged.
+[/list]
+
+[h2]DarkRP[/h2]
+[list]
+[*]What players buy goes straight into their inventory; shipments work as usual.
+[*]/drop frees the weapon's slot, money can be dropped from the inventory.
+[*]Optional: job weapons become inventory weapons.
+[/list]
+
+[h2]Other weapon bases[/h2]
+[list]
+[*]Works with any weapon base. Attachments are kept for ARC9, TFA and CW 2.0.
+[*]CW 2.0 tested: its drop command, dropped weapons and ammo kits all go through the inventory.
+[/list]
+
+[h2]More[/h2]
+[list]
+[*]Crafting with recipes and workbenches (off by default).
+[*]Items can be used: health, armour, or any effect an addon defines.
+[*]Saved per player, or per character with a character system.
+[*]Lua only: every model comes with Garry's Mod.
+[/list]
+
+[h2]Server settings[/h2]
+All in the admin menu (console: advinv_admin), or in server.cfg: language, death drops, body time and count, pickup rules, ground item time, crafting, load slowdown, searching, DarkRP options.
+
+[h2]For developers[/h2]
+Item packs, weapon bases, storage entities and character systems plug into the inventory through a documented API: item fields, hooks, server functions. Read DEVELOPERS.md on GitHub:
+[url=https://github.com/milou2764/gmod-inventory]https://github.com/milou2764/gmod-inventory[/url]

@@ -1,0 +1,1 @@
+ENT.Base = "advinv_base_entity"
