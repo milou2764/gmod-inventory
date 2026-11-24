@@ -223,7 +223,10 @@ AdvInv.CarryWeapons["my_crossbow"] = { default = "sling_up", wide = true } -- wi
 A registered weapon item can set `ENT.CarryModes` / `ENT.CarryDefault` instead. A generic weapon
 (a SWEP without an item of its own, see below) with no entry gets every mode if it is a primary
 weapon, `sling_up` if it is a launcher. Without exact positions, a weapon is placed by
-a template fitted to the shape of its world model. In the modes listed in `Config.CarryLongHang`
+a template fitted to the shape of its world model (`AdvInv.WeaponGeometry`: its mesh as posed at
+rest, checked against the model's hull, or its render box when the hull doesn't cover the mesh, as
+on the Fallout 4 Institute rifle; a shape only taken from the hull is measured again a few times).
+In the modes listed in `Config.CarryLongHang`
 (the front carry), a gun longer than the one the templates were fitted with (`Config.CarryTemplateGun`,
 the AR2) keeps its butt where that gun's butt is and turns toward the vertical, so it spans no wider:
 a long rifle hangs down in front instead of sticking out past the shoulder. Exact positions per playermodel:

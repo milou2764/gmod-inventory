@@ -118,9 +118,16 @@ end
 -- { mins, maxs, core, muzzleBack } of a weapon world model at rest (barrel along X, top +Z);
 -- core.y / core.z: band holding most of its surface across (what rests against the body);
 -- muzzleBack: its muzzle is on the -X end.
+-- A shape taken from the hull only (the mesh not read, or not posed right) is measured again a few
+-- times, a few seconds apart: it happened once to a model just loaded (the TFA Lebel), which was
+-- then carried as its hull for the whole session. A new measure is a new table (carry templates
+-- built on the old one are rebuilt).
+local GEOM_RETRIES, GEOM_RETRY_DELAY = 3, 2
 function I.WeaponGeometry(path)
     local cached = geomCache[path]
-    if cached ~= nil then return cached or nil end
+    if cached ~= nil and not (cached and cached.retryAt and RealTime() >= cached.retryAt) then
+        return cached or nil
+    end
     local ent = ClientsideModel(path, RENDERGROUP_OTHER)
     if not IsValid(ent) then
         geomCache[path] = false
@@ -135,6 +142,16 @@ function I.WeaponGeometry(path)
     ent:SetupBones()
     local hmin, hmax = ent:GetModelBounds()
     local mn, mx, core = meshBounds(ent, path, hmin, hmax)
+    if not mn then
+        -- the posed mesh is checked against the model's hull (skinned the right way). Some hulls
+        -- don't cover the mesh (the Fallout 4 Institute rifle's is shorter, 30 wide and 20 tall
+        -- for a 32 x 5 x 9 rifle): the mesh was refused and that hull taken for the gun, carried
+        -- as a bulky block. Then the hull or the render box, whichever reaches further
+        local rmin, rmax = ent:GetRenderBounds()
+        mn, mx, core = meshBounds(ent, path,
+            Vector(math.min(hmin.x, rmin.x), math.min(hmin.y, rmin.y), math.min(hmin.z, rmin.z)),
+            Vector(math.max(hmax.x, rmax.x), math.max(hmax.y, rmax.y), math.max(hmax.z, rmax.z)))
+    end
     local g = { mins = mn or hmin, maxs = mx or hmax, exact = mn ~= nil }
     g.core = core or { y = { lo = g.mins.y, hi = g.maxs.y }, z = { lo = g.mins.z, hi = g.maxs.z } }
     -- some models point their muzzle to -X (HL2 pistol, AR2, shotgun, RPG): read it on the model
@@ -144,6 +161,10 @@ function I.WeaponGeometry(path)
     local b0 = ent:GetBoneMatrix(0) -- its root bone at rest: carries the model when it is bonemerged
     g.restBone0 = b0 and Matrix(b0) or nil
     ent:Remove()
+    if not g.exact then
+        local tries = (cached and cached.tries or 0) + 1
+        if tries <= GEOM_RETRIES then g.tries, g.retryAt = tries, RealTime() + GEOM_RETRY_DELAY end
+    end
     geomCache[path] = g
     return g
 end

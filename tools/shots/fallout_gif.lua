@@ -35,23 +35,22 @@ local DWELLERS = FOGIF_DWELLERS or {
     { "models/humans/vaulttec/male_04.mdl", { [2] = 2, [3] = 0, [4] = 0, [5] = 8, [6] = 1 }, { pistol = true } },
     { "models/humans/vaulttec/male_02.mdl", { [2] = 0, [3] = 1, [4] = 1, [5] = 1, [6] = 1 }, {} },
 }
--- (no rifle on a pack wearer: the bulky Institute rifle slung beside a pack hangs in front of the
--- chest, an AIS carry issue reported to the user)
 local F76, F3 = "advinv_c_fo76_backpacks_", "advinv_c_fo3_"
 -- One track per dweller: from frame to frame each one changes a different thing, so four frames
 -- show many combinations. Per state, per dweller: the items worn (classes), hold = "rifle" or
 -- "pistol" in hand (in its safe mode, as a player at rest holds it), mode = the rifle's carry mode.
 FOGIF_STATES = FOGIF_STATES or {
-    -- 1: Fallout 76 packs / 2: the rifle: in hand, slung, muzzle down, in front / 3: Fallout 3
-    -- packs (pistol holstered) / 4: the pistol in hand or holstered (Fallout 76 pack) / 5: a pack off
-    -- and on (the vault number on the back shows)
+    -- 1: Fallout 76 packs / 2: the rifle: in hand, slung, muzzle down, then slung beside a pack he
+    -- put on (the front carry is hidden from behind) / 3: Fallout 3 packs (pistol holstered) / 4:
+    -- the pistol in hand or holstered (Fallout 76 pack) / 5: a pack off and on (the vault number
+    -- on the back shows)
     { { F76 .. "backpack_vault_survivor" }, { hold = "rifle" }, { F3 .. "custom_backpack_1" },
       { F76 .. "atx_backpack_wanderer", hold = "pistol" }, {} },
     { { F76 .. "backpack_cappy" }, { mode = "sling_up" }, { F3 .. "custom_backpack_3" },
       { F76 .. "atx_backpack_wanderer" }, { F76 .. "backpack_packrat" } },
     { { F76 .. "backpack_bottle" }, { mode = "sling_down" }, { F3 .. "campish_campish_pack" },
       { F76 .. "atx_backpack_wanderer", hold = "pistol" }, {} },
-    { { F76 .. "backpack_space_explorer" }, { mode = "front_hang" }, { F3 .. "custom_backpack_5" },
+    { { F76 .. "backpack_space_explorer" }, { F3 .. "custom_backpack_2", mode = "sling_up" }, { F3 .. "custom_backpack_5" },
       { F76 .. "atx_backpack_wanderer" }, { F76 .. "backpack_postalservice" } },
 }
 -- poses: each body turned its own way off the look direction (degrees), then the head turned to

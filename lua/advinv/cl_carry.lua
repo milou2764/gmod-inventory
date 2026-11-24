@@ -80,9 +80,11 @@ end
 local templateCache = {}
 local function templateEntry(mode, path)
     local key = mode .. "|" .. path
-    if templateCache[key] ~= nil then return templateCache[key] or nil end
     local t = I.CarryTemplates[mode]
     local g = t and I.WeaponGeometry(path)
+    local e = templateCache[key]
+    -- (built on the weapon's current shape: a shape measured again is a new table)
+    if e == false or (e and e.geom == g) then return e or nil end
     if not g then
         templateCache[key] = false
         return
@@ -160,7 +162,7 @@ local function templateEntry(mode, path)
         pos = butt - R * Vector(mn.x, face, zmid)
     end
     local M = R * Q
-    local e = { bone = t.bone, pos = pos, ang = M:GetAngles(), out = out }
+    e = { bone = t.bone, pos = pos, ang = M:GetAngles(), out = out, geom = g }
     templateCache[key] = e
     return e
 end
