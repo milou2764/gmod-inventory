@@ -144,7 +144,7 @@ Read from the item's entity table (`ENT.*`); all optional except `Model` and the
 | `WeaponClass` | weapons | the SWEP given when equipped |
 | `Ammo`, `ClipSize`, `Rounds` | weapons | ammo type, magazine size, rounds when spawned (`ClipSize = -1`: no magazine) |
 | `CarryModes`, `CarryDefault` | long guns | `{ "sling_up", "front_hang", ... }`, default mode |
-| `CarryBackThickness` | vests | units it adds between the back and a slung weapon (default: `Config.CarryVestThickness` with armour, 0 without) |
+| `CarryBackThickness` | vests | units it adds between the back and a slung weapon (default: measured by `tools/vest_back.py`, else `Config.CarryVestThickness` with armour, 0 without) |
 | `CarryWide` | long guns | `true`: too wide to hang beside a backpack (a crossbow's bow): only in front while one is worn |
 | `Ammo`, `Rounds`, `Capacity` | ammo boxes | ammo type, rounds when spawned, rounds when full |
 
@@ -627,6 +627,7 @@ game's models from its VPK files):
 | `mount_check.py` | renders worn items on playermodels, without the game |
 | `bodyfit.py`, `bodyfit_lua.py` | torso measurements of playermodels (`cl_bodyfit_data.lua`) |
 | `weapon_check.py`, `mdl_render.py`, `studio.py`, `vpk.py`, `anim0.py`, `refbody.py` | model reading and rendering |
+| `vest_back.py` | how thick each compatible vest is on the back, where slung weapons rest (`cl_vest_back.lua`) |
 | `workshop.py` | Workshop items through Garry's Mod's Steamworks DLL: animated (GIF) icon, description, screenshots, required items, visibility (what `gmpublish` can't do) |
 | `shots/gear_gif.lua`, `shots/make_gif.py` | frames and GIF of the animated Workshop icon (a playermodel switching gear) |
 

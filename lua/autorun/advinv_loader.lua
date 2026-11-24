@@ -52,6 +52,7 @@ local files = {
     "cl_weapons.lua",
     "cl_gearicon.lua",
     "cl_carry_data.lua",
+    "cl_vest_back.lua",
     "cl_carry.lua",
     "cl_carry_tools.lua",
     "cl_attach_editor.lua",

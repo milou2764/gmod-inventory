@@ -15,11 +15,14 @@ local I = AdvInv
 local C = I.Config
 
 C.CarryVestThickness = C.CarryVestThickness or 2 -- a worn vest adds this much around the torso
--- On the back (weapons slung there) only armour counts: a plate carrier or a vest (ENT.Armor > 0)
--- adds C.CarryVestThickness, chest rigs, webbing and belts (no armour: straps) nothing; an item can
--- say how much it adds there with ENT.CarryBackThickness.
-local function vestBack(vt)
+-- On the back (weapons slung there) what the vest's model has there: ENT.CarryBackThickness, else
+-- its measured thickness (AdvInv.VestBackThickness, cl_vest_back.lua made by tools/vest_back.py:
+-- 0 for chest rigs, the panel of a plate carrier or a soft vest), else a guess: a chest rig
+-- (front only) nothing, armour C.CarryVestThickness, webbing and belts (no armour: straps) nothing.
+local function vestBack(vt, class)
     if vt.CarryBackThickness then return vt.CarryBackThickness end
+    local measured = I.VestBackThickness and class and I.VestBackThickness[class]
+    if measured then return measured end
     if vt.BlocksCarryZones and vt.BlocksCarryZones.front then return 0 end
     return (vt.Armor or 0) > 0 and C.CarryVestThickness or 0
 end
@@ -154,7 +157,7 @@ function I.CarryPushes(ent, gearOwner, carried)
     local vestID = IsValid(gearOwner) and gearOwner:GetNW2Int("Vest") or 0
     local vest = vestID > 1
     local vt = vest and I.EntityTable(vestID)
-    local back = vt and vestBack(vt) or (vest and C.CarryVestThickness) or 0
+    local back = vt and vestBack(vt, I.IDClass and I.IDClass[vestID]) or (vest and C.CarryVestThickness) or 0
     local pack = IsValid(gearOwner) and I.BackpackThickness(gearOwner) or 0
     for cat, w in pairs(carried) do
         local push = 0
