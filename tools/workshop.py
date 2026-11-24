@@ -4,7 +4,9 @@ visibility. Uses Garry's Mod's own bin/win64/steam_api64.dll and the logged-in S
 acts as the user: only on their own items).
 
     python workshop.py update <id> [--preview FILE] [--description FILE] [--image FILE ...]
+                                   [--replace-image INDEX FILE ...]
                                    [--visibility public|friends|private|unlisted] [--note TEXT]
+    python workshop.py previews <id>                     its screenshots: index, original file name
     python workshop.py depend <id> <required id> ...     the item's "Required items"
 
 The preview (icon) must be under 1 MB; it may be a GIF. Descriptions: Steam BBCode, 8000 characters.
@@ -18,7 +20,7 @@ from pathlib import Path
 APP = 4000
 DLL = Path(os.environ.get("GMOD_DIR", r"C:/Program Files (x86)/Steam/steamapps/common/GarrysMod")) / "bin/win64/steam_api64.dll"
 VIS = {"public": 0, "friends": 1, "private": 2, "unlisted": 3}
-SUBMIT_RESULT, DEPENDENCY_RESULT = 3404, 3412  # k_iSteamUGCCallbacks + 4, + 12
+SUBMIT_RESULT, DEPENDENCY_RESULT, QUERY_RESULT = 3404, 3412, 3401  # k_iSteamUGCCallbacks + 4, + 12, + 1
 
 os.environ["SteamAppId"] = os.environ["SteamGameId"] = str(APP)
 api = C.CDLL(str(DLL))
@@ -41,6 +43,14 @@ SetItemPreview = fn("SteamAPI_ISteamUGC_SetItemPreview", B, P, U64, S)
 SetItemDescription = fn("SteamAPI_ISteamUGC_SetItemDescription", B, P, U64, S)
 SetItemVisibility = fn("SteamAPI_ISteamUGC_SetItemVisibility", B, P, U64, C.c_int)
 AddItemPreviewFile = fn("SteamAPI_ISteamUGC_AddItemPreviewFile", B, P, U64, S, C.c_int)
+UpdateItemPreviewFile = fn("SteamAPI_ISteamUGC_UpdateItemPreviewFile", B, P, U64, C.c_uint32, S)
+CreateQueryUGCDetailsRequest = fn("SteamAPI_ISteamUGC_CreateQueryUGCDetailsRequest", U64, P, C.POINTER(U64), C.c_uint32)
+SetReturnAdditionalPreviews = fn("SteamAPI_ISteamUGC_SetReturnAdditionalPreviews", B, P, U64, B)
+SendQueryUGCRequest = fn("SteamAPI_ISteamUGC_SendQueryUGCRequest", U64, P, U64)
+GetQueryUGCNumAdditionalPreviews = fn("SteamAPI_ISteamUGC_GetQueryUGCNumAdditionalPreviews", C.c_uint32, P, U64, C.c_uint32)
+GetQueryUGCAdditionalPreview = fn("SteamAPI_ISteamUGC_GetQueryUGCAdditionalPreview", B, P, U64, C.c_uint32, C.c_uint32,
+                                  C.c_char_p, C.c_uint32, C.c_char_p, C.c_uint32, C.POINTER(C.c_int))
+ReleaseQueryUGCRequest = fn("SteamAPI_ISteamUGC_ReleaseQueryUGCRequest", B, P, U64)
 SubmitItemUpdate = fn("SteamAPI_ISteamUGC_SubmitItemUpdate", U64, P, U64, S)
 AddDependency = fn("SteamAPI_ISteamUGC_AddDependency", U64, P, U64, U64)
 IsAPICallCompleted = fn("SteamAPI_ISteamUtils_IsAPICallCompleted", B, P, U64, C.POINTER(B))
@@ -63,7 +73,7 @@ def wait(utils, call, cb_id, size, timeout=600):
 
 
 def main(argv):
-    if not argv or argv[0] not in ("update", "depend"):
+    if not argv or argv[0] not in ("update", "depend", "previews"):
         print(__doc__)
         return 1
     err = C.create_string_buffer(1024)
@@ -72,15 +82,29 @@ def main(argv):
     try:
         ugc, utils = UGC(), Utils()
         item = int(argv[1])
+        if argv[0] == "previews":
+            ids = (U64 * 1)(item)
+            q = CreateQueryUGCDetailsRequest(ugc, ids, 1)
+            SetReturnAdditionalPreviews(ugc, q, True)
+            wait(utils, SendQueryUGCRequest(ugc, q), QUERY_RESULT, 280)  # SteamUGCQueryCompleted_t
+            for k in range(GetQueryUGCNumAdditionalPreviews(ugc, q, 0)):
+                url, name, kind = C.create_string_buffer(1024), C.create_string_buffer(1024), C.c_int(0)
+                GetQueryUGCAdditionalPreview(ugc, q, 0, k, url, 1024, name, 1024, C.byref(kind))
+                print(k, name.value.decode(errors="replace") or "-", url.value.decode(errors="replace"))
+            ReleaseQueryUGCRequest(ugc, q)
+            return 0
         if argv[0] == "depend":
             for child in argv[2:]:
                 r = wait(utils, AddDependency(ugc, item, int(child)), DEPENDENCY_RESULT, 24)
                 print(f"required item {child}: result {int.from_bytes(r[:4], 'little')} (1 = OK)")
             return 0
-        opts, images, k = {}, [], 2
+        opts, images, replace, k = {}, [], [], 2
         while k < len(argv):
             if argv[k] == "--image":
                 images.append(argv[k + 1])
+            elif argv[k] == "--replace-image":
+                replace.append((int(argv[k + 1]), argv[k + 2]))
+                k += 1
             else:
                 opts[argv[k]] = argv[k + 1]
             k += 2
@@ -97,6 +121,8 @@ def main(argv):
             assert SetItemDescription(ugc, h, text.encode("utf-8"))
         for f in images:
             assert AddItemPreviewFile(ugc, h, str(Path(f).resolve()).encode(), 0)  # k_EItemPreviewType_Image
+        for index, f in replace:
+            assert UpdateItemPreviewFile(ugc, h, index, str(Path(f).resolve()).encode())
         if "--visibility" in opts:
             assert SetItemVisibility(ugc, h, VIS[opts["--visibility"]])
         r = wait(utils, SubmitItemUpdate(ugc, h, opts.get("--note", "").encode("utf-8") or None), SUBMIT_RESULT, 16)

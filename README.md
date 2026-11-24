@@ -118,7 +118,8 @@ Rules, all decided by the server (a forged request is refused):
   `advinv_base_rucksack` has it); vests have `{ front = false }`, set `front = true` on a chest rig;
 - gear can take single modes too (`ENT.BlocksCarryModes`). With a backpack on, only sling arms is
   left on the back (the back carry's zone is taken), and the slung weapon hangs beside the pack, in
-  line with the shoulder;
+  line with the shoulder; a weapon too wide for that (the crossbow, `wide = true` in
+  `AdvInv.CarryWeapons` or `ENT.CarryWide`) only hangs in front while a backpack is worn;
 - when gear takes the zone or the mode of a carried weapon, the weapon moves to the front carry if
   it can, else to the first possible mode of `sling_up`, `sling_down`, `front_hang`, then its other
   modes (the other long gun moves too if that makes room) and the player is told. With `advinv_carry_refuse_gear 1` (server) the gear is

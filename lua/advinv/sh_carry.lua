@@ -46,7 +46,9 @@ for class, conf in pairs({
     weapon_smg1 = { modes = ALL, default = "sling_up" },
     weapon_ar2 = { modes = ALL, default = "sling_up" },
     weapon_shotgun = { modes = ALL, default = "sling_up" },
-    weapon_crossbow = { modes = ALL, default = "sling_up" },
+    -- wide: its bow can't hang beside a backpack (limbs in front of the face) nor over it (far off
+    -- the back): with a backpack on, only in front
+    weapon_crossbow = { modes = ALL, default = "sling_up", wide = true },
     weapon_rpg = { modes = { "sling_up" }, default = "sling_up" },
 }) do
     I.CarryWeapons[class] = I.CarryWeapons[class] or conf
@@ -75,7 +77,7 @@ function I.CarryConfig(id, c)
     if #modes == 0 then modes = { "sling_up" } end
     local default = t.CarryDefault or (base and base.default)
     if not table.HasValue(modes, default) then default = modes[1] end
-    return { modes = modes, default = default, weaponClass = t.WeaponClass }
+    return { modes = modes, default = default, weaponClass = t.WeaponClass, wide = t.CarryWide or (base and base.wide) or nil }
 end
 
 function I.CarryModeAllowedForWeapon(conf, mode)
@@ -146,14 +148,17 @@ function I.CarryAllowed(ply, cat, mode, blocked, others, ids)
     local zone = I.CarryZone[mode]
     blocked = blocked or I.BlockedZones(ply)
     if blocked[zone] then return false, I.CarryBlockedReason(zone, blocked[zone]) end
-    if blocked[mode] then
-        local key = "carry_blocked_mode_" .. blocked[mode] -- "...: not possible with a backpack on"
+    local function modeBlocked(gear)
+        local key = "carry_blocked_mode_" .. gear -- "...: not possible with a backpack on"
         local s = I.L(key, I.L("carry_" .. mode))
         if s == key then
-            s = I.L("carry_blocked_mode", I.L("carry_" .. mode), string.lower(I.SlotLabels[blocked[mode]] or blocked[mode]))
+            s = I.L("carry_blocked_mode", I.L("carry_" .. mode), string.lower(I.SlotLabels[gear] or gear))
         end
         return false, s
     end
+    if blocked[mode] then return modeBlocked(blocked[mode]) end
+    -- a wide weapon (conf.wide: a crossbow) with gear on the back: only in front
+    if conf.wide and blocked.back and zone ~= "front" then return modeBlocked(blocked.back) end
     for _, other in ipairs(I.CARRY_CATS) do
         local oid, oc = ref(ply, other, ids)
         if other ~= cat and oid > 1 and I.CarryConfig(oid, oc) then

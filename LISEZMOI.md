@@ -126,7 +126,9 @@ Règles, toutes décidées par le serveur (une demande forgée est refusée) :
   gilet de combat (chest rig) ;
 - un équipement peut aussi prendre des modes (`ENT.BlocksCarryModes`). Sac à dos sur le dos, il ne
   reste que l'arme à la bretelle (la zone de l'arme à la grenadière est prise), et l'arme à la
-  bretelle pend à côté du sac, dans l'alignement de l'épaule ;
+  bretelle pend à côté du sac, dans l'alignement de l'épaule ; une arme trop large pour cela
+  (l'arbalète, `wide = true` dans `AdvInv.CarryWeapons` ou `ENT.CarryWide`) ne se porte qu'en
+  relâche avant tant qu'un sac est porté ;
 - quand un équipement prend la zone ou le mode d'une arme portée, l'arme passe en relâche avant si
   elle le peut, sinon au premier mode possible parmi `sling_up`, `sling_down`, `front_hang`, puis ses
   autres modes (l'autre arme longue bouge aussi si cela fait de la place) et le joueur est prévenu. Avec `advinv_carry_refuse_gear 1` (serveur),

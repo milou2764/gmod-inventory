@@ -47,6 +47,7 @@ ENTS = {
     [10] = { WeaponClass = "weapon_ar2", PrintName = "AR2", AdvInvCategory = "PrimaryWep" },
     [11] = { WeaponClass = "weapon_rpg", PrintName = "RPG", AdvInvCategory = "RocketLauncher" },
     [12] = { WeaponClass = "weapon_pistol", PrintName = "Pistol", AdvInvCategory = "SecondaryWep" },
+    [13] = { WeaponClass = "weapon_crossbow", PrintName = "Crossbow", AdvInvCategory = "PrimaryWep" },
     [20] = { PrintName = "Backpack", AdvInvCategory = "Rucksack", BlocksCarryZones = { back = true } }, -- (as advinv_base_rucksack)
     [21] = { PrintName = "Vest", AdvInvCategory = "Vest", BlocksCarryZones = { front = false } },
     [22] = { PrintName = "Chest rig", AdvInvCategory = "Vest", BlocksCarryZones = { front = true } },
@@ -181,6 +182,20 @@ check("told", told(), "Carry mode changed - AR2: Front carry / Hang")
 check("sling arms with a backpack", req("PrimaryWep", "sling_up"), True)
 gear("Rucksack", 1)
 check("back carry without a backpack", req("PrimaryWep", "sling_down"), True)
+# a wide weapon (the crossbow's bow) can't hang beside or over a backpack: only in front with one on
+run('function() P:SetNWInt("PrimaryWep", 1) P:SetNWInt("PrimaryWepCarry", 6) end')()
+told()
+check("crossbow equipped", equip("PrimaryWep", 13), True)
+check("crossbow slung without a backpack", mode("PrimaryWep"), "sling_up")
+check("backpack over a slung crossbow", gear("Rucksack", 20), True)
+check("crossbow to the front", mode("PrimaryWep"), "front_hang")
+check("told crossbow", told(), "Carry mode changed - Crossbow: Front carry / Hang")
+r = req("PrimaryWep", "sling_up")
+check("crossbow sling arms refused with a backpack", (r[0], "backpack" in str(r[1])), (False, True))
+check("AR2 sling arms still fine with a backpack", run('function() return AdvInv.CarryAllowed(P, "PrimaryWep", "sling_up", nil, nil, { PrimaryWep = 10 }) end')(), True)
+gear("Rucksack", 1)
+check("crossbow sling arms without a backpack", req("PrimaryWep", "sling_up"), True)
+run('function() P:SetNWInt("PrimaryWep", 10) P:SetNWInt("PrimaryWepCarry", AdvInv.CARRY_INDEX.sling_down) end')()  # (the AR2 back on the back, as before)
 # french strings
 run('function() CVARS.advinv_language = "fr" end')()
 told()

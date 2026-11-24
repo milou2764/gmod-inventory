@@ -144,6 +144,7 @@ Read from the item's entity table (`ENT.*`); all optional except `Model` and the
 | `WeaponClass` | weapons | the SWEP given when equipped |
 | `Ammo`, `ClipSize`, `Rounds` | weapons | ammo type, magazine size, rounds when spawned (`ClipSize = -1`: no magazine) |
 | `CarryModes`, `CarryDefault` | long guns | `{ "sling_up", "front_hang", ... }`, default mode |
+| `CarryWide` | long guns | `true`: too wide to hang beside a backpack (a crossbow's bow): only in front while one is worn |
 | `Ammo`, `Rounds`, `Capacity` | ammo boxes | ammo type, rounds when spawned, rounds when full |
 
 ## Base classes and slots
@@ -215,6 +216,7 @@ chosen by the player (right-click). Configure a weapon by class (shared):
 AdvInv.CarryWeapons = AdvInv.CarryWeapons or {}
 AdvInv.CarryWeapons["my_rifle"] = { default = "sling_up" }                          -- every mode
 AdvInv.CarryWeapons["my_launcher"] = { modes = { "sling_up" }, default = "sling_up" }
+AdvInv.CarryWeapons["my_crossbow"] = { default = "sling_up", wide = true } -- with a backpack: in front
 ```
 
 A registered weapon item can set `ENT.CarryModes` / `ENT.CarryDefault` instead. A generic weapon
