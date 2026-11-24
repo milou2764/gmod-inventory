@@ -291,7 +291,9 @@ Each item is drawn with the playermodel's own model: its other bodygroups on the
 parts that have none hidden by material (`materials/advinv/nodraw.vmt`). Nothing of the playermodel
 addon is redistributed; without it the items aren't available (not spawnable, never given).
 
-- On the pack's own playermodels the item is shown by the bodygroup itself (rigged for that body).
+- On the pack's own playermodels the item is shown by the bodygroup itself (rigged for that body),
+  and the bodygroups the pack's items use are locked to the pack's `blank` values there: their gear
+  shows only while the item is worn (an `AdvInv.ModelGear` entry with its own `lock` wins).
   Those bodygroups are locked (`ModelGear` `lock`): picking them in a menu does nothing, only the
   item worn shows them.
 - On any other playermodel a copy follows the head or the torso, with a fit per playermodel (the

@@ -286,6 +286,26 @@ function I.AddModelGearPack(pack)
             I.ModelGear[model].items[it.class] = bgs
         end
     end
+    -- and their gear only while it is worn: the bodygroups the items use are locked to the pack's
+    -- "no gear" values (else a player of such a model shows the model's own gear without the items:
+    -- the Vietnam soldiers, NPC ragdolls when their pack was made, later ported as playermodels).
+    -- An entry of sh_modelgear.lua or of the server keeps its own lock.
+    if pack.blank then
+        local locks = {}
+        for _, it in ipairs(pack.items or {}) do
+            for pm, bgs in pairs(it.on or {}) do
+                local model = string.lower(pm)
+                locks[model] = locks[model] or {}
+                for bg in pairs(bgs) do
+                    if pack.blank[bg] ~= nil then locks[model][bg] = pack.blank[bg] end
+                end
+            end
+        end
+        for model, lock in pairs(locks) do
+            local g = I.ModelGear[model]
+            if g and g.lock == nil and next(lock) then g.lock = lock end
+        end
+    end
     I.MergePackFits(pack)
 end
 
