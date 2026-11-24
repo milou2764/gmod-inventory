@@ -149,7 +149,9 @@ menu when defined on the client) and `OnCarryModeChanged(ply, item, mode, oldMod
 
 Drawing (client, `lua/advinv/cl_carry.lua`): offsets are stored per playermodel, weapon and
 mode (`lua/advinv/cl_carry_data.lua`, below). A worn vest pushes the weapons out by
-`Config.CarryVestThickness`; with a backpack, a weapon in a shoulder mode (`Config.CarryOverPack`)
+`Config.CarryVestThickness`: in front any vest, on the back only armour (a plate carrier: `ENT.Armor`
+above 0; chest rigs, webbing and belts are straps and add nothing there; `ENT.CarryBackThickness`
+sets it for an item); with a backpack, a weapon in a shoulder mode (`Config.CarryOverPack`)
 is moved sideways until it clears the pack's half width (`Config.CarryBesidePack = false`: pushed
 over the pack instead, by its thickness). When the launcher and the primary weapon are both on the back side and
 cross, one goes over the other. A playermodel without the bone a mode uses does not show that

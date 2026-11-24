@@ -15,6 +15,14 @@ local I = AdvInv
 local C = I.Config
 
 C.CarryVestThickness = C.CarryVestThickness or 2 -- a worn vest adds this much around the torso
+-- On the back (weapons slung there) only armour counts: a plate carrier or a vest (ENT.Armor > 0)
+-- adds C.CarryVestThickness, chest rigs, webbing and belts (no armour: straps) nothing; an item can
+-- say how much it adds there with ENT.CarryBackThickness.
+local function vestBack(vt)
+    if vt.CarryBackThickness then return vt.CarryBackThickness end
+    if vt.BlocksCarryZones and vt.BlocksCarryZones.front then return 0 end
+    return (vt.Armor or 0) > 0 and C.CarryVestThickness or 0
+end
 C.CarryGap = C.CarryGap or 0.3
 -- modes that rest on the upper back, where a backpack is: the weapon hangs beside the pack (moved
 -- sideways, away from the body's middle, until it clears it); C.CarryBesidePack = false: it goes
@@ -143,11 +151,14 @@ end
 -- slot -> half width of the backpack the weapon hangs beside (I.CarryBeside).
 function I.CarryPushes(ent, gearOwner, carried)
     local out = {}
-    local vest = IsValid(gearOwner) and gearOwner:GetNW2Int("Vest") > 1
+    local vestID = IsValid(gearOwner) and gearOwner:GetNW2Int("Vest") or 0
+    local vest = vestID > 1
+    local vt = vest and I.EntityTable(vestID)
+    local back = vt and vestBack(vt) or (vest and C.CarryVestThickness) or 0
     local pack = IsValid(gearOwner) and I.BackpackThickness(gearOwner) or 0
     for cat, w in pairs(carried) do
         local push = 0
-        if vest then push = push + C.CarryVestThickness end
+        if vest then push = push + (I.CarryZone[w.mode] == "front" and C.CarryVestThickness or back) end
         if pack > 0 and C.CarryOverPack[w.mode] then
             if C.CarryBesidePack then
                 out.beside = out.beside or {}

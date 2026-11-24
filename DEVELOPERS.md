@@ -144,6 +144,7 @@ Read from the item's entity table (`ENT.*`); all optional except `Model` and the
 | `WeaponClass` | weapons | the SWEP given when equipped |
 | `Ammo`, `ClipSize`, `Rounds` | weapons | ammo type, magazine size, rounds when spawned (`ClipSize = -1`: no magazine) |
 | `CarryModes`, `CarryDefault` | long guns | `{ "sling_up", "front_hang", ... }`, default mode |
+| `CarryBackThickness` | vests | units it adds between the back and a slung weapon (default: `Config.CarryVestThickness` with armour, 0 without) |
 | `CarryWide` | long guns | `true`: too wide to hang beside a backpack (a crossbow's bow): only in front while one is worn |
 | `Ammo`, `Rounds`, `Capacity` | ammo boxes | ammo type, rounds when spawned, rounds when full |
 

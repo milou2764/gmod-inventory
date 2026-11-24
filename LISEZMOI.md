@@ -160,7 +160,9 @@ actuel }`.
 
 Affichage (client, `lua/advinv/cl_carry.lua`) : les réglages sont rangés par playermodel,
 arme et mode (`lua/advinv/cl_carry_data.lua`, ci-dessous). Un gilet porté écarte les armes
-de `Config.CarryVestThickness` ; avec un sac, une arme portée à l'épaule (`Config.CarryOverPack`)
+de `Config.CarryVestThickness` : devant tout gilet, dans le dos seulement un blindage (porte-plaques :
+`ENT.Armor` au-dessus de 0 ; porte-chargeurs, brêlages et ceinturons ne sont que des sangles et
+n'ajoutent rien dans le dos ; `ENT.CarryBackThickness` le fixe pour un objet) ; avec un sac, une arme portée à l'épaule (`Config.CarryOverPack`)
 est décalée sur le côté jusqu'à dégager la demi-largeur du sac (`Config.CarryBesidePack = false` :
 elle passe par-dessus, écartée de son épaisseur). Quand le lance-roquettes et l'arme principale sont tous deux côté dos et
 se croisent, l'un passe sur l'autre. Un playermodel sans l'os d'un mode n'affiche pas cette arme.
