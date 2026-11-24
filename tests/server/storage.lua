@@ -6,6 +6,8 @@ for _, b in ipairs(player.GetBots()) do b:Kick("reset") end
 for _, cls in ipairs({ "advinv_crate", "advinv_bank", "advinv_loot_spawn" }) do
     for _, e in ipairs(ents.FindByClass(cls)) do I.RemovePermanent(e) e:Remove() end
 end
+-- (and those of earlier runs not spawned yet: they come back 2 s after the map loads)
+sql.Query("DELETE FROM advinv_storage WHERE Map = " .. SQLStr(game.GetMap()))
 sql.Query("DELETE FROM advinv_stores")
 I.Stores = {}
 local out = {}
@@ -86,10 +88,12 @@ timer.Simple(1, function()
     -- permanent: the shared crate c1 and a normal crate with contents
     local keep = spawn("advinv_crate", base + Vector(200, 0, 0))
     I.Set(keep, "Storage", { { id = idOf.advinv_ammo_357, r = 6 }, { id = I.GENERIC_ENTITY, c = "item_battery" } })
+    local rowsBefore = tonumber(sql.QueryValue("SELECT COUNT(*) FROM advinv_storage WHERE Map = " .. SQLStr(game.GetMap()))) or 0
     call(function(p) setR(0, p) end, boss, { keep, "permanent", "1" })
     call(function(p) setR(0, p) end, boss, { c1, "permanent", "1" })
     call(function(p) setR(0, p) end, boss, { b1, "permanent", "1" })
-    out.permanentRows = tonumber(sql.QueryValue("SELECT COUNT(*) FROM advinv_storage WHERE Map = " .. SQLStr(game.GetMap())))
+    -- rows this run added (the database keeps the crates of earlier runs: they are permanent)
+    out.permanentRows = (tonumber(sql.QueryValue("SELECT COUNT(*) FROM advinv_storage WHERE Map = " .. SQLStr(game.GetMap()))) or 0) - rowsBefore
     timer.Simple(17, function()
         out.lootCrate = summary(I.Get(loot, "Storage"))
         out.lootSpawn = IsValid(ls.AdvInvSpawned) and ls.AdvInvSpawned:GetClass() or "none"

@@ -12,8 +12,7 @@ I.TABLE = "advinv_inventory"
 
 function I.SQLRequest(request)
     if sql.Query(request) == false then
-        I.Log.d(TAG, "error in SQL request: " .. request)
-        I.Log.d(TAG, sql.LastError())
+        I.Log.e(TAG, "error in SQL request: " .. sql.LastError() .. " (" .. string.sub(request, 1, 200) .. ")")
         return false
     end
     return true

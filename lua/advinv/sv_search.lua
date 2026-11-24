@@ -31,16 +31,21 @@ I.StopSearch = clear
 
 local function close(a, b)
     return IsValid(a) and IsValid(b) and a:Alive() and b:Alive()
-        and a:GetPos():DistToSqr(b:GetPos()) <= (C.SearchRange + 60) ^ 2
+        and a:GetPos():DistToSqr(b:GetPos()) <= (C.SearchRange + 60) ^ 2 and I.InSight(a, b)
 end
 
--- The searcher may see / take from target now.
+C.SearchViewTime = C.SearchViewTime or 120 -- seconds a finished search lets the searcher look and take
+
+-- The searcher may see / take from target now: close, in sight, still allowed (job...), not too long.
 function I.IsSearching(ply, target)
     return ply.AdvInvSearchView == target and close(ply, target)
+        and CurTime() - (ply.AdvInvSearchSince or 0) <= C.SearchViewTime
+        and I.SearchAllowed(ply, target) == true
 end
 
 local function finish(searcher, target)
     searcher.AdvInvSearchView = target
+    searcher.AdvInvSearchSince = CurTime()
     searcher:SetNWFloat("AdvInvSearchEnd", 0)
     target.AdvInvViewers = target.AdvInvViewers or {}
     target.AdvInvViewers[searcher] = true
@@ -71,6 +76,8 @@ handlers[I.ACT.SEARCH] = function(ply)
     end
     local target = net.ReadEntity()
     if sub == SUB.START then
+        if (ply.AdvInvSearchWait or 0) > CurTime() then return end
+        ply.AdvInvSearchWait = CurTime() + 2
         local ok, why = I.CanSearch(ply, target)
         if not ok then return false, why end
         clear(ply)
@@ -114,6 +121,8 @@ timer.Create("AdvInv_SearchViewers", 1, 0, function()
         if target and not I.IsSearching(ply, target) then clear(ply) end
     end
 end)
+
+hook.Add("OnPlayerChangedTeam", "AdvInv_Search", function(ply) clear(ply) end)
 
 hook.Add("PlayerDisconnected", "AdvInv_Search", function(ply)
     clear(ply)

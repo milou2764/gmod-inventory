@@ -55,16 +55,16 @@ French); this guide only covers code.
 
 ```
 addons/my-gear/
-  lua/autorun/my_gear.lua         -- registers the IDs (shared)
+  lua/autorun/my_gear.lua         -- registers the items (shared)
   lua/entities/my_helmet.lua      -- one entity per item
 ```
 
 ```lua
 -- lua/autorun/my_gear.lua
 AdvInv = AdvInv or {}
-AdvInv.ClassID = AdvInv.ClassID or {}
-AdvInv.ClassID["my_helmet"] = 40      -- unique, 2-127, never changed afterwards
-AdvInv.ClassID["my_backpack"] = 41
+AdvInv.Items = AdvInv.Items or {}
+AdvInv.Items["advinv_myname_helmet"] = true      -- the class name is the item's ID
+AdvInv.Items["advinv_myname_backpack"] = true
 ```
 
 ```lua
@@ -102,16 +102,20 @@ model of an item that has no icon of its own (`materials/entities/<class>.png` o
 
 ## Item IDs
 
-- Between **2 and 127** (sent on 7 bits). 0 = no slot, 1 = empty slot.
-- **Unique** across all installed addons, and **never changed** once a server uses them: they
-  are what the database saves. Changing an ID turns saved items into another item, or into
-  nothing.
-- Taken: 100-127 by the AIS (100 any weapon, 103 any whitelisted entity, 125 any ammo type,
-  the HL2 weapons, ammo and gear), 62-99 by `mrpi-military`. Tell the users of your addon which
-  range it takes, and keep a few IDs free for later items.
+- An item's ID is its **entity class name**: unique whatever the addons installed (Garry's Mod
+  takes one class per name). Put your name in it (`advinv_myname_helmet`) and **never rename** a
+  class once a server uses it: the database saves class names.
 - Register them in a **shared** file with the `AdvInv = AdvInv or {}` line, whatever the loading
-  order of the addons. The table of IDs to classes is built at `InitPostEntity`
-  (hook `AdvInv_ItemsInitialized`); `AdvInv.IDClass[id]` and `AdvInv.EntityTable(id)` work after it.
+  order of the addons: `AdvInv.Items[class] = true` (or `AdvInv.RegisterItem(class)`).
+- Within a game session each item also has a number, for the network only: `AdvInv.ClassID[class]`,
+  `AdvInv.IDClass[number]`, built at `InitPostEntity` (hook `AdvInv_ItemsInitialized`);
+  `AdvInv.EntityTable(number)` works after it. The items registered by name are numbered by the
+  server from 20000 and the clients get its numbers. 0 = no slot, 1 = empty slot.
+- Older registration: `AdvInv.ClassID[class] = number` (2 to 19999) still registers an item and
+  keeps that number in the session; saves made before class names (version 3) name items by those
+  numbers and are read with them (`AdvInv.LegacyID`). Taken: 100-127 by the AIS (100 any weapon,
+  103 any whitelisted entity, 125 any ammo type, the HL2 weapons, ammo and gear), 1000-1999 by the
+  compatible Workshop addons (sh_compat.lua), 62-99 by `mrpi-military`.
 
 ## Item fields
 
@@ -135,9 +139,11 @@ Read from the item's entity table (`ENT.*`); all optional except `Model` and the
 | `BodyFit` | worn | `"vest"` / `"back"`: a rigged model shifted to each playermodel's build |
 | `MaxLoad` | vest, backpack, uniform | capacity of its container (0/none: no container) |
 | `BlocksCarryZones` | worn | `{ back = true, front = true, side = true, shoulder = true }`: zones taken from long guns |
+| `BlocksCarryModes` | worn | `{ sling_down = true, ... }`: single carry modes taken |
+| `BackDepth`, `BackHalfWidth` | backpack | how far it sticks out behind the back and to each side (else read from its model) |
 | `WeaponClass` | weapons | the SWEP given when equipped |
 | `Ammo`, `ClipSize`, `Rounds` | weapons | ammo type, magazine size, rounds when spawned (`ClipSize = -1`: no magazine) |
-| `CarryModes`, `CarryDefault` | long guns | `{ "sling_up", "back_carry", ... }`, default mode |
+| `CarryModes`, `CarryDefault` | long guns | `{ "sling_up", "front_hang", ... }`, default mode |
 | `Ammo`, `Rounds`, `Capacity` | ammo boxes | ammo type, rounds when spawned, rounds when full |
 
 ## Base classes and slots
@@ -170,24 +176,50 @@ A vest or backpack keeps its contents when dropped, stored in a crate or taken f
   position for every built-in item on every default playermodel. Items without an entry use their
   own `ENT.Attach`. Your addon can add entries the same way (`AdvInv.Fits`, see the file).
 - A worn item parented to the local player is hidden in first person.
+- Props are placed every frame from the bone (`AdvInv.GearPlacement(model, wearer)`) and lit from
+  the wearer's centre, so a prop whose origin is far from its mesh is not drawn dark.
+- A prop on the upper chest bone (`ValveBiped.Bip01_Spine4`: vests, pouches) follows the whole
+  torso, between Spine1 and Spine4, so it stays on the chest when crouching or on a body. Set
+  `AdvInv.Config.VestFollowsTorso = false` (client) to attach those to Spine4 only.
+- Playermodel paths in fit tables (`AdvInv.Fits`, `AdvInv.BodyFit.models`, carry offsets) are
+  matched in lowercase.
 - Client: `AdvInv.mountedGear[userid][slot]` is the clientside model drawn on a player.
+- **Playermodels with gear of their own** (bodygroups: a cap, a helmet, a vest, a backpack):
+  `AdvInv.ModelGear["models/x.mdl"] = { lock = { [3] = 2 }, items = { my_helmet = { [3] = 0 } } }`
+  (lowercase model, shared). `lock`: headgear, vest and backpack bodygroups held at that value (none)
+  whatever the player picks, or `{ [gear value] = none value }` to lock only some values of a
+  bodygroup mixing gear and faces; `items`: an item that is the model's own gear is shown by that
+  bodygroup and its model isn't drawn; `slots = { Slot = { [bodygroup] = value } }`: other bodygroups
+  set while a slot holds an item. The player's own choice comes back for what nothing asks for
+  (`AdvInv.ApplyModelGear(ent)`, server: after every change of a worn item, on spawn and every
+  second). Entries already in the table are kept, so define yours in a shared file. Measure that
+  playermodel's fits with the "none" values: `tools/playermodel_bodygroups.txt`.
+- **Gear in a playermodel's mesh** (no bodygroup to take it off): `AdvInv.GearBuiltIn["models/x.mdl"]
+  = { Helmet = true, Vest = true, Rucksack = true }`; a slot can be `{ [bodygroup] = { [value] = true } }`
+  when only some bodygroup choices have it, or `false` to allow it (shared, lowercase). `AdvInv.Equip`
+  refuses those slots with the message of `AdvInv.GearBuiltInMessages` (`msg_headgear_on_headgear`,
+  `msg_vest_on_vest`, `msg_backpack_on_backpack`); `AdvInv.GearBuiltInCheck(ply)` (server, every
+  second) takes ours off a player who took such a playermodel or bodygroup (to the inventory, or the
+  ground with its contents). `AdvInv.HasBuiltInGear(ent, slot)`. The fit tools give those slots' items
+  no fit on those playermodels (`tools/builtin_gear.py` reads the table).
 
 ## Weapons and carry modes
 
 A weapon item (`advinv_base_wep`) gives its `WeaponClass` when equipped and takes it away when
 taken off; the magazine is kept in the item. Long guns are always carried on the body in one of
-five modes (`sling_up`, `sling_down`, `cross_body`, `back_carry`, `front_hang`), one per body zone,
+three modes (`sling_up` sling arms, `sling_down` back carry, `front_hang` front carry; `cross_body` and
+the old `back_carry` were removed), one per body zone,
 chosen by the player (right-click). Configure a weapon by class (shared):
 
 ```lua
 AdvInv.CarryWeapons = AdvInv.CarryWeapons or {}
 AdvInv.CarryWeapons["my_rifle"] = { default = "sling_up" }                          -- every mode
-AdvInv.CarryWeapons["my_launcher"] = { modes = { "back_carry" }, default = "back_carry" }
+AdvInv.CarryWeapons["my_launcher"] = { modes = { "sling_up" }, default = "sling_up" }
 ```
 
 A registered weapon item can set `ENT.CarryModes` / `ENT.CarryDefault` instead. A generic weapon
 (a SWEP without an item of its own, see below) with no entry gets every mode if it is a primary
-weapon, `back_carry`/`sling_up` if it is a launcher. Without exact positions, a weapon is placed by
+weapon, `sling_up` if it is a launcher. Without exact positions, a weapon is placed by
 a template fitted to the shape of its world model. Exact positions per playermodel:
 `tools/fit_carry.py` writes `cl_carry_data.lua`; tune in game with `advinv_carry_tune`
 (`advinv_carry_cycle` cycles through the modes). Hooks: `CanChangeCarryMode`,
@@ -223,6 +255,144 @@ AdvInv.Consumables["my_medkit"] = { health = 40 }      -- what using it does
 ```
 
 A SWEP can also declare `SWEP.AdvInvCategory` and `SWEP.AdvInvMass`.
+
+## Grenades
+
+A grenade is not a slot weapon: it is one round of its ammunition type (a generic ammo item of
+size 1). Register other grenade weapons (shared): `AdvInv.Grenades["my_grenade"] = "My Grenades"`
+(its `Primary.Ammo`). The inventory keeps the items equal to the grenades (reserve + loaded): a
+throw takes one away, ammo given by other code adds some, and Use puts the weapon in the hands.
+
+## Compatible Workshop addons (their models as items)
+
+`tools/compat_packs.py` lists addons whose models become items when installed (fixed IDs
+1000-1999, slot, orientation of the prop, stats). `tools/fit_compat.py` reads the extracted addons
+(`MDL_EXTRA_DIRS`), fits every model on every default playermodel and writes
+`lua/advinv/sh_compat_data.lua` and `cl_fits_compat.lua`; `tools/compat_sheets.py` renders them
+to check. `sh_compat.lua` registers the items, spawnable only where the model is there. The addons'
+files are never shipped.
+
+## Gear from a playermodel's bodygroups (extensions)
+
+A playermodel addon whose helmets, vests or backpacks are bodygroups can have them as items, in an
+extension: a separate addon shipping **Lua only** (`addons/advinv-ext-ww1-french`,
+`addons/advinv-ext-vietnam-us`). The pack's models need not be playermodels: NPC ragdolls on the
+ValveBiped skeleton work too (the Vietnam soldiers); their gear is then only worn as fitted copies.
+Each item is drawn with the playermodel's own model: its other bodygroups on their empty choice, the
+parts that have none hidden by material (`materials/advinv/nodraw.vmt`). Nothing of the playermodel
+addon is redistributed; without it the items aren't available (not spawnable, never given).
+
+- On the pack's own playermodels the item is shown by the bodygroup itself (rigged for that body).
+  Those bodygroups are locked (`ModelGear` `lock`): picking them in a menu does nothing, only the
+  item worn shows them.
+- On any other playermodel a copy follows the head or the torso, with a fit per playermodel (the
+  extension's `fits`, merged into `AdvInv.Fits` on the client).
+- On the ground: the gear alone, its physics its convex hull (`PhysHull`) around its centre
+  (`ModelOrigin`: the entity's origin). A `stored` look may differ from the worn one (webbing: the
+  straps folded away), and pieces with nothing between them are drawn pushed together (`pieces`:
+  clip planes); `stored_cut` (a fraction of the item's height) keeps only what is below it on the
+  ground (a chest rig's shoulder straps cut away).
+- Slots: `Helmet`, `Vest`, `Rucksack`, and the head-worn `Gasmask`, `NVGs`, `Radio` (the headset),
+  fitted by the skull like helmets. `lift` raises head gear on the other playermodels (units of its
+  own head, scaled with the wearer's): the Civil War kepis, worn over the eyes on their own models,
+  have their brim on the forehead elsewhere; `drop` lowers torso gear the same way (the PAVN
+  backpack, which its own soldier wears low on the back). `rigged` bonemerges the item on its wearer instead of a
+  rigid copy on a bone: each part follows its own bone (a drop-leg holster, leg pouches: the thighs),
+  without a per-playermodel fit.
+- Gear on a material the body also uses (the Vietnam soldiers' suspenders are painted on the
+  uniform's texture): hiding the body would hide it. The pack marks those looks (`shared`), and the
+  game reads their triangles from the installed model (`util.GetModelMeshes`: the item's bodygroups
+  minus the gearless ones, on a hidden material) and draws them as a mesh where the model is drawn
+  (worn, on the ground, in icons; `I.SharedPartsMesh`, `I.DrawSharedParts`). Nothing is shipped.
+
+`tools/modelgear_pack.py <pack>` makes the extension's Lua from a pack in `tools/modelgear_packs.py`
+(the playermodels, the bodygroup choices of each item, its stats; `stored` for a different look on
+the ground). Bodyparts and submodels are named by the start of their name, else its end, else a part
+of it (models of one pack may prefix them: `VN3_Headgear_Pith02`, `male_01_helmet1.smd`). The tool
+measures each piece of gear in the playermodel's reference pose, transfers it to every
+playermodel of a list (head gear by the skull; torso gear by the torso's girth at the height where
+most of it is, both bodies measured at the same height between pelvis and neck, kept within 15 % of
+the chest's ratio: a chest rig on a slim soldier's belly isn't sized by a citizen's chest) and writes
+`lua/autorun/<name>.lua`. `--preview FILE` draws every item alone. The format is described at the top
+of `lua/advinv/sh_modelgear_items.lua`; the item classes are their IDs, put your name in them.
+
+## Fitting more playermodels
+
+Options of an item in `tools/compat_packs.py` (the extra dict), for gear the measuring gets wrong:
+`ref` (size, height of a helmet on male_07, chosen by eye with `tools/review_sheets.py`; other heads
+by their head's size), `full` (a helmet enclosing the whole head), `outer` (width ratio, top gap:
+helmets whose inside can't be measured), `min_ratio` (an open helmet at least that wide x the skull), `sizes` (min, max sizes),
+`lift` (helmet raised, units), `size` (a vest's size on male_07, other bodies by their chest girth),
+`tilt` (back item turned around the shoulders). The review sheets (`tools/review_sheets.py`) show
+every item on every playermodel of a list.
+
+The fits are made offline by the tools, from the models' meshes (`tools/`, Python 3, numpy, PIL):
+`fit_items.py` (built-in gear), `fit_compat.py` (compatible addons' gear), `bodyfit.py` +
+`bodyfit_lua.py` (rigged vests and backpacks) and `fit_carry.py` (weapons on the body). Each takes
+a list of playermodels; run them on the whole list, Garry's Mod's and the Workshop ones:
+
+```
+cat playermodels.txt playermodels_workshop.txt > all.txt
+MDL_EXTRA_DIRS="<extracted addons, ; separated>" python fit_items.py all.txt   (then the others)
+```
+
+Only the numbers are written (`lua/advinv/cl_fits_*.lua`, `cl_bodyfit_data.lua`,
+`cl_carry_data.lua`); the models are only read. Playermodel paths are matched in lowercase.
+
+### Fit editor: approving every pair by hand
+
+`tools/fit_editor/` (C, OpenGL) goes through every worn item on every playermodel, one pair at a
+time, drawn the way the game places it (front, 3/4, side, back; the whole playermodel, arms
+hideable). Adjust the size, the position (forward, up, left) and the tilt with the keys, the wheel
+or the fields, then approve. An approved pair is final: it goes to `tools/fit_locks.txt`, into the
+game's fit files at once (`python fit_locks.py apply`), the editor doesn't ask for it again (tick
+"Show approved pairs too" to see it, Unlock to change it) and `fit_items.py` / `fit_compat.py` keep
+it whatever their rules give. Playermodels whose head (or torso) and fit are the same are one pair.
+
+Carried long guns are in it too: one item per weapon and carry mode ("AR2 - sling arms", class
+`carry:weapon_ar2:sling_up` in `fit_locks.txt`), the weapon's world model on the mode's bone, without
+worn gear. Their positions are shared by the playermodels of one
+offset set (`cl_carry_data.lua`), so a set is one pair; an approval is written into that set and
+`fit_carry.py` keeps it when it runs again. Weapons have no size: only their place and angles change.
+
+**Weapon carry editor.** Double-click `tools/fit_editor/carry_editor.bat`: it finds the long guns
+of your addons (below), computes their positions if some are new, and opens a window made for them:
+the weapons in a list, the carry modes as buttons, the playermodel shown, sliders for forward/back,
+up/down, left/right, lean, turn sideways and spin, the weapon drawn on the whole body (drag to turn
+around, wheel to zoom). Save applies the move to every playermodel (each from where it has the
+weapon; or only the one shown) and writes it into `cl_carry_data.lua` at once. Settings in
+`tools/fit_editor/local.bat`: `ADVINV_PYTHON`, `MDL_EXTRA_DIRS` (other addons' unpacked models),
+`ADVINV_WEAPON_DIRS` (more folders to look for weapons in).
+
+Other addons' long guns (CW 2.0, TFA, a DarkRP shipment's AK...) can be set the same way, offline
+(what the carry editor's launcher runs):
+
+```
+python carry_weapons.py scan [addon folders or .gma ...]   (default: the game's addons and Workshop downloads)
+python fit_carry.py playermodels.txt                       (their positions on every playermodel)
+tools/fit_editor/fit_editor.bat                            (one item per weapon and mode)
+```
+
+`carry_weapons.py` reads the weapon files as text (nothing is run) and writes `carry_weapons.txt`:
+the long guns (held like one: ar2, smg, shotgun, crossbow, rpg hold types, or their
+`AdvInvCategory`) whose world model it can read (put other addons' unpacked content in
+`MDL_EXTRA_DIRS`). Edit the list freely. Their positions go into `cl_carry_data.lua` under their
+weapon class; the game uses them instead of the mode's template (which stays for any weapon not
+listed).
+
+Start it with `tools/fit_editor/fit_editor.bat`, with `ADVINV_PYTHON` (Python with numpy and
+Pillow) and `MDL_EXTRA_DIRS` set in the environment or in `tools/fit_editor/local.bat` (not in
+git). It runs `tools/fit_editor_export.py`, which reads the models once into
+`%TEMP%\advinv_fit_editor` (about a minute the first time, then only new models), then opens
+`fit_editor.exe`. Build it with `tools/fit_editor/build.sh` (MSYS2 UCRT64 gcc and zlib; no DLL
+needed).
+
+Batch use (reviewing many pairs at once): `--sheet ITEM OUT.bmp INDEX.txt [--tight] [--views 0,2,3]
+[--size PX] [--cols N] [--which all|open|pending] [--adjust FILE]` draws every pair of an item on
+the GPU in one picture (a fraction of a millisecond a pair); `--approve-item ITEM --adjust FILE --by
+claude` approves them with the adjustments of FILE (`item<TAB>playermodel or *<TAB>size% forward up
+left tilt`, or `skip`). Pairs approved that way are marked with who approved them: the user can
+review them with "Review Claude's approvals" and change them; the user's own approvals stay final.
 
 ## Other weapon bases
 
@@ -347,6 +517,9 @@ All on the server unless noted. `holder` is a player, a body or a storage entity
 | `AdvInv.Use(ply, ent)` | takes an entity from the world as if the player pressed Use |
 | `AdvInv.ItemFromEntity(ent)` | the item an entity would become, or nil |
 | `AdvInv.ItemForWeaponClass(class, rounds)` | the item for a weapon class (registered or generic) |
+| `AdvInv.ClassTable(class)`, `AdvInv.EntityTable(id)` | an item's table, inherited fields included (shared, cached: READ ONLY) |
+| `AdvInv.ReleaseSlot(ply, slot)` | frees a weapon slot without taking the weapon (it left another way) |
+| `AdvInv.GuardAmmo(ply)` | the next 2 ticks, reserve decreases don't use up ammo boxes (your code takes ammo away all at once) |
 | `AdvInv.Info(id, c)` | cached facts: `name`, `cat`, `mass`, `maxLoad`, `isWeapon`, `weaponClass`, `isBox`, `ammo`... (shared) |
 | `AdvInv.SlotRef(ent, slot)`, `AdvInv.SlotInfo(ent, slot)` | the item in a slot: id, class / its info (shared) |
 | `AdvInv.CanAccess(ply, holder)` | may this player open it (distance, locks, rights) |
@@ -366,8 +539,13 @@ them: use `Equip` / `TakeOff`.
 |---|---|---|---|
 | `AdvInv_ItemsInitialized` | shared | | after the ID tables are built |
 | `AdvInv_OwnerID` | server | ply | owner of the inventory he carries (saving) |
-| `AdvInv_ShouldAutoInit` | server | ply | `false`: no reset at spawn |
-| `AdvInv_Changed` | client | holder, cont | a container was received |
+| `AdvInv_ShouldAutoInit` | server | ply | `false`: no reset (first spawn, after a death that emptied him) |
+| `AdvInv_CanPickup` | server | ply, ent | `false`: Use / the pickup key doesn't take it |
+| `AdvInv_JobIsolation` | server | ply, oldTeam, newTeam | DarkRP job change: `false` keeps the inventory, `true` forgets it |
+| `AdvInv_JobInventoryForgotten` | server | ply, oldTeam, newTeam | the inventory was forgotten (isolated job) |
+| `AdvInv_CanWeaponLeave` | server | ply, class | `false`: the weapon can't be dropped or given to a crate / body |
+| `AdvInv_StorageCodeFailed` | server | ply, storage, fails | every 3rd wrong code on a storage |
+| `AdvInv_Changed` | client | holder, cont, entIndex | a container was received (holder can be NULL for an entity not known yet: use entIndex) |
 | `AdvInv_CanOpen` | client | ply | `false`: the inventory doesn't open |
 | `AdvInv_PanelCreated` | client | panel, target | adjust the inventory window |
 | `AdvInv_UseItem` | server | ply, item | `false` to forbid using it |
@@ -440,6 +618,7 @@ game's models from its VPK files):
 | Script | |
 |---|---|
 | `fit_items.py` | fits every worn item to every default playermodel (`cl_fits_data.lua`) |
+| `fit_editor/` (C), `fit_editor_export.py`, `fit_locks.py` | the fit editor: every item on every playermodel approved by hand (`fit_locks.txt`) |
 | `fit_carry.py` | carry mode positions of the long guns (`cl_carry_data.lua`) |
 | `carry_sheets.py`, `fit_sheets.py` | contact sheets to check them |
 | `mount_check.py` | renders worn items on playermodels, without the game |

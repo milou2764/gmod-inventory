@@ -12,6 +12,7 @@ end
 function ENT:createCSModel(target)
     local modelPath = self:getGearModelPath()
     local model = ClientsideModel(modelPath)
+    AdvInv.SetupItemModel(model, self, true) -- gear drawn from a playermodel: its worn look
     AdvInv.MountGearModel(model, target, self.Attach, self.BodyFit, self.ClassName)
 
     return model

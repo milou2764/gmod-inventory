@@ -47,7 +47,7 @@ timer.Simple(1, function()
     timer.Simple(0.2, function()
         p:Give("weapon_shotgun")
         hook.Run("PlayerLoadout", p)
-        timer.Simple(0.5, function()
+        timer.Simple(1.2, function() -- DarkRP's /dropmoney places the bag after 1 s
             out.bought = { uniform = summary(I.Get(p, "Uniform")), boxGone = not IsValid(box) }
             out.money = { wallet = p:getDarkRPVar("money"), bags = #ents.FindByClass("spawned_money") }
             out.loadout = { primary = AdvInv.IDClass[p:GetNWInt("PrimaryWep")] }

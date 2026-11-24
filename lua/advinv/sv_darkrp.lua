@@ -48,38 +48,84 @@ hook.Add("playerBoughtPistol", "AdvInv_DarkRP", bought)
 hook.Add("playerBoughtAmmo", "AdvInv_DarkRP", bought)
 
 -- Frees a weapon slot without taking the weapon away (DarkRP drops it itself).
-local function releaseSlot(ply, cat)
-    ply:SetNWInt(cat .. "Carry", I.CARRY_INDEX.stowed)
-    ply:SetNWString(cat .. "Class", "")
-    ply:SetNWInt(cat, 1)
-    ply:SetNWInt(cat .. "Rounds", 0)
-    I.MarkDirty(ply, "Uniform")
+local function releaseSlot(ply, cat) I.ReleaseSlot(ply, cat) end
+
+local function slotOf(ply, class)
+    for _, cat in ipairs(AdvInv.WeaponCat) do
+        if I.SlotInfo(ply, cat).weaponClass == class then return cat end
+    end
 end
 
+-- Dying: the body has the inventory's weapons (sv_death.lua), DarkRP doesn't drop them.
 hook.Add("canDropWeapon", "AdvInv_DarkRP", function(ply, wep)
-    if not IsValid(wep) then return end
-    for _, cat in ipairs(AdvInv.WeaponCat) do
-        local info = I.SlotInfo(ply, cat)
-        if info.weaponClass and info.weaponClass == wep:GetClass() then
-            if not ply:Alive() then return false end -- dying: the belongings bag has it
-            releaseSlot(ply, cat)
-            return
-        end
+    if IsValid(wep) and not ply:Alive() and slotOf(ply, wep:GetClass()) then return false end
+end)
+
+-- /drop: once DarkRP has dropped it, the slot is free; the dropped weapon keeps its attachments and
+-- carry mode, but not the reserve (it is the boxes, which stay in the inventory).
+hook.Add("onDarkRPWeaponDropped", "AdvInv_DarkRP", function(ply, ent, wep)
+    if not (IsValid(ply) and IsValid(ent)) then return end
+    ent.ammoadd = 0
+    local cat = IsValid(wep) and slotOf(ply, wep:GetClass())
+    if cat then
+        ent.AdvInvExtra = I.WeaponExtra(wep)
+        if I.CarryConfig(I.SlotRef(ply, cat)) then ent.AdvInvCarryMode = ply:GetNWInt(cat .. "Carry", 0) end
+        releaseSlot(ply, cat)
     end
 end)
 
+-- The weapon checker confiscates: the inventory's weapons leave their slots (given back later as
+-- ordinary weapons by DarkRP).
+hook.Add("playerWeaponsConfiscated", "AdvInv_DarkRP", function(_, target, list)
+    if not (IsValid(target) and istable(list)) then return end
+    for class in pairs(list) do
+        local cat = isstring(class) and slotOf(target, class)
+        if cat then releaseSlot(target, cat) end
+    end
+end)
+
+-- DarkRP's drop takes the reserve away (RemoveAmmo): guarded, the boxes stay.
+hook.Add("InitPostEntity", "AdvInv_DarkRPDrop", function()
+    local meta = FindMetaTable("Player")
+    local orig = meta.AdvInvOrigDrop or meta.dropDRPWeapon
+    if not orig then return end
+    meta.AdvInvOrigDrop = orig
+    meta.dropDRPWeapon = function(ply, ...)
+        if IsValid(ply) then I.GuardAmmo(ply) end
+        local r = { orig(ply, ...) }
+        if IsValid(ply) then I.MarkDirty(ply, "Uniform") end
+        return unpack(r)
+    end
+end)
+
+-- advinv_darkrp_loadout_to_inventory: the job's own weapons (its F4 list, not what every job or
+-- other addons give) that fit a free slot become inventory weapons, marked as the job's: they go
+-- when the player changes job or dies, and are never saved (sv_inventory.lua).
 hook.Add("PlayerLoadout", "AdvInv_DarkRP", function(ply)
     if not (isDarkRP() and loadoutInv:GetBool()) then return end
     timer.Simple(0.2, function()
         if not (IsValid(ply) and ply:Alive()) then return end
+        local job = ply.getJobTable and ply:getJobTable()
+        local own = {}
+        for _, class in ipairs(job and istable(job.weapons) and job.weapons or {}) do own[string.lower(class)] = true end
         for _, wep in ipairs(ply:GetWeapons()) do
-            local item = I.ItemForWeaponClass(wep:GetClass(), math.max(wep:Clip1(), 0))
-            if item then
-                local cat = I.Info(item.id, item.c).cat
-                if cat and I.SlotID(ply, cat) <= 1 then I.Equip(ply, item) end
+            if own[string.lower(wep:GetClass())] then
+                local item = I.ItemForWeaponClass(wep:GetClass(), math.max(wep:Clip1(), 0))
+                if item then
+                    local cat = I.Info(item.id, item.c).cat
+                    if cat and I.SlotID(ply, cat) <= 1 then
+                        item.j = true
+                        I.Equip(ply, item)
+                    end
+                end
             end
         end
     end)
+end)
+
+-- Leaving a job: its weapons stay with it (DarkRP calls this before its strip and new loadout).
+hook.Add("OnPlayerChangedTeam", "AdvInv_JobItems", function(ply)
+    if IsValid(ply) then I.RemoveJobItems(ply) end
 end)
 
 net.Receive("advinv_drop_money", function(_, ply)
@@ -87,10 +133,66 @@ net.Receive("advinv_drop_money", function(_, ply)
     if not (isDarkRP() and ply:Alive() and amount > 0) then return end
     if (ply.AdvInvMoneyWait or 0) > CurTime() then return end
     ply.AdvInvMoneyWait = CurTime() + 1
+    -- DarkRP's own /dropmoney: its pile limit, placement, hooks and logs
+    local cmd = DarkRP.getChatCommand and DarkRP.getChatCommand("dropmoney")
+    if cmd and isfunction(cmd.callback) then
+        cmd.callback(ply, tostring(amount))
+        return
+    end
     if not (ply.canAfford and ply:canAfford(amount)) then
         I.Tell(ply, I.L("money_cannot"))
         return
     end
+    local bags = {}
+    for _, b in ipairs(ply.AdvInvMoneyBags or {}) do if IsValid(b) then bags[#bags + 1] = b end end
+    ply.AdvInvMoneyBags = bags
+    if #bags >= ((GAMEMODE.Config and GAMEMODE.Config.maxMoneyPiles) or 20) then
+        I.Tell(ply, I.L("money_cannot"))
+        return
+    end
     ply:addMoney(-amount)
-    DarkRP.createMoneyBag(I.DropPos(ply), amount)
+    bags[#bags + 1] = DarkRP.createMoneyBag(I.DropPos(ply), amount)
+    hook.Run("playerDroppedMoney", ply, amount, bags[#bags])
 end)
+
+--[[
+    Job isolation (military or Star Wars RP, where a job is another character): switching into or
+    out of an isolated job forgets the inventory (gear, slot weapons, pockets, munitions); the new
+    job starts empty.
+        advinv_job_isolation 1     every job is isolated (except the jobs with AdvInvIsolated = false)
+        advinv_isolated_jobs "a,b" else only these jobs (commands or names, comma separated), and the
+                                   jobs with AdvInvIsolated = true in their DarkRP.createJob table
+    Hook AdvInv_JobIsolation(ply, oldTeam, newTeam): false keeps the inventory, true forgets it.
+--]]
+local isoAll = CreateConVar("advinv_job_isolation", "0", { FCVAR_ARCHIVE, FCVAR_NOTIFY },
+    "Every job keeps its own inventory: changing job forgets it (0: only advinv_isolated_jobs)", 0, 1)
+local isoList = CreateConVar("advinv_isolated_jobs", "", { FCVAR_ARCHIVE },
+    "Jobs whose inventory is forgotten when changing job: commands or names, comma separated")
+
+-- Is this DarkRP team an isolated job?
+function I.JobIsolated(t)
+    local job = RPExtraTeams and RPExtraTeams[t]
+    if not job then return false end
+    if job.AdvInvIsolated ~= nil then return job.AdvInvIsolated == true end
+    if isoAll:GetBool() then return true end
+    local cmd, name = string.lower(job.command or ""), string.lower(job.name or "")
+    for raw in string.gmatch(string.lower(isoList:GetString()), "[^,]+") do
+        local entry = string.Trim(raw)
+        if entry ~= "" and (entry == cmd or entry == name) then return true end
+    end
+    return false
+end
+
+-- Called by DarkRP before it strips the weapons and gives the new loadout.
+hook.Add("OnPlayerChangedTeam", "AdvInv_JobIsolation", function(ply, before, after)
+    if not (IsValid(ply) and before ~= after and RPExtraTeams and RPExtraTeams[before]) then return end -- (joining: no job before)
+    local h = hook.Run("AdvInv_JobIsolation", ply, before, after)
+    if h == false then return end
+    if h ~= true and not (I.JobIsolated(before) or I.JobIsolated(after)) then return end
+    I.Clear(ply)
+    ply.AdvInvUnknown = nil -- items of missing addons too
+    I.MarkAllDirty(ply)
+    I.Tell(ply, I.L("msg_job_isolated"))
+    hook.Run("AdvInv_JobInventoryForgotten", ply, before, after)
+end)
+

@@ -8,6 +8,8 @@
 		"tools/*",
 		"tests/*",
 		"workshop/*",
+		"private/*",
+		"release/*",
 		".git*",
 		"*.psd"
 	]

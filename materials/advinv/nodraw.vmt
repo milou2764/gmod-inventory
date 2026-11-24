@@ -1,0 +1,9 @@
+// Advanced Inventory System: hides the parts of a playermodel drawn only for one piece of its gear
+// (lua/advinv/sh_modelgear_items.lua). Not drawn at all.
+"UnlitGeneric"
+{
+	"$basetexture" "dev/dev_measuregeneric01b"
+	"$no_draw" "1"
+	"$translucent" "1"
+	"$alpha" "0"
+}

@@ -30,8 +30,10 @@ timer.Simple(1, function()
     local phys = spawnAt("weapon_physgun", base + Vector(0, 60, 0))
     timer.Simple(0.5, function()
         if IsValid(ar2) then ar2:SetClip1(17) end
-        out.walkOver = { crowbar = hook.Run("PlayerCanPickupWeapon", b, crowbar), physgun = hook.Run("PlayerCanPickupWeapon", b, phys),
-            kit = hook.Run("PlayerCanPickupItem", b, kit) }
+        -- (the physgun isn't an item: the bot may already have walked over it and taken it)
+        local function canPick(hookName, e) return IsValid(e) and hook.Run(hookName, b, e) or (not IsValid(e) and "taken") end
+        out.walkOver = { crowbar = canPick("PlayerCanPickupWeapon", crowbar), physgun = canPick("PlayerCanPickupWeapon", phys),
+            kit = canPick("PlayerCanPickupItem", kit) }
         out.items = { crowbar = I.ItemFromEntity(crowbar), ar2 = I.ItemFromEntity(ar2), ak = I.ItemFromEntity(ak),
             kit = I.ItemFromEntity(kit), ammo = I.ItemFromEntity(ammo), physgun = I.ItemFromEntity(phys) or "none" }
         -- Use each (I.Use has a 0.4 s delay between uses)

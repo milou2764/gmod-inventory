@@ -11,11 +11,13 @@ Rules (the ones the defaults were made with), in the frame of the wearer's 'eyes
   - bucket: upside down, inner bottom on the top of the head, centred, size 0.7 or more if the head
     would poke out of its walls;
   - hats (top hat, graduation cap): placed like their bonemerge on the reference body (Valve's
-    placement), carried over to each face, then enlarged until the head fits in the crown;
+    placement), carried over to each face, then enlarged until the head fits in the crown (95% of
+    it: hair may go through), 1.2 at most;
   - back items (jetpack, suitcase): the side against the body flat on the back, top 2 units under
     the neck, centred;
   - weapons: back anchor between Spine2 and Spine4, right thigh anchor 8 units under the hip.
-Props are taken in their rest pose (anim0.py), as the game draws them.
+Props are taken in their rest pose (anim0.py), as the game draws them. Pairs approved by hand in
+the fit editor (fit_locks.txt) are kept as they are.
 
     python fit_items.py [playermodels.txt]
 """
@@ -38,7 +40,7 @@ REF = "models/player/group01/male_07.mdl"
 HEAD, SPINE, THIGH = "ValveBiped.Bip01_Head1", "ValveBiped.Bip01_Spine2", "ValveBiped.Bip01_R_Thigh"
 TORSO = ["ValveBiped.Bip01_Spine", "ValveBiped.Bip01_Spine1", "ValveBiped.Bip01_Spine2", "ValveBiped.Bip01_Spine4"]
 GAP = 0.15
-HAT_MAX_SCALE = 1.6
+HAT_MAX_SCALE = 1.2  # a hair bun or a cap goes through rather than a hat half again too big
 
 
 # ---------------------------------------------------------------- geometry helpers
@@ -141,11 +143,40 @@ _helmet_back = _helmet_c - np.array([1.0, 0, 0]) * ray_hits(HELMET, _helmet_c, n
 
 
 def fit_helmet(body):
+    """The CP mask's faceplate (upright in its rest pose: front +X, up +Z)."""
     h = body.head_in_eyes()
     t = np.array([h[:, 0].min() - GAP - _helmet_back[0],
                   (h[:, 1].min() + h[:, 1].max()) / 2 - _helmet_c[1],
                   h[:, 2].max() + GAP - _helmet_top[2]])
     return eyes_to_bone(body, np.eye(3), t, 1.0)
+
+
+# Barney's helmet lies on its side in its rest pose (its crown towards -X, its front +Z, as the game
+# draws it): R_HELMET stands it up (front +X, left +Y, up +Z). Resting on the head (inner top GAP above
+# it, back of the shell against the back of the head), then adjusted like the fit editor does it
+# (chosen by eye there): 12 % bigger, tilted front up by 10 degrees about the item's centre, 0.5
+# forward and 0.3 down (eyes frame). Upright at size 1 the forehead went through the visor on most heads.
+R_HELMET = np.array([[0, 0, 1.0], [0, 1.0, 0], [-1.0, 0, 0]])
+HELMET_ADJUST = (1.12, 10.0, np.array([0.5, 0, -0.3]))  # size, tilt (front up), shift (forward, left, up)
+_hu = rest_mesh(HELMET)[2] @ R_HELMET.T
+_hu_c = np.array([(_hu[:, 0].min() + _hu[:, 0].max()) / 2, (_hu[:, 1].min() + _hu[:, 1].max()) / 2,
+                  _hu[:, 2].min() + 0.35 * np.ptp(_hu[:, 2])])  # inside the shell
+# the shell itself (an inner layer under the crown would hold the head too high)
+_hu_top = _hu_c + np.array([0, 0, 1.0]) * max(ray_hits(HELMET, R_HELMET.T @ _hu_c, R_HELMET.T @ np.array([0, 0, 1.0])))
+_hu_back = _hu_c - np.array([1.0, 0, 0]) * ray_hits(HELMET, R_HELMET.T @ _hu_c, R_HELMET.T @ np.array([-1.0, 0, 0]))[0]
+_h_mid = (rest_mesh(HELMET)[2].min(0) + rest_mesh(HELMET)[2].max(0)) / 2  # the item's centre (its model space)
+
+
+def fit_barney_helmet(body):
+    h = body.head_in_eyes()
+    t = np.array([h[:, 0].min() - GAP - _hu_back[0],
+                  (h[:, 1].min() + h[:, 1].max()) / 2 - _hu_c[1],
+                  h[:, 2].max() + GAP - _hu_top[2]])
+    size, tilt, shift = HELMET_ADJUST
+    p0 = R_HELMET @ _h_mid + t  # the centre stays put (then shifted)
+    a = np.radians(tilt)
+    R = np.array([[np.cos(a), 0, -np.sin(a)], [0, 1.0, 0], [np.sin(a), 0, np.cos(a)]]) @ R_HELMET
+    return eyes_to_bone(body, R, p0 + shift - R @ (size * _h_mid), size)
 
 
 BUCKET, BUCKET_SCALE, BUCKET_MAX_SCALE = "models/props_junk/metalbucket01a.mdl", 0.7, 1.2
@@ -227,7 +258,8 @@ class Hat:
             rc = self._crown_radius(z)
             if not len(sel) or rc is None:
                 continue
-            out = max(out, (np.hypot(sel[:, 0] - self.p[0], sel[:, 1] - self.p[1]).max() - rc) * s)
+            # 95th percentile: a few strands of hair or a bun don't decide the size alone
+            out = max(out, (np.percentile(np.hypot(sel[:, 0] - self.p[0], sel[:, 1] - self.p[1]), 95) - rc) * s)
         return out
 
     def fit(self, body):
@@ -305,8 +337,8 @@ def fit_body(model, hats):
     body = Body(model)
     items = {}
     if body.eyes is not None and body.has(HEAD) and len(body.verts([HEAD])) > 20:
-        items["advinv_barney_helmet"] = fit_helmet(body)
-        items["advinv_cp_mask"] = items["advinv_barney_helmet"]
+        items["advinv_barney_helmet"] = fit_barney_helmet(body)
+        items["advinv_cp_mask"] = fit_helmet(body)
         items["advinv_bucket"] = fit_bucket(body)
         for cls, hat in hats.items():
             items[cls] = hat.fit(body)
@@ -348,9 +380,19 @@ def main():
             "advinv_graduation_cap": Hat("models/player/items/humans/graduation_cap.mdl", ref, crown=(5.5, 9.4), base_z=5.5,
                                        strict=False)}
     fits = {}
+    import fit_locks  # noqa: E402
+    import builtin_gear  # noqa: E402
+    locks = fit_locks.load()
+    blocked, slots = builtin_gear.builtin(), builtin_gear.item_slots()
     for m in models:
         try:
             items, weapons = fit_body(m, hats)
+            # gear of its own in its mesh (headgear, backpack): none of ours over it
+            items = {c: f for c, f in items.items() if not builtin_gear.is_blocked(c, m, blocked, slots)}
+            for cls in items:
+                lk = fit_locks.get(locks, cls, m)
+                if lk is not None:  # approved by hand: final
+                    items[cls] = lk
         except Exception as e:  # noqa: BLE001
             print(f"{m}: skipped ({e})")
             continue

@@ -98,7 +98,7 @@ local function openEditor(arg)
     path:SetText(modelPath)
     path.OnEnter = function(self)
         local p = string.Trim(self:GetValue())
-        if util.IsValidModel(p) then
+        if util.IsValidModel(p) or file.Exists(p, "GAME") then
             modelPath = p
             prop:SetModel(p)
         else

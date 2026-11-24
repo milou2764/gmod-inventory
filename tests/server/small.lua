@@ -24,11 +24,12 @@ local function call(fn, ply, q)
     if not ok then return "ERROR " .. tostring(a) end
     return { a, b }
 end
-local function hit(p, group, dmg)
+local function hit(p, group, dmg, blocked) -- blocked: another addon refuses the damage
     local d = DamageInfo()
     d:SetDamage(dmg)
     d:SetDamageType(DMG_BULLET)
     hook.Run("ScalePlayerDamage", p, group, d)
+    hook.Run("PostEntityTakeDamage", p, d, not blocked)
     return d:GetDamage()
 end
 player.CreateNextBot("Smith")
@@ -39,6 +40,8 @@ timer.Simple(1, function()
     -- armour: helmet protects the head, not the stomach
     I.Equip(p, { id = idOf.advinv_barney_helmet, a = 100 })
     out.armor = { head = hit(p, HITGROUP_HEAD, 20), helmetLeft = p:GetNWInt("HelmetArmor"), stomach = hit(p, HITGROUP_STOMACH, 20) }
+    hit(p, HITGROUP_HEAD, 20, true)
+    out.armorAfterBlockedHit = p:GetNWInt("HelmetArmor") -- unchanged (80)
     local item = I.TakeOff(p, "Helmet")
     out.armorKept = item and item.a
     -- crafting

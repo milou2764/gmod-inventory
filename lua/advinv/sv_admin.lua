@@ -105,6 +105,7 @@ sub[A.GIVE] = function(admin)
     local target, id, c = net.ReadEntity(), net.ReadUInt(I.NET_ID_BITS), net.ReadString()
     local count = math.Clamp(net.ReadUInt(8), 1, 100)
     if not (IsValid(target) and target:IsPlayer() and AdvInv.IDClass[id] and id > 1) then return end
+    if not I.CompatItemAvailable(AdvInv.IDClass[id]) then return false, I.L("admin_unknown_item") end
     local given = 0
     for _ = 1, count do
         local item = newItem(id, c)
@@ -188,6 +189,8 @@ net.Receive("advinv_admin_set", function(_, ply)
         value = tostring(s[2] == "int" and math.floor(v) or v)
     elseif s[2] == "choice" then
         if not table.HasValue(s[3], value) then return end
+    elseif s[2] == "text" then
+        value = string.sub(string.gsub(value, "[%c\"]", ""), 1, 512)
     end
     GetConVar(name):SetString(value)
     log(ply, "set " .. name .. " = " .. value .. " on", game.GetWorld())

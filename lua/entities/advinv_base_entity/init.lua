@@ -4,7 +4,16 @@ include("shared.lua")
 
 function ENT:Initialize()
     self:SetModel(self.Model)
-    self:PhysicsInit(SOLID_VPHYSICS)
+    AdvInv.SetupItemModel(self, self) -- gear drawn from a playermodel: its bodygroups, the rest hidden
+    if self.PhysHull then
+        -- that gear's convex hull, around the entity's origin (the gear's centre: ENT.ModelOrigin)
+        self:PhysicsInitConvex(self.PhysHull)
+        self:SetMoveType(MOVETYPE_VPHYSICS)
+        self:SetSolid(SOLID_VPHYSICS)
+        self:EnableCustomCollisions(true)
+    else
+        self:PhysicsInit(SOLID_VPHYSICS)
+    end
     if not IsValid(self:GetPhysicsObject()) then
         -- Modèle sans collision (.phy) : boîte autour du modèle, ou ENT.PhysBox = { mins, maxs }.
         local mins, maxs = self:GetModelBounds()
@@ -19,12 +28,8 @@ function ENT:Initialize()
     self:SetCollisionGroup(COLLISION_GROUP_WEAPON)
     self:PhysWake()
     self:SetUseType(SIMPLE_USE)
-    -- un objet posé au sol disparaît au bout de 30 s, sauf s'il contient quelque chose
-    timer.Simple(30, function()
-        if IsValid(self) and not (self.AdvInvContents and #self.AdvInvContents > 0) then
-            self:Remove()
-        end
-    end)
+    -- (items put on the ground by the inventory disappear after advinv_ground_item_time,
+    -- sv_containers.lua; items spawned from the menu or placed by admins stay)
 end
 
 -- Touche Utiliser : l'équiper si son emplacement est libre, sinon le ranger (voir sv_containers.lua).

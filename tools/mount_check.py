@@ -7,8 +7,7 @@ does it (lua/advinv/cl_gear.lua):
     attach.scale;
   - without it (bonemerge): every bone of the item takes the transform of the playermodel's bone
     of the same name; other bones follow their parent.
-Then it renders the item on the body from the front, the left and the back. The arms are left out:
-in the reference pose they stretch sideways and would hide the side views.
+Then it renders the item on the whole body (arms included) from the front, the left and the back.
 
 Items are drawn in their rest pose (first frame of their idle sequence, anim0.py), like the game:
 several props (Barney helmet, jetpack...) are stored turned and only reach their real orientation
@@ -172,8 +171,11 @@ def place_item(model, att, bones):
     return P, N, uv, tris, mats
 
 
-def load_body(model):
+def load_body(model, arms=True):
+    """The playermodel's mesh in its reference pose: the whole of it (arms=False: without its arms)."""
     pos, nrm, uv, tris, mats = mr.load_model(model)
+    if arms:
+        return pos, nrm, uv, tris, mats
     names = [b["name"] for b in refbody.bones(model)]
     B, W = vertex_weights(model)
     arm = np.array([bool(ARM_BONES.search(names[B[k, int(np.argmax(W[k]))]])) for k in range(len(pos))])

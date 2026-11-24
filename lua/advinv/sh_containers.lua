@@ -62,8 +62,7 @@ local massCache, loadCache = {}, {}
 
 local function entTable(id)
     if not id or id <= 1 then return end
-    local class = AdvInv.IDClass and AdvInv.IDClass[id]
-    return class and scripted_ents.GetStored(class) and scripted_ents.Get(class) or nil
+    return AdvInv.ClassTable(AdvInv.IDClass and AdvInv.IDClass[id])
 end
 I.EntTable = entTable
 
@@ -106,8 +105,44 @@ function I.ItemMaxLoad(id)
 end
 
 -- Caractéristiques d'un objet utiles à l'inventaire (mises en cache).
+-- Is nothing solid between ply's eyes and ent: a wall, a floor, a closed door, a prop wall or a
+-- fading door? (players, NPCs, bodies, weapons and small props don't count). Two points are tried:
+-- the nearest point of ent and its centre.
+local function blocks(e)
+    if e:IsPlayer() or e:IsNPC() or e:IsWeapon() then return false end
+    local c = e:GetClass()
+    if c == "prop_ragdoll" then return false end
+    if string.sub(c, 1, 5) == "func_" or c == "prop_door_rotating" then return true end
+    local mins, maxs = e:OBBMins(), e:OBBMaxs()
+    local size = maxs - mins
+    return math.max(size.x, size.y, size.z) >= 40 -- small things lying around don't hide anything
+end
+function I.InSight(ply, ent)
+    if not (IsValid(ply) and IsValid(ent)) then return false end
+    local eye = ply:EyePos()
+    local centre = ent:IsPlayer() and ent:EyePos() or ent:WorldSpaceCenter()
+    for _, p in ipairs({ ent:NearestPoint(eye), centre }) do
+        p = p + (centre - p):GetNormalized() * 0.5 -- just inside its surface
+        local tr = util.TraceLine({ start = eye, endpos = p, mask = MASK_SOLID, filter = function(e)
+            if e == ply or e == ent then return false end
+            return blocks(e)
+        end })
+        if not tr.Hit or tr.Entity == ent then return true end
+    end
+    return false
+end
+
+-- Within reach (distance and line of sight).
+function I.InReach(ply, ent, dist)
+    if not (IsValid(ply) and IsValid(ent)) then return false end
+    dist = dist or C.UseDistance
+    local eye = ply:EyePos()
+    return ent:NearestPoint(eye):DistToSqr(eye) <= dist * dist and I.InSight(ply, ent)
+end
+
 local infoCache = {}
 local EMPTY_INFO = { mass = 0, maxLoad = 0 }
+function I.ClearInfoCache() infoCache = {} end
 function I.Info(id, c)
     local generic = I.IsGeneric and I.IsGeneric(id)
     local key = generic and (id .. ":" .. tostring(c)) or id
@@ -195,14 +230,24 @@ end
 
 ---------------------------------------------------------------- format réseau
 
-I.NET_ID_BITS = 7       -- ID des objets (2 à 127)
+I.NET_ID_BITS = 16      -- item IDs (2 to 65535; compatibility items: 1000-1999)
 I.NET_ROUNDS_BITS = 16  -- munitions d'un objet
 I.NET_ARMOR_BITS = 8    -- blindage d'un objet (0 à 255)
 I.NET_COUNT_BITS = 8    -- objets par contenant (255 au maximum)
 
 function I.WriteItems(items)
-    net.WriteUInt(math.min(#items, 255), I.NET_COUNT_BITS)
-    for k = 1, math.min(#items, 255) do
+    -- (an entry without a valid id, put there by other code, is left out: it would break the message)
+    local valid = {}
+    for k = 1, #items do
+        local it = items[k]
+        if istable(it) and isnumber(it.id) and it.id > 1 and it.id < 2 ^ I.NET_ID_BITS then
+            valid[#valid + 1] = it
+            if #valid == 255 then break end
+        end
+    end
+    items = valid
+    net.WriteUInt(#items, I.NET_COUNT_BITS)
+    for k = 1, #items do
         local it = items[k]
         net.WriteUInt(it.id, I.NET_ID_BITS)
         net.WriteUInt(math.Clamp(math.floor(it.r or 0), 0, 65535), I.NET_ROUNDS_BITS)
@@ -254,7 +299,9 @@ if CLIENT then
         local items = I.ReadItems()
         I.Seen[idx] = I.Seen[idx] or {}
         I.Seen[idx][cont] = items
-        hook.Run("AdvInv_Changed", holder, cont)
+        -- (holder may still be NULL here: an entity the client doesn't know yet, a body just made;
+        -- the data is kept by its index and idx lets the windows find it)
+        hook.Run("AdvInv_Changed", holder, cont, idx)
     end)
 
     net.Receive("advinv_msg", function()

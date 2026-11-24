@@ -54,7 +54,8 @@ function I.ItemMatches(it, spec)
     if spec.entity then return it.id == I.GENERIC_ENTITY and it.c == spec.entity end
     if spec.ammo then
         local info = I.Info(it.id, it.c)
-        return info.isBox and info.ammo and string.lower(info.ammo) == string.lower(spec.ammo) or false
+        return info.isBox and info.ammo and string.lower(info.ammo) == string.lower(spec.ammo)
+            and (it.r or 0) >= (info.boxRounds or 0) or false -- full boxes only
     end
     if spec.weapon then
         if it.id == I.GENERIC_WEAPON then return it.c == spec.weapon end
@@ -79,6 +80,8 @@ function I.SpecName(spec)
     if spec.item and AdvInv.ClassID[spec.item] then return I.Info(AdvInv.ClassID[spec.item]).name end
     if spec.entity then return I.Info(I.GENERIC_ENTITY, spec.entity).name or spec.entity end
     if spec.weapon then
+        local grenade = I.GrenadeAmmo(spec.weapon)
+        if grenade and game.GetAmmoID(grenade) ~= -1 then return I.Info(I.GENERIC_AMMO, grenade).name end
         local reg = I.ItemForWeapon(spec.weapon)
         return reg and I.Info(reg).name or I.Info(I.GENERIC_WEAPON, spec.weapon).name or spec.weapon
     end
@@ -97,7 +100,7 @@ end
 
 function I.NearBench(ply)
     for _, e in ipairs(ents.FindInSphere(ply:GetPos(), 150)) do
-        if e:GetClass() == "advinv_workbench" then return true end
+        if e:GetClass() == "advinv_workbench" and I.InSight(ply, e) then return true end
     end
     return false
 end

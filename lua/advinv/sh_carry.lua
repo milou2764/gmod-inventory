@@ -3,22 +3,25 @@
     body (shared rules; the server decides, the client uses the same rules to grey out the menu).
 
     Modes (network index = position in I.CARRY_MODES):
-        sling_up    from one shoulder, muzzle up            zone "shoulder"
-        sling_down  from one shoulder, muzzle down          zone "shoulder"
-        cross_body  sling across the torso, gun on the side zone "side"
-        back_carry  diagonally across the back              zone "back"
-        front_hang  hanging in front of the chest           zone "front"
+        sling_up    sling arms: from the right shoulder, muzzle up                zone "shoulder"
+        sling_down  back carry: the sling across the chest, the gun flat on the back, butt behind the
+                    left shoulder blade, muzzle down (USMC weapons carries, 0300-M16-1004 p. 19)  zone "back"
+        front_hang  front carry: hanging in front of the chest                    zone "front"
     A long gun is always carried in one of them: "stowed" (index 6) only means "nothing" internally
-    (empty slot) and can never be chosen.
+    (empty slot) and can never be chosen. Removed modes keep their index (saves and the network keep
+    the others' numbers) but have no zone, so no weapon can use them (a weapon saved that way takes
+    another mode): "cross_body" (index 3) and "back_carry" (index 4, the old diagonal back carry).
 
     Rules: one weapon per body zone; worn gear can block zones (ENT.BlocksCarryZones on the item,
-    e.g. { back = true } on backpacks); hooks CanChangeCarryMode(ply, item, mode) -> false to forbid,
+    e.g. { back = true } on backpacks) or single modes (ENT.BlocksCarryModes: a backpack leaves only
+    sling arms on the back, the back carry is blocked; a weapon carried that
+    way moves to the front carry when it goes on); hooks CanChangeCarryMode(ply, item, mode) -> false to forbid,
     OnCarryModeChanged(ply, item, mode, oldMode) after a change. When nothing fits any more (gear or
     a weapon being equipped), I.CarryPlan finds no plan and the change is refused.
 
     Weapons are configured by weapon class in I.CarryWeapons (other addons can add theirs):
         AdvInv.CarryWeapons["my_rifle"] = { default = "sling_up" }             -- every mode
-        AdvInv.CarryWeapons["my_launcher"] = { modes = { "back_carry" }, default = "back_carry" }
+        AdvInv.CarryWeapons["my_launcher"] = { modes = { "sling_up" }, default = "sling_up" }
     An item can also set ENT.CarryModes / ENT.CarryDefault.
 --]]
 local I = AdvInv
@@ -29,30 +32,30 @@ for k, m in ipairs(I.CARRY_MODES) do I.CARRY_INDEX[m] = k end
 I.CARRY_NET_BITS = 3
 
 I.CarryZone = {
-    sling_up = "shoulder", sling_down = "shoulder", cross_body = "side",
-    back_carry = "back", front_hang = "front",
+    sling_up = "shoulder", sling_down = "back", front_hang = "front", -- (cross_body, back_carry: removed)
 }
 -- When a weapon has to move, it tries these modes first, then its other modes.
-I.CarryFallback = { "sling_up", "cross_body", "front_hang" }
+I.CarryFallback = { "sling_up", "sling_down", "front_hang" }
 
 -- Equipment slots that can hold a long gun (the sidearm keeps its holster).
 I.CARRY_CATS = { "PrimaryWep", "RocketLauncher" }
 
-local ALL = { "sling_up", "sling_down", "cross_body", "back_carry", "front_hang" }
+local ALL = { "sling_up", "sling_down", "front_hang" }
 I.CarryWeapons = I.CarryWeapons or {}
 for class, conf in pairs({
     weapon_smg1 = { modes = ALL, default = "sling_up" },
     weapon_ar2 = { modes = ALL, default = "sling_up" },
     weapon_shotgun = { modes = ALL, default = "sling_up" },
     weapon_crossbow = { modes = ALL, default = "sling_up" },
-    weapon_rpg = { modes = { "back_carry", "sling_up" }, default = "back_carry" },
+    weapon_rpg = { modes = { "sling_up" }, default = "sling_up" },
 }) do
     I.CarryWeapons[class] = I.CarryWeapons[class] or conf
 end
 
 -- Carry configuration of an item (ID, class of a generic item) (nil: not a long gun with carry
--- modes). A generic weapon of the primary or launcher slot gets every mode (launcher: back carry
--- and sling arms); it is placed by the mode's template (cl_carry.lua).
+-- modes). A generic weapon of the primary or launcher slot gets every mode (launcher: sling arms);
+-- it is placed by the mode's template (cl_carry.lua). Modes that no longer exist (back_carry, in
+-- another addon's configuration) are left out.
 function I.CarryConfig(id, c)
     local t = id and id > 1 and I.DefTable(id, c)
     if not t then return end
@@ -61,12 +64,17 @@ function I.CarryConfig(id, c)
         if t.AdvInvCategory == "PrimaryWep" then
             base = { modes = ALL, default = "sling_up" }
         elseif t.AdvInvCategory == "RocketLauncher" then
-            base = { modes = { "back_carry", "sling_up" }, default = "back_carry" }
+            base = { modes = { "sling_up" }, default = "sling_up" }
         end
     end
     if not (base or t.CarryModes) then return end
-    local modes = t.CarryModes or (base and base.modes) or ALL
-    local default = t.CarryDefault or (base and base.default) or modes[1]
+    local modes = {}
+    for _, m in ipairs(t.CarryModes or (base and base.modes) or ALL) do
+        if I.CarryZone[m] then modes[#modes + 1] = m end
+    end
+    if #modes == 0 then modes = { "sling_up" } end
+    local default = t.CarryDefault or (base and base.default)
+    if not table.HasValue(modes, default) then default = modes[1] end
     return { modes = modes, default = default, weaponClass = t.WeaponClass }
 end
 
@@ -79,19 +87,27 @@ function I.CarryMode(ply, cat)
     return I.CARRY_MODES[ply:GetNWInt(cat .. "Carry", I.CARRY_INDEX.stowed)] or "stowed"
 end
 
--- Zones blocked by the gear the player wears: { zone = item name }.
+-- Zones and modes blocked by the gear the player wears: { zone or mode = gear slot }.
 function I.BlockedZones(ply, extraID, extraCat)
     local out = {}
     for cat in pairs(AdvInv.GearCat) do
         local id = (cat == extraCat and extraID) or ply:GetNW2Int(cat)
         local t = id and id > 1 and AdvInv.EntityTable(id)
-        if t and t.BlocksCarryZones then
-            for zone, on in pairs(t.BlocksCarryZones) do
+        if t then
+            for zone, on in pairs(t.BlocksCarryZones or {}) do
                 if on then out[zone] = cat end
+            end
+            for mode, on in pairs(t.BlocksCarryModes or {}) do
+                if on then out[mode] = cat end
             end
         end
     end
     return out
+end
+
+-- Is mode blocked by worn gear (blocked: I.BlockedZones)? -> the gear slot, or nil
+function I.CarryModeBlocked(blocked, mode)
+    return blocked[mode] or blocked[I.CarryZone[mode] or ""]
 end
 
 -- "Back occupied by backpack": a phrase for this zone and gear slot if there is one, else generic.
@@ -130,6 +146,14 @@ function I.CarryAllowed(ply, cat, mode, blocked, others, ids)
     local zone = I.CarryZone[mode]
     blocked = blocked or I.BlockedZones(ply)
     if blocked[zone] then return false, I.CarryBlockedReason(zone, blocked[zone]) end
+    if blocked[mode] then
+        local key = "carry_blocked_mode_" .. blocked[mode] -- "...: not possible with a backpack on"
+        local s = I.L(key, I.L("carry_" .. mode))
+        if s == key then
+            s = I.L("carry_blocked_mode", I.L("carry_" .. mode), string.lower(I.SlotLabels[blocked[mode]] or blocked[mode]))
+        end
+        return false, s
+    end
     for _, other in ipairs(I.CARRY_CATS) do
         local oid, oc = ref(ply, other, ids)
         if other ~= cat and oid > 1 and I.CarryConfig(oid, oc) then
@@ -146,8 +170,10 @@ function I.CarryAllowed(ply, cat, mode, blocked, others, ids)
     return true
 end
 
--- Modes to try for a weapon, best first: the wanted one, then I.CarryFallback, then its others.
-local function candidates(conf, want)
+-- Modes to try for a weapon, best first: the wanted one, then I.CarryFallback, then its others; a
+-- weapon whose mode worn gear blocks (a backpack) goes to the front carry first.
+I.CarryGearFallback = I.CarryGearFallback or "front_hang"
+local function candidates(conf, want, gearBlocked)
     local out, seen = {}, {}
     local function add(m)
         if not seen[m] and I.CarryModeAllowedForWeapon(conf, m) then
@@ -156,6 +182,7 @@ local function candidates(conf, want)
         end
     end
     if want then add(want) end
+    if gearBlocked and I.CarryGearFallback then add(I.CarryGearFallback) end
     for _, m in ipairs(I.CarryFallback) do add(m) end
     for _, m in ipairs(conf.modes) do add(m) end
     return out
@@ -182,7 +209,7 @@ function I.CarryPlan(ply, opts)
         local conf = id > 1 and I.CarryConfig(id, c)
         if conf then
             local want = (opts.want and opts.want[cat]) or I.CarryMode(ply, cat)
-            cands[cat] = candidates(conf, want)
+            cands[cat] = candidates(conf, want, I.CarryModeBlocked(blocked, want) ~= nil)
             if cat == opts.newCat then
                 last[1] = cat
             elseif I.CarryAllowed(ply, cat, want, blocked, none, ids) then

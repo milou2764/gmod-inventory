@@ -88,24 +88,26 @@ weapon, **Carry mode**. Everyone sees it on the player model.
 | Mode | English | French | Where | Body zone |
 |---|---|---|---|---|
 | `sling_up` | Sling arms | Arme à la bretelle | from the right shoulder, muzzle up | shoulder |
-| `sling_down` | Muzzle-down carry | Arme à la bretelle, canon en bas | from the right shoulder, muzzle down | shoulder |
-| `cross_body` | Cross-body carry | Arme en bandoulière | sling across the torso, gun on the left hip | side |
-| `back_carry` | Back carry | Arme à la grenadière | diagonally across the back | back |
+| `sling_down` | Back carry | Arme à la grenadière | sling across the chest, gun flat on the back: butt behind the left shoulder blade, muzzle down towards the right calf | back |
 | `front_hang` | Front carry / Hang | Arme en relâche avant | hanging in front of the chest | front |
 
 A long gun is always carried one of these ways: it cannot be stowed out of sight.
 
 Weapons: `weapon_smg1`, `weapon_ar2`, `weapon_shotgun`, `weapon_crossbow` (every mode) and
-`weapon_rpg` (`back_carry`, `sling_up`). Defaults: sling arms, back carry for the launcher.
+`weapon_rpg` (`sling_up`). Default: sling arms. (The cross-body carry and the old diagonal back
+carry were removed: a weapon saved that way takes another mode.)
 
 Rules, all decided by the server (a forged request is refused):
 
 - one weapon per body zone: back + front is fine, two on the back is not;
 - gear can take a zone: `ENT.BlocksCarryZones = { back = true }` on backpacks (the base
   `advinv_base_rucksack` has it); vests have `{ front = false }`, set `front = true` on a chest rig;
-- when gear takes the zone of a carried weapon, the weapon moves to the first possible mode of
-  `sling_up`, `cross_body`, `front_hang`, then its other modes (the other long gun moves too if
-  that makes room) and the player is told. With `advinv_carry_refuse_gear 1` (server) the gear is
+- gear can take single modes too (`ENT.BlocksCarryModes`). With a backpack on, only sling arms is
+  left on the back (the back carry's zone is taken), and the slung weapon hangs beside the pack, in
+  line with the shoulder;
+- when gear takes the zone or the mode of a carried weapon, the weapon moves to the front carry if
+  it can, else to the first possible mode of `sling_up`, `sling_down`, `front_hang`, then its other
+  modes (the other long gun moves too if that makes room) and the player is told. With `advinv_carry_refuse_gear 1` (server) the gear is
   refused instead;
 - gear or a weapon that would leave a long gun with no possible mode is refused ("Your RPG would
   have no place left to be carried");
@@ -120,7 +122,7 @@ Other weapons (data in `lua/advinv/sh_carry.lua`, shared):
 
 ```lua
 AdvInv.CarryWeapons["my_rifle"] = { default = "sling_up" }   -- every mode
-AdvInv.CarryWeapons["my_launcher"] = { modes = { "back_carry" }, default = "back_carry" }
+AdvInv.CarryWeapons["my_launcher"] = { modes = { "sling_up" }, default = "sling_up" }
 ```
 
 or `ENT.CarryModes` / `ENT.CarryDefault` on the item. A weapon without computed offsets is placed by
@@ -132,8 +134,9 @@ menu when defined on the client) and `OnCarryModeChanged(ply, item, mode, oldMod
 
 Drawing (client, `lua/advinv/cl_carry.lua`): offsets are stored per playermodel, weapon and
 mode (`lua/advinv/cl_carry_data.lua`, below). A worn vest pushes the weapons out by
-`Config.CarryVestThickness`, a backpack pushes the shoulder modes over it
-(`Config.CarryOverPack`). When the launcher and the primary weapon are both on the back side and
+`Config.CarryVestThickness`; with a backpack, a weapon in a shoulder mode (`Config.CarryOverPack`)
+is moved sideways until it clears the pack's half width (`Config.CarryBesidePack = false`: pushed
+over the pack instead, by its thickness). When the launcher and the primary weapon are both on the back side and
 cross, one goes over the other. A playermodel without the bone a mode uses does not show that
 weapon. Models are removed on death, disconnect and Lua refresh.
 
@@ -243,6 +246,102 @@ when done. Weapons with different data don't stack.
   attachments kept); CW 2.0's own dropped weapons are taken with Use into the inventory;
 - the ammo of CW 2.0's ammo kits and crates goes into generic ammo boxes of its calibre.
 
+## Compatible Workshop addons
+
+When the server has one of these addons installed, its models become inventory items: worn,
+stored, looted, saved like the others, and fitted to each of the 87 default playermodels. Nothing
+of these addons is shipped with the inventory: install them on the server (and its Workshop
+collection); the server makes its players download the ones it has (`advinv_compat_download 1`).
+Items of an addon that isn't installed don't show anywhere.
+
+| Workshop addon | Items | Spawn menu |
+|---|---|---|
+| [Fallout 76 - Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=3234192542) | 54 backpacks | Inventory: Fallout 76 |
+| [Fallout 3 Custom Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=891790188) | 6 backpacks | Inventory: Fallout 3 |
+| [FO3 Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=315810701) | camping frame pack | Inventory: Fallout 3 |
+| [Imperial Helmet Props Star wars](https://steamcommunity.com/sharedfiles/filedetails/?id=943349673) | 8 helmets | Inventory: Star Wars |
+| [[AN] Mace Windu's Clone Helmets](https://steamcommunity.com/sharedfiles/filedetails/?id=973353552) | 2 helmets | Inventory: Star Wars |
+| [[NGRP] Rebel Pilot Helmet Prop](https://steamcommunity.com/sharedfiles/filedetails/?id=1268434165) | pilot helmet | Inventory: Star Wars |
+| [TF2 Hex - Helmet of Victory](https://steamcommunity.com/sharedfiles/filedetails/?id=242772309) | 9 helmets (their textures are Team Fortress 2's: mount it) | Inventory: TF2 |
+| [US & Soviet Tank crew helmets](https://steamcommunity.com/sharedfiles/filedetails/?id=327527107) | 2 helmets | Inventory: Military |
+| [Amnesia "Adrian helmet"](https://steamcommunity.com/sharedfiles/filedetails/?id=3613961508) | Adrian helmet | Inventory: Military |
+| [DayZ Police vest](https://steamcommunity.com/sharedfiles/filedetails/?id=1448797869) | police vest | Inventory: Military |
+| [Petruz PMC Vests](https://steamcommunity.com/sharedfiles/filedetails/?id=3626263716) | 2 chest rigs, 2 plate carriers | Inventory: Military |
+| [Tactical Vest H.E.V Replacement](https://steamcommunity.com/sharedfiles/filedetails/?id=3838802156) | tactical vest | Inventory: Military |
+
+Backpacks: capacity from their size (40 to 200), on the back (no long gun across it). Vests:
+armour and pockets; chest rigs take the front. Helmets: armour. Item IDs 1000-1999. The fits are
+made by `tools/fit_compat.py` from `tools/compat_packs.py` (to add an addon: see DEVELOPERS.md).
+
+## Pre-fitted Workshop playermodels
+
+Besides the 87 playermodels of Garry's Mod, every worn item (built-in and compatible addons' gear)
+is fitted to these Workshop playermodels, when the server has them (nothing of them is shipped):
+
+| Workshop addon | Playermodels |
+|---|---|
+| [Rusty's National Guard Redux](https://steamcommunity.com/sharedfiles/filedetails/?id=3037475566) | 15 soldiers (9 male, 6 female) |
+| [Vault Dwellers Part 1](https://steamcommunity.com/sharedfiles/filedetails/?id=3612720459) | 4 vault dwellers |
+| [Star Wars Imperial Officers (Imperial Gaming)](https://steamcommunity.com/sharedfiles/filedetails/?id=1133511197) | 9 officers |
+| [[NGRP] Rebel Pilot Variant](https://steamcommunity.com/sharedfiles/filedetails/?id=1268173091) | Rebel pilot |
+| [Rogue One Imperial Naval Officers](https://steamcommunity.com/sharedfiles/filedetails/?id=2593940310) | 34 Imperial crew (17 male, 17 female) |
+| [[IC] WW1 French army playermodels 1916](https://steamcommunity.com/sharedfiles/filedetails/?id=3433822040) | 6 French soldiers (faces: [{PM0V3} Shared Materials](https://steamcommunity.com/sharedfiles/filedetails/?id=1722627125)) |
+| [Russian Army \| RF Soldier](https://steamcommunity.com/sharedfiles/filedetails/?id=2764717646) | 5 Russian soldiers |
+| [Civil War Soldiers [Playermodel + Ragdolls]](https://steamcommunity.com/sharedfiles/filedetails/?id=3614216336) | 8 soldiers (4 Union, 4 Confederate) |
+| [RS2: Forces of the East](https://steamcommunity.com/sharedfiles/filedetails/?id=2944903873) | 4 soldiers (2 PAVN, 2 Viet Minh) |
+| [PMC Pack Redux (Playermodels & NPCs)](https://steamcommunity.com/sharedfiles/filedetails/?id=1769231405) | 8 PMC soldiers |
+
+Any other playermodel uses each item's default fit (made on male_07). The list of fitted models is
+`tools/playermodels.txt` (Garry's Mod) and `tools/playermodels_workshop.txt`; DEVELOPERS.md says how
+to add more.
+
+**Their own gear is the inventory's.** These playermodels have caps, helmets, vests or backpacks of
+their own as bodygroups. Gear is what the inventory gives: those bodygroups can't be picked in a
+menu or by a job any more (they go back to "none"); they show only while the matching item is worn.
+An item that *is* the model's own gear is shown by the model itself, rigged for that body (the
+Adrian helmet on the WW1 French soldiers); any other item worn there takes their place. The other
+bodygroups (faces, moustaches, ranks, scarves...) stay the player's choice. The table is
+`AdvInv.ModelGear` (sh_modelgear.lua); servers add their playermodels to it (DEVELOPERS.md).
+
+**Their gear as items: extensions.** An extension turns a playermodel addon's own gear into items that
+any playermodel can wear: *Advanced Inventory System: WW1 French gear* (the Adrian helmets, kepi,
+beanie, backpack, blanket roll and webbing of the WW1 French soldiers) and *Advanced Inventory
+System: Vietnam US gear* (the M1 helmets, boonie hat, rucksacks, PRC-25 radio and web gear of the
+Vietnam era US Soldiers ragdolls, Workshop 146299217 or its fixed re-upload 3627113533), *Russian
+Army gear* (6B47 helmet, plate carrier), *Civil War gear* (Union and Confederate kepis), *PAVN and
+Vietcong gear* (pith helmets, AK chest rigs, backpack, bush hat, conical hat) and *PMC gear* (caps,
+helmets with goggles or visor, gas masks, night vision, headset, packs, belt kits). Each ships Lua
+only and needs that addon, on the server and for the players. On its own playermodels the item is shown by their bodygroup; on any
+other one a copy fitted to that body; on the ground the gear alone.
+
+**Gear that can't come off.** When a playermodel's headgear, vest or backpack is part of its mesh (no
+bodygroup), none of ours can be worn over it: it is impossible to put headgear on another headgear, a
+vest on another vest, a backpack on another backpack, and the inventory says so.
+
+- Headgear: the Combine soldiers and Civil Protection, the rebels (their beanie) and the medic in a
+  cap, Odessa, the zombine, the Counter-Strike: Source helmets and balaclavas, the Vault-Tec security
+  suit and hazard suit.
+- Vests: the Combine soldiers, Civil Protection, the zombine, Barney, Eli, the rebels and the medics,
+  the Counter-Strike: Source vests, the Day of Defeat soldiers' webbing, the rebel pilot's flight vest,
+  the Rogue One ground crew, and the armoured bodies of the Rogue One crew and of the Vault-Tec
+  security suit (only those bodygroup choices).
+- Backpacks: the rebels and the medics.
+
+A player who takes such a playermodel (or outfit) while wearing ours gets it back: in the inventory,
+or at the feet without room or when it holds things (a vest or a backpack keeps its contents). Gear
+that is a bodygroup comes off under ours instead, like the ones above: the Day of Defeat soldiers'
+helmet, the National Guard's harness, the WW1 soldiers' webbing and cartridge pouches, the Rogue One
+ground crew's batons. The table is `AdvInv.GearBuiltIn` (sh_modelgear.lua).
+
+## Grenades
+
+Grenades are items, not weapons in a slot: one grenade = one item, stored and stacked like the
+others (HL2 grenade, CW 2.0 frag, flash and smoke grenades; others: `AdvInv.Grenades[class] = ammo
+type`). Right-click a grenade > **Use** puts it in your hands; each grenade thrown takes one item
+away, and the weapon goes with the last one. A grenade weapon given by other code (a job, the spawn
+menu, an ammo crate) becomes as many items as it has grenades. Grenades are dropped from the
+inventory (DarkRP's `/drop` and CW 2.0's drop don't take them).
+
 ## Using items, unloading weapons
 
 Right-click an item of your inventory > **Use** (or double-click it): the HL2 health kit (+25
@@ -276,7 +375,10 @@ Admins: context menu (C) on a crate > **Storage settings**:
 player (capacity `Config.BankLoad`, 300), kept between sessions.
 
 **Locks**: the player who spawned or bought a crate, and admins, can lock it and set a code
-(context menu > Lock / unlock, Set the code). Others are asked for the code when they use it.
+(context menu > Lock / unlock, Set the code: 4 to 8 digits). Others are asked for the code when
+they use it, within reach. Every 3 wrong codes on a crate, whoever tries them, it refuses codes for
+a while (30 s, doubled each time, up to an hour) and its owner is told. A locked vehicle (DarkRP
+keys, simfphys) opens its trunk to its owners only.
 
 **Loot spawns** (admin menu > Loot spawns): invisible points where a random item of a loot table
 appears, and appears again some seconds after it was taken. Add one where you look, then
@@ -315,9 +417,11 @@ advinv_death_body_max 20     // bodies at most, the oldest goes first
 advinv_death_loot_name 1     // the dead player's name is shown on his body
 ```
 
-Hooks (server): `AdvInv_DeathDrop(ply)` (return false: nothing stays on the body this time) and
-`AdvInv_DeathBody(ply, body)`. With a character system the emptied inventory is saved at once, so
-the next load doesn't give the items back; without one, the inventory is reset at every spawn.
+With `advinv_death_drop` below 3, what isn't left on the body is still the player's when he
+respawns. Hooks (server): `AdvInv_DeathDrop(ply)` (return false: nothing stays on the body this
+time, the player keeps everything) and `AdvInv_DeathBody(ply, body)`. With a character system the emptied inventory is saved at once, so
+the next load doesn't give the items back; without one, the emptied inventory starts again from
+nothing at the next spawn.
 
 ## Searching a player
 
@@ -325,7 +429,9 @@ Context menu (C) on a player within reach > **Search**. After a few seconds, bot
 close, the searcher sees the target's inventory on the right of the screen: illegal items have a
 red frame and are listed in the chat. The searcher may take items (drag them, or right-click an
 equipped weapon > Take) but can't put anything on the target. The target sees who is searching
-them; moving away cancels or ends the search.
+them; moving away, losing sight of each other or changing job cancels or ends the search, and a
+finished search lasts 2 minutes (`AdvInv.Config.SearchViewTime`). The rules (job, hook) are
+checked again during the whole search.
 
 ```
 advinv_search_mode 1    // 0 nobody (admins excepted), 1 allowed jobs, 2 anyone
@@ -346,12 +452,50 @@ allow), `AdvInv_Searched(searcher, target, illegalNames)` and
   there is room (`advinv_darkrp_buy_to_inventory 1`). Shipments stay as they are; the weapons they
   give, like any DarkRP weapon lying around, are taken with Use (full magazine), one at a time.
 - DarkRP ammo lying around becomes ammo boxes.
-- `/drop` on an inventory weapon: DarkRP drops it as usual and its slot is freed. DarkRP's drop on
-  death never drops an inventory weapon (it stays on the body).
-- The inventory shows the wallet, with **Drop money**.
-- `advinv_darkrp_loadout_to_inventory 1` (off by default): the job's weapons that fit a free slot
-  become inventory weapons (on the body, carry modes, dropped on death). With death drops on,
-  every respawn gives new ones to drop: think of it before turning it on.
+- `/drop` on an inventory weapon: DarkRP drops it as usual, then its slot is freed; the dropped
+  weapon keeps its magazine and attachments but carries no reserve (the ammo boxes stay in the
+  inventory). DarkRP's drop on death never drops an inventory weapon (it stays on the body).
+- The weapon checker's confiscation takes the inventory weapons out of their slots (DarkRP gives
+  them back later as ordinary weapons). Arrest, job change and admin strips take nothing else:
+  the ammo boxes stay, and the slot weapons come back at the next loadout (not while arrested).
+- `gm_giveswep` (spawn menu) follows DarkRP's rules (admin weapons, arrested); a weapon it gives
+  goes into the inventory.
+- The inventory shows the wallet, with **Drop money** (DarkRP's own `/dropmoney`: its limit of
+  money piles, placement and logs).
+- **Jail**: DarkRP takes the weapons and ammo of an arrested player away; his inventory stays
+  (gear worn, pockets, slot weapons kept in their slots with their magazine). He can look at it but
+  not change it, nor take anything with Use, and the police can search him. When he is released,
+  his slot weapons come back with their magazine.
+- **Changing job** keeps the inventory: the slot weapons come back after the new job's loadout,
+  with their magazine and attachments; the new job's weapons are ordinary weapons.
+- **Job isolation** (military or Star Wars RP, where a job is another character): switching into
+  or out of an isolated job forgets the inventory, and the new job starts empty.
+  `advinv_job_isolation 1` isolates every job; else `advinv_isolated_jobs "clone,arc"` lists the
+  isolated jobs (commands or names, comma separated). In a job's `DarkRP.createJob` table,
+  `AdvInvIsolated = true` or `false` decides for that job whatever the settings. Both settings are
+  in the admin menu. Hook: `AdvInv_JobIsolation(ply, oldTeam, newTeam)` (false: keep, true:
+  forget). With a character system that saves inventories, leave it off.
+- A weapon DarkRP's `/drop` refuses (job weapons with `dropspawnedweapons` off, `DisallowDrop`,
+  `restrictdrop`) can't leave its player through the inventory either: not dropped, nor put into a
+  crate or a body. Other code can decide with the hook `AdvInv_CanWeaponLeave(ply, class)`.
+- Entities with a DarkRP limit (`max` in their F4 entry) stay entities: taking them into the
+  inventory would free a place in the limit and let the buyer buy more.
+- `advinv_darkrp_loadout_to_inventory 1` (off by default): the job's own weapons (its F4 list)
+  that fit a free slot become inventory weapons (shown on the body, carry modes). They still belong
+  to the job: they go when the player changes job or dies (never left on his body, never saved),
+  and the next loadout gives them again.
+
+## Protections
+
+- Crates, bodies, trunks, searches and workbenches are used within reach and in sight: not through
+  a wall, a floor, a closed door or a wall of props.
+- Use and the pickup key respect prop protection (CPPI: FPP...) and DarkRP's `canDarkRPUse`; the
+  hook `AdvInv_CanPickup(ply, ent)` can refuse more.
+- Ammunition lying around of any amount (a merged DarkRP pile...) goes into boxes of a box's
+  size; what finds no room stays on the ground as a box with what is left.
+- Every action is checked by the server; dead players can only close and stop a search. At most
+  15 actions a second per player, 255 items per container, 5 real weapons dropped at once.
+- Something just dropped next to a crate or a trunk isn't stored back into it for a second.
 
 ## Administration
 
@@ -373,8 +517,9 @@ logs each action in its console and calls the hook `AdvInv_AdminAction(admin, ac
 
 - **Tooltips**: mass, slot, rarity, rounds and magazine, ammunition, carry modes, armour,
   capacity, what using it gives, and "Illegal".
-- **Rarity** (1 common ... 5 legendary): `ENT.Rarity` on an item or
-  `AdvInv.ItemRarity[class] = 3` for any class; the item's frame takes its colour.
+- **Rarity** (off by default: `advinv_rarity 1`, or the admin menu; 1 common ... 5 legendary):
+  `ENT.Rarity` on an item or `AdvInv.ItemRarity[class] = 3` for any class; the item's frame takes
+  its colour.
 - **Armour by body part**: any worn item with `ENT.Armor` protects the parts it covers, wears
   down as it is hit and lets more damage through as it does. Parts: `ENT.ArmorHitgroups` on the
   item, else by slot (`AdvInv.ArmorZones`: helmet head, vest chest and stomach, uniform body,
@@ -450,7 +595,7 @@ The addon is Lua only: models, icons and sounds all come from Garry's Mod.
 Spawn menu (Entities): "Inventory: Gear", "Inventory: Weapons", "Inventory: Ammo" and
 "Inventory: Furniture" (crates, bank locker, workbench); the Inventory tool is in Weapons >
 "Inventory". Items without an icon of their own show their model, like props. They only use
-models installed with Garry's Mod. Reserved IDs: 100 to 127.
+models installed with Garry's Mod.
 
 | Item | Slot | Model | Display |
 |---|---|---|---|
@@ -505,8 +650,8 @@ ENT.Attach = {
 
 -- anywhere in a shared file (lua/autorun/...):
 AdvInv = AdvInv or {}
-AdvInv.ClassID = AdvInv.ClassID or {}
-AdvInv.ClassID["my_helmet"] = 42
+AdvInv.Items = AdvInv.Items or {}
+AdvInv.Items["my_helmet"] = true -- the class name is the item's ID
 ```
 
 **Model rigged to the ValveBiped skeleton**: don't set `ENT.Attach`; the item is shown with
@@ -541,8 +686,9 @@ into the item's file.
 If the model has no collision model (`.phy`), the item dropped on the ground gets a collision box
 around the model; `ENT.PhysBox = { Vector(...), Vector(...) }` sets it by hand.
 
-ID rules: between 2 and 127, unique, and **never changed** once in production (they are saved in
-the database).
+An item's ID is its class name: unique whatever the addons (put your name in it, e.g.
+`myname_helmet`), and **never renamed** once in production (the database saves class names). The
+older `AdvInv.ClassID["my_helmet"] = 42` still works (DEVELOPERS.md, Item IDs).
 
 Useful fields depending on the base: `Mass` (all items), `MaxLoad` (capacity of a backpack, a
 vest with pockets or a uniform), `Armor` (helmet, vest), `NVGsHolder` (helmet that can carry
@@ -586,7 +732,9 @@ and Z to the right (useful when writing `ENT.Attach` by hand).
 
 ## Saving and linking to a character system
 
-On its own, the addon resets the inventory at every spawn and saves nothing. To save inventories
+On its own, the addon starts the inventory empty at the first spawn and after a death that left
+everything on the body; any other spawn (DarkRP's arrest, an admin's respawn) keeps it. It saves
+nothing. To save inventories
 (per player, per character...), answer who owns the inventory a player carries and call Load /
 Save:
 

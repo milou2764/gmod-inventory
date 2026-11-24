@@ -20,6 +20,7 @@ A model joins an existing set only if that set's offsets fit it without clipping
 ALIAS_TOL units of its own fit.
 
     python fit_carry.py [models.txt]     (default: playermodels.txt, the base game's list)
+    python fit_carry.py --current        (the playermodels cl_carry_data.lua already has)
 Tuned values (advinv_carry_tune, saved in garrysmod/data/advinv_carry_tuned.json) can be copied to
 tools/carry_overrides.json: they replace the computed offsets of their set / weapon / mode.
 """
@@ -49,11 +50,17 @@ WEAPONS = {  # class: (model, modes)
     "weapon_ar2": ("models/weapons/w_irifle.mdl", None),
     "weapon_shotgun": ("models/weapons/w_shotgun.mdl", None),
     "weapon_crossbow": ("models/weapons/w_crossbow.mdl", None),
-    "weapon_rpg": ("models/weapons/w_rocket_launcher.mdl", ("back_carry", "sling_up")),
+    "weapon_rpg": ("models/weapons/w_rocket_launcher.mdl", ("sling_up",)),
 }
-MODES = ("sling_up", "sling_down", "cross_body", "back_carry", "front_hang")
+# other addons' long guns, set offline in the fit editor like these (tools/carry_weapons.txt, made by
+# carry_weapons.py scan): the game uses their offsets by weapon class instead of the mode's template
+import carry_weapons  # noqa: E402
+for _cls, _slot, _model, _name in carry_weapons.load():
+    WEAPONS.setdefault(_cls, (_model, ("sling_up",) if _slot == "RocketLauncher" else None))
+MODES = ("sling_up", "sling_down", "front_hang")  # (back_carry, cross_body: removed, 23/11; sling_down is the back carry)
+# weapons without offsets (templates): the point of the gun that keeps its place (default: its middle)
+TEMPLATE_ANCHOR = {"sling_down": "butt"}
 BONES = {"sling_up": "ValveBiped.Bip01_Spine4", "sling_down": "ValveBiped.Bip01_Spine4",
-         "cross_body": "ValveBiped.Bip01_Pelvis", "back_carry": "ValveBiped.Bip01_Spine2",
          "front_hang": "ValveBiped.Bip01_Spine4"}
 
 
@@ -180,25 +187,20 @@ def modes_for(body, w):
     centre = (w.mn + w.mx) / 2
     muzzle_tip = np.array([w.mx[0], centre[1], centre[2]])
     stock_tip = np.array([w.mn[0], centre[1], centre[2]])
-    th = math.radians(40)
-    # back: diagonal, muzzle up over the left shoulder
-    out["back_carry"] = place(body, w, (math.sin(th), 0, math.cos(th)), (0, 1, 0), (0, 0, 1),
-                              centre, (0, 0, (s2 + s4) / 2 + 2)) + (np.array([0, 1.0, 0]),)
     # from the right shoulder, muzzle up: behind the right shoulder blade, muzzle above the shoulder
     n_sh = unit((-0.3, 1, 0))
     x_sh = -0.55 * hw
     out["sling_up"] = place(body, w, (-0.12, 0.08, 1), n_sh, (-1, 0, 0), muzzle_tip,
                             (x_sh, 0, sh + 0.15 * L)) + (n_sh,)
-    # from the right shoulder, muzzle down: the stock end under the shoulder
-    out["sling_down"] = place(body, w, (-0.12, 0.08, -1), n_sh, (-1, 0, 0), stock_tip,
-                              (x_sh, 0, sh - 1.5)) + (n_sh,)
-    # sling across the torso from the right shoulder, gun on the left side: behind the left hip
-    # (clear of the hanging arm and of the shoulder / back zones), muzzle down and a little forward
-    n_side = unit((0.4, 0.92, 0))
-    tang = unit(np.cross(n_side, (0, 0, 1)))  # left-forward along the body
-    d_side = unit(-0.9 * np.array([0, 0, 1.0]) + 0.44 * tang)
-    out["cross_body"] = place(body, w, d_side, n_side, -tang, centre,
-                              (0.5 * body.half_width(pelvis + 4), 0, pelvis + 4)) + (n_side,)
+    # The back carry (sling_down): the cross-body carry, muzzle down, of the USMC weapons carries
+    # (0300-M16-1004, p. 19): the sling across the chest, the gun flat on the back, about 13 degrees
+    # off the vertical.
+    back = np.array([0, 1.0, 0])
+    tilt = math.radians(13)
+    # muzzle down: the butt behind the left shoulder blade, the muzzle down towards the right calf,
+    # its top (the sights) towards the right
+    out["sling_down"] = place(body, w, (-math.sin(tilt), 0, -math.cos(tilt)), back, (-1, 0, 0), stock_tip,
+                              (0.75 * hw, 0, sh - 2)) + (back,)
     # in front of the chest and belly, hands free: diagonal, stock at the right chest, muzzle down left
     out["front_hang"] = place(body, w, (0.71, 0, -0.71), (0, -1, 0), (0, 0, 1), centre,
                               (0, 0, s2 - 2)) + (np.array([0, -1.0, 0]),)
@@ -277,7 +279,7 @@ def penetration(body, w, e, solid=None):
     return worst
 
 
-BACK_SIDE = {"sling_up", "sling_down", "cross_body", "back_carry"}
+BACK_SIDE = {"sling_up", "sling_down"}
 
 
 def stacking(body, weapons, res):
@@ -286,7 +288,7 @@ def stacking(body, weapons, res):
     { "rpg mode|primary class mode": push } with push > 0: the launcher moves out, < 0: the primary
     weapon moves out by -push."""
     out = {}
-    zone = {"sling_up": "shoulder", "sling_down": "shoulder", "cross_body": "side", "back_carry": "back"}
+    zone = {"sling_up": "shoulder", "sling_down": "back"}
     for lmode, le in res["weapon_rpg"].items():
         for cls, modes in res.items():
             if cls == "weapon_rpg":
@@ -304,12 +306,18 @@ def stacking(body, weapons, res):
 
 
 def main():
-    lst = Path(sys.argv[1]) if len(sys.argv) > 1 else TOOLS / "playermodels.txt"
-    models = [l.strip() for l in lst.read_text(encoding="utf-8").splitlines() if l.strip()]
+    if sys.argv[1:2] == ["--current"]:  # the playermodels the game's carry data already has
+        import carry_data
+        models = sorted(carry_data.read()[1])
+    else:
+        lst = Path(sys.argv[1]) if len(sys.argv) > 1 else TOOLS / "playermodels.txt"
+        models = [l.strip() for l in lst.read_text(encoding="utf-8").splitlines() if l.strip()]
     weapons = {cls: Weapon(path) for cls, (path, _) in WEAPONS.items()}
     overrides = json.loads(OVERRIDES.read_text(encoding="utf-8")) if OVERRIDES.exists() else {}
     fitted, bodies, skipped = {}, {}, []
-    for m in [REF] + [x for x in models if x != REF]:
+    todo = [REF] + [x for x in models if x.lower() != REF]
+    for k, m in enumerate(todo, 1):
+        print(f"  playermodel {k}/{len(todo)}  {m}", flush=True)
         body, res = fit_model(m, weapons)
         if res is None:
             skipped.append(m)
@@ -349,6 +357,19 @@ def main():
                     sets[name]["res"][cls][mode].update(
                         bone=v["bone"], pos=np.array(v["pos"]), ang=v["ang"],
                         out=np.array(v.get("out", sets[name]["res"][cls][mode]["out"])))
+    # positions approved in the fit editor (tools/fit_locks.txt, "carry:<weapon>:<mode>"): final
+    import carry_data
+    import fit_locks
+    set_of = {m.lower(): n for m, n in aliases.items()}  # (locks are keyed by lowercase playermodel)
+    for cls_key, per in fit_locks.load().items():
+        wm = carry_data.split_class(cls_key)
+        if not wm:
+            continue
+        for pm, (p, a, _s) in per.items():
+            name = set_of.get(pm)
+            e = name and sets.get(name, {}).get("res", {}).get(wm[0], {}).get(wm[1])
+            if e:
+                e.update(pos=np.array(p), ang=tuple(a))
     for name, s in sets.items():
         s["stack"] = stacking(bodies[s["rep"]], weapons, s["res"])
     # templates for weapons without offsets: the default body's rules (surface point, outward, angles)
@@ -358,15 +379,19 @@ def main():
         e = fitted[REF]["weapon_ar2"].get(mode) or fitted[REF]["weapon_smg1"][mode]
         w = weapons["weapon_ar2"]
         R, t, n = e["R"], e["t"], e["n"]
-        # surface point under the weapon centre, outward direction and canonical angles, bone-relative
-        # (the main body's band across Y rests on the body, as in place())
+        # surface point under the weapon's anchor (its middle, or its butt for the modes whose butt
+        # has its place: a longer gun then goes further from it, not both ways), outward direction and
+        # canonical angles, bone-relative (the main body's band across Y rests on the body, as in place())
         lo, hi = w.core_y
-        c = R @ np.array([(w.mn[0] + w.mx[0]) / 2, (lo + hi) / 2, (w.mn[2] + w.mx[2]) / 2]) + t
+        anchor = TEMPLATE_ANCHOR.get(mode, "middle")
+        ax = w.mn[0] if anchor == "butt" else (w.mn[0] + w.mx[0]) / 2
+        c = R @ np.array([ax, (lo + hi) / 2, (w.mn[2] + w.mx[2]) / 2]) + t
         half = (hi - lo) / 2
         surf = c - n * (half + GAP)
         Bw = ref.world[BONES[mode]]
         Li = np.linalg.inv(Bw)
-        templates[mode] = (BONES[mode], Li[:3, :3] @ surf + Li[:3, 3], Li[:3, :3] @ n, fi.matrix_angles(Li[:3, :3] @ R))
+        templates[mode] = (BONES[mode], Li[:3, :3] @ surf + Li[:3, 3], Li[:3, :3] @ n,
+                           fi.matrix_angles(Li[:3, :3] @ R), anchor)
     write_lua(sets, aliases, templates, models)
     # report
     worst = []
@@ -418,8 +443,8 @@ def write_lua(sets, aliases, templates, models):
     L.append("-- weapons without offsets: surface point, outward direction and angles of each mode on the")
     L.append("-- default body, placed at run time with the weapon's own shape")
     L.append("AdvInv.CarryTemplates = {")
-    for mode, (bone, pos, out, ang) in templates.items():
-        L.append(f'    {mode} = {{ bone = "{bone}", pos = {v(pos)}, out = {vo(out)}, ang = {a(ang)} }},')
+    for mode, (bone, pos, out, ang, anchor) in templates.items():
+        L.append(f'    {mode} = {{ bone = "{bone}", pos = {v(pos)}, out = {vo(out)}, ang = {a(ang)}, anchor = "{anchor}" }},')
     L.append("}")
     L.append("-- the base game's playermodels (player_manager), for advinv_carry_cycle")
     L.append("AdvInv.CarryDefaultModels = {")

@@ -20,7 +20,7 @@ local function itemList()
     for id, class in pairs(AdvInv.IDClass or {}) do
         if id > 1 and not I.IsGeneric(id) then
             local t = scripted_ents.Get(class)
-            if t then
+            if t and t.AdvInvAvailable ~= false then -- (compatibility items: only when their addon is here)
                 out[#out + 1] = { id = id, name = t.PrintName or class, class = class, cat = t.Category or "" }
             end
         end
@@ -85,6 +85,18 @@ local function settingsTab(sheet)
                     combo:SetWide(160)
                     for _, c in ipairs(s[3]) do combo:AddChoice(c, c, c == value) end
                     combo.OnSelect = function(_, _, v) send(v) end
+                elseif kind == "text" then
+                    local entry = vgui.Create("DTextEntry", row)
+                    entry:Dock(FILL)
+                    entry:DockMargin(8, 4, 8, 4)
+                    entry:SetValue(value)
+                    local sent = value
+                    local function apply()
+                        local v = entry:GetValue()
+                        if v ~= sent then sent = v send(v) end
+                    end
+                    entry.OnEnter = apply
+                    entry.OnLoseFocus = function(self) apply() DTextEntry.OnLoseFocus(self) end
                 else
                     local slider = vgui.Create("DNumSlider", row)
                     slider:Dock(FILL)
@@ -280,7 +292,9 @@ local function open(target)
         local class = string.Trim(wclass:GetValue() or "")
         if class == "" then return end
         local reg = I.ItemForWeapon(class)
-        if reg then sendGive(reg) else sendGive(I.GENERIC_WEAPON, class) end
+        local grenade = I.GrenadeAmmo(class)
+        if grenade and game.GetAmmoID(grenade) ~= -1 then sendGive(I.GENERIC_AMMO, grenade)
+        elseif reg then sendGive(reg) else sendGive(I.GENERIC_WEAPON, class) end
     end
     sheet:AddSheet(I.L("admin_items"), ip, "icon16/box.png")
 

@@ -10,6 +10,7 @@ ENT.PrintName = AdvInv.T("Bank locker", "Casier de banque")
 ENT.Category = AdvInv.T("Inventory: Furniture", "Inventaire : mobilier")
 ENT.Model = "models/props_c17/lockers001a.mdl" -- (spawn menu icon)
 ENT.Spawnable = true
+ENT.DisableDuplicator = true -- its contents would be copied
 ENT.AdminOnly = true
 ENT.AdvInvStorage = true
 

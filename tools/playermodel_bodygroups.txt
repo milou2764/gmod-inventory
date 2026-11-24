@@ -1,0 +1,97 @@
+# Bodygroups the fits are measured with (bodypart=submodel): for playermodels whose default
+# bodygroup wears what an inventory item replaces (their own cap, helmet, backpack). They are the
+# bodygroups AdvInv.ModelGear (lua/advinv/sh_modelgear.lua) sets while an item fills that slot,
+# so the item is fitted to the body it will be drawn on.
+models/rusty/natguard/player/male_01.mdl 3=2
+models/rusty/natguard/player/male_02.mdl 3=2
+models/rusty/natguard/player/male_03.mdl 3=2
+models/rusty/natguard/player/male_04.mdl 3=2
+models/rusty/natguard/player/male_05.mdl 3=2
+models/rusty/natguard/player/male_06.mdl 3=2
+models/rusty/natguard/player/male_07.mdl 3=2
+models/rusty/natguard/player/male_08.mdl 3=2
+models/rusty/natguard/player/male_09.mdl 3=2
+models/rusty/natguard/player/female_01.mdl 3=2
+models/rusty/natguard/player/female_02.mdl 3=2
+models/rusty/natguard/player/female_03.mdl 3=2
+models/rusty/natguard/player/female_04.mdl 3=2
+models/rusty/natguard/player/female_06.mdl 3=2
+models/rusty/natguard/player/female_07.mdl 3=2
+models/player/swbf_imperial_officer_isbofficerv2/swbf_imperial_officer_isbofficerv2.mdl 2=1
+models/player/swbf_imperial_officer_lieutenantv2/swbf_imperial_officer_lieutenantv2.mdl 2=1
+models/player/swbf_imperial_officer_ensignv2/swbf_imperial_officer_ensignv2.mdl 2=1
+models/player/swbf_imperial_officer_commodorev2/swbf_imperial_officer_commodorev2.mdl 2=1
+models/player/swbf_imperial_officer_colonelv2/swbf_imperial_officer_colonelv2.mdl 2=1
+models/player/swbf_imperial_officer_admiralv2/swbf_imperial_officer_admiralv2.mdl 2=1
+models/player/swbf_imperial_officer_grand_admiralv2/swbf_imperial_officer_grand_admiralv2.mdl 2=1
+models/player/swbf_imperial_officer_ncov2/swbf_imperial_officer_ncov2.mdl 2=1
+models/player/swbf_imperial_isb_agentv2/swbf_imperial_isb_agentv2.mdl 2=1
+models/nada/pms/female/admiral.mdl 1=4
+models/nada/pms/female/admiral_esb.mdl 1=4
+models/nada/pms/female/atst_driver.mdl 1=3
+models/nada/pms/female/black_naval_officer.mdl 1=4
+models/nada/pms/female/bridgecrew.mdl 1=2
+models/nada/pms/female/grandadmiral.mdl 1=3
+models/nada/pms/female/grey_admiral.mdl 1=4
+models/nada/pms/female/groundcrew.mdl 1=1 3=1
+models/nada/pms/female/gunner.mdl 1=1
+models/nada/pms/female/imperialweapontechnician.mdl 1=1
+models/nada/pms/female/mechanicalcrew.mdl 1=3
+models/nada/pms/female/medic.mdl 1=4
+models/nada/pms/female/naval_officer.mdl 1=4
+models/nada/pms/female/navy_trooper.mdl 1=3
+models/nada/pms/female/navy_trooper_jr.mdl 1=3
+models/nada/pms/female/scanner.mdl 1=2
+models/nada/pms/female/navy_colourable.mdl 1=4
+models/nada/pms/male/admiral.mdl 1=4
+models/nada/pms/male/admiral_esb.mdl 1=4
+models/nada/pms/male/atst_driver.mdl 1=4
+models/nada/pms/male/black_naval_officer.mdl 1=4
+models/nada/pms/male/bridgecrew.mdl 1=2
+models/nada/pms/male/grandadmiral.mdl 1=3
+models/nada/pms/male/grey_admiral.mdl 1=4
+models/nada/pms/male/groundcrew.mdl 1=1 3=1
+models/nada/pms/male/gunner.mdl 1=1
+models/nada/pms/male/imperialweapontechnician.mdl 1=1
+models/nada/pms/male/mechanicalcrew.mdl 1=3
+models/nada/pms/male/medic.mdl 1=3
+models/nada/pms/male/naval_officer.mdl 1=4
+models/nada/pms/male/navy_trooper.mdl 1=3
+models/nada/pms/male/navy_trooper_jr.mdl 1=3
+models/nada/pms/male/scanner.mdl 1=2
+models/nada/pms/male/navy_colourable.mdl 1=4
+models/adamwassim/player/imperialcommunity/ww1/soldatfrancais1.mdl 5=1 6=6 8=4 9=2
+models/adamwassim/player/imperialcommunity/ww1/soldatfrancais2.mdl 5=1 6=6 8=4 9=2
+models/adamwassim/player/imperialcommunity/ww1/soldatfrancais3.mdl 5=1 6=6 8=4 9=2
+models/adamwassim/player/imperialcommunity/ww1/soldatfrancais4.mdl 5=1 6=6 8=4 9=2
+models/adamwassim/player/imperialcommunity/ww1/soldatfrancais5.mdl 5=1 6=6 8=4 9=2
+models/adamwassim/player/imperialcommunity/ww1/soldatfrancais6.mdl 5=1 6=6 8=4 9=2
+models/player/dod_american.mdl 1=1
+models/player/dod_german.mdl 1=1
+# Russian Army, Civil War, RS2: Forces of the East, PMC Pack Redux (24/11): their own gear off
+models/leygun/rfarmy/soilder_rf_02.mdl 3=1 4=1
+models/leygun/rfarmy/soilder_rf_04.mdl 3=1 4=1
+models/leygun/rfarmy/soilder_rf_05.mdl 3=1 4=1
+models/leygun/rfarmy/soilder_rf_07.mdl 3=1 4=1
+models/leygun/rfarmy/soilder_rf_08.mdl 3=1 4=1
+models/leygun/rfarmy/soilder_rf_09.mdl 3=1 4=1
+models/humans/civilwar/male_01.mdl 3=1
+models/humans/civilwar/male_02.mdl 3=1
+models/humans/civilwar/male_03.mdl 3=1
+models/humans/civilwar/male_04.mdl 3=1
+models/humans/civilwar/male_06.mdl 3=1
+models/humans/civilwar/male_07.mdl 3=1
+models/humans/civilwar/male_08.mdl 3=1
+models/humans/civilwar/male_09.mdl 3=1
+models/player/kerberos_risingstorm2.mdl 5=1 6=1 7=1 8=1 9=1 10=1
+models/player/kerberos_risingstorm3.mdl 5=1 6=1 7=1 8=1 9=1 10=1
+models/vietnam/humans/vc/gmod/vc_1.mdl 2=4
+models/vietnam/humans/vc/gmod/vc_5.mdl 2=4
+models/pmc/pmc_1/pmc_pm.mdl 3=0 4=0 5=0 6=0 10=0
+models/pmc/pmc_2/acu_pm.mdl 3=0 4=0 5=0 6=0 10=0
+models/pmc/pmc_3/mpt_pm.mdl 3=0 4=0 5=0 6=0 10=0
+models/pmc/pmc_4/swat_pm.mdl 3=0 4=0 5=0 6=0 10=0
+models/pmc/pmc_5/sas_pm.mdl 3=0 4=0 5=0 6=0 10=0
+models/pmc/pmc_6/desert_pm.mdl 3=0 4=0 5=0 6=0 10=0
+models/pmc/pmc_7/super_pm.mdl 3=0 4=0 5=0 6=0 10=0
+models/pmc/pmc_8/snw_pm.mdl 3=0 4=0 5=0 6=0 10=0

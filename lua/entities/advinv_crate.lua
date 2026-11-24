@@ -5,6 +5,7 @@ ENT.PrintName = AdvInv.T("Supply crate", "Caisse de ravitaillement")
 ENT.Category = AdvInv.T("Inventory: Furniture", "Inventaire : mobilier")
 ENT.Model = "models/props_junk/wood_crate001a.mdl" -- (spawn menu icon)
 ENT.Spawnable = true
+ENT.DisableDuplicator = true -- its contents would be copied
 
 -- Contenant « Storage » (voir sh_containers.lua) ; capacité : ENT.MaxLoad, sinon
 -- AdvInv.Config.CrateLoad. Le contenu n'est pas sauvegardé au redémarrage.

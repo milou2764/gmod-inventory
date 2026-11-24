@@ -29,6 +29,8 @@ end
 -- Item for a weapon class (its registered item, else a generic weapon), with rounds in the magazine.
 function I.ItemForWeaponClass(class, rounds)
     if I.WeaponBlacklist[class] then return end
+    local grenade = I.GrenadeAmmo(class) -- a grenade is an item: one round of its ammunition
+    if grenade and game.GetAmmoID(grenade) ~= -1 then return { id = I.GENERIC_AMMO, c = grenade, r = 1 } end
     local reg = I.ItemForWeapon(class)
     if reg then return { id = reg, r = rounds or 0 } end
     if anyWeapon:GetBool() and I.DefTable(I.GENERIC_WEAPON, class) then
@@ -141,7 +143,9 @@ end
 -- inventory.
 I.EntityItemHandlers = I.EntityItemHandlers or {} -- [class] = function(ent) -> item or nil (sv_cw2.lua...)
 
-function I.GenericItemFromEntity(ent)
+-- light: only whether it is an item (no attachment data: hooks that run every tick).
+function I.GenericItemFromEntity(ent, light)
+    if not IsValid(ent) then return end
     local class = ent:GetClass()
     local handler = I.EntityItemHandlers[class]
     if handler then return handler(ent) end
@@ -159,14 +163,19 @@ function I.GenericItemFromEntity(ent)
             local reg = I.ItemForWeapon(wclass)
             clip = (swep and swep.Primary and swep.Primary.ClipSize) or (reg and I.Info(reg).clipSize) or 0
         end
-        return I.ItemForWeaponClass(wclass, math.max(clip, 0))
+        local item = I.ItemForWeaponClass(wclass, math.max(clip, 0))
+        if item then
+            item.x = ent.AdvInvExtra
+            if ent.AdvInvCarryMode then item.m = ent.AdvInvCarryMode end
+        end
+        return item
     end
     if ent:IsWeapon() then
         if IsValid(ent:GetOwner()) or not pickWeapons:GetBool() then return end
         local item = I.ItemForWeaponClass(class, math.max(ent:Clip1(), 0))
         if item and ent.AdvInvCarryMode then item.m = ent.AdvInvCarryMode end
         -- attachments kept from when it was dropped (a weapon lying in the world may not show them)
-        if item then item.x = ent.AdvInvExtra or I.WeaponExtra(ent) end
+        if item and not light then item.x = ent.AdvInvExtra or I.WeaponExtra(ent) end
         return item
     end
     if not pickEntities:GetBool() then return end
@@ -214,7 +223,7 @@ end
 -- Walking over a weapon or whitelisted item lying in the world does not take it.
 hook.Add("PlayerCanPickupWeapon", "AdvInv_WorldWeapons", function(ply, wep)
     if not pickWeapons:GetBool() or beingGiven(wep, ply) then return end
-    if I.GenericItemFromEntity(wep) then return false end
+    if I.GenericItemFromEntity(wep, true) then return false end
 end)
 
 hook.Add("PlayerCanPickupItem", "AdvInv_WorldItems", function(ply, item)
@@ -227,27 +236,44 @@ end)
 hook.Add("PlayerUse", "AdvInv_WorldItems", function(ply, ent)
     local id = AdvInv.ClassID[ent:GetClass()]
     if id and not I.IsGeneric(id) then return end
-    if I.GenericItemFromEntity(ent) then
+    if I.GenericItemFromEntity(ent, true) then
         I.Use(ply, ent)
         return false
     end
 end)
 
--- Spawn menu (sandbox): a weapon given goes into the inventory, magazine full.
-hook.Add("PlayerGiveSWEP", "AdvInv_GiveSWEP", function(ply, class, swep)
-    if not pickWeapons:GetBool() then return end
-    local clip = swep and swep.Primary and swep.Primary.ClipSize or -1
-    local item = I.ItemForWeaponClass(class, math.max(clip or 0, 0))
-    if not item then return end
-    local reg = I.Info(item.id, item.c)
-    if (reg.clipSize or 0) > 0 and not I.IsGeneric(item.id) then item.r = reg.clipSize end
-    local ok, why = I.Equip(ply, item)
-    if not ok then
-        if I.Store(ply, item) then
-            ok = true
-        else
-            I.Tell(ply, why or I.L("msg_no_room_for", reg.name))
-        end
+-- Spawn menu (gm_giveswep): the gamemode decides as usual (DarkRP: adminweapons, arrested...).
+-- This hook gives nothing and returns nothing; the weapon the gamemode then gives goes into the
+-- inventory on the next tick (equipped if its slot is free, else stored, else on the ground).
+hook.Add("PlayerGiveSWEP", "AdvInv_GiveSWEP", function(ply, class)
+    if I.GrenadeAmmo(class) then return end -- grenades: given grenades become items (sv_grenades.lua)
+    if pickWeapons:GetBool() and I.ItemForWeaponClass(class, 0) then
+        -- only the Give that follows on this tick (the gamemode may refuse: nothing given then)
+        local g = { class = class, tick = engine.TickCount() }
+        ply.AdvInvGiveSWEP = g
+        timer.Simple(0, function()
+            if IsValid(ply) and ply.AdvInvGiveSWEP == g then ply.AdvInvGiveSWEP = nil end
+        end)
     end
-    return false
+end)
+
+hook.Add("WeaponEquip", "AdvInv_GiveSWEP", function(wep, ply)
+    local g = IsValid(ply) and ply.AdvInvGiveSWEP
+    if not (g and IsValid(wep) and g.class == wep:GetClass() and g.tick == engine.TickCount()) then return end
+    ply.AdvInvGiveSWEP = nil
+    timer.Simple(0, function()
+        if not (IsValid(ply) and ply:Alive() and IsValid(wep) and wep:GetOwner() == ply) then return end
+        local class = wep:GetClass()
+        for _, cat in ipairs(I.WeaponCat) do
+            if I.SlotInfo(ply, cat).weaponClass == class then return end -- already the slot's weapon
+        end
+        local item = I.ItemForWeaponClass(class, math.max(wep:Clip1(), 0))
+        if not item then return end
+        ply:StripWeapon(class)
+        local ok, why = I.Equip(ply, item)
+        if not ok and not I.Store(ply, item) then
+            I.Tell(ply, why or I.L("msg_no_room_for", I.Info(item.id, item.c).name))
+            I.SpawnItem(item, I.DropPos(ply))
+        end
+    end)
 end)

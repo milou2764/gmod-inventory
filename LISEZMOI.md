@@ -94,16 +94,14 @@ Chaque arme longue se porte d'une de ces façons, choisie dans l'inventaire : cl
 | Mode | Français | Anglais | Où | Zone du corps |
 |---|---|---|---|---|
 | `sling_up` | Arme à la bretelle | Sling arms | à l'épaule droite, canon en haut | épaule |
-| `sling_down` | Arme à la bretelle, canon en bas | Muzzle-down carry | à l'épaule droite, canon en bas | épaule |
-| `cross_body` | Arme en bandoulière | Cross-body carry | sangle en travers du torse, arme sur la hanche gauche | côté |
-| `back_carry` | Arme à la grenadière | Back carry | en diagonale dans le dos | dos |
+| `sling_down` | Arme à la grenadière | Back carry | sangle en travers de la poitrine, arme à plat dans le dos : crosse derrière l'omoplate gauche, canon vers le mollet droit | dos |
 | `front_hang` | Arme en relâche avant | Front carry / Hang | pendue devant la poitrine | devant |
 
 Une arme longue est toujours portée d'une de ces façons : elle ne peut pas être rangée hors de vue.
 
 Armes : `weapon_smg1`, `weapon_ar2`, `weapon_shotgun`, `weapon_crossbow` (tous les modes) et
-`weapon_rpg` (`back_carry`, `sling_up`). Par défaut : à la bretelle, à la grenadière pour le
-lance-roquettes.
+`weapon_rpg` (`sling_up`). Par défaut : à la bretelle. (L'arme en bandoulière et l'ancienne arme à
+la grenadière en diagonale ont été retirées : une arme enregistrée ainsi prend un autre mode.)
 
 Règles, toutes décidées par le serveur (une demande forgée est refusée) :
 
@@ -111,9 +109,12 @@ Règles, toutes décidées par le serveur (une demande forgée est refusée) :
 - un équipement peut prendre une zone : `ENT.BlocksCarryZones = { back = true }` sur les sacs (la
   base `advinv_base_rucksack` l'a) ; les gilets ont `{ front = false }`, mettre `front = true` sur un
   gilet de combat (chest rig) ;
-- quand un équipement prend la zone d'une arme portée, l'arme passe au premier mode possible parmi
-  `sling_up`, `cross_body`, `front_hang`, puis ses autres modes (l'autre arme longue bouge aussi si
-  cela fait de la place) et le joueur est prévenu. Avec `advinv_carry_refuse_gear 1` (serveur),
+- un équipement peut aussi prendre des modes (`ENT.BlocksCarryModes`). Sac à dos sur le dos, il ne
+  reste que l'arme à la bretelle (la zone de l'arme à la grenadière est prise), et l'arme à la
+  bretelle pend à côté du sac, dans l'alignement de l'épaule ;
+- quand un équipement prend la zone ou le mode d'une arme portée, l'arme passe en relâche avant si
+  elle le peut, sinon au premier mode possible parmi `sling_up`, `sling_down`, `front_hang`, puis ses
+  autres modes (l'autre arme longue bouge aussi si cela fait de la place) et le joueur est prévenu. Avec `advinv_carry_refuse_gear 1` (serveur),
   c'est l'équipement qui est refusé ;
 - un équipement ou une arme qui ne laisserait aucun mode possible à une arme longue est refusé
   (« Plus de place pour porter : RPG ») ;
@@ -129,7 +130,7 @@ Autres armes (données dans `lua/advinv/sh_carry.lua`, partagé) :
 
 ```lua
 AdvInv.CarryWeapons["mon_fusil"] = { default = "sling_up" }   -- tous les modes
-AdvInv.CarryWeapons["mon_lanceur"] = { modes = { "back_carry" }, default = "back_carry" }
+AdvInv.CarryWeapons["mon_lanceur"] = { modes = { "sling_up" }, default = "sling_up" }
 ```
 
 ou `ENT.CarryModes` / `ENT.CarryDefault` sur l'objet. Une arme sans réglages calculés est placée
@@ -142,8 +143,9 @@ actuel }`.
 
 Affichage (client, `lua/advinv/cl_carry.lua`) : les réglages sont rangés par playermodel,
 arme et mode (`lua/advinv/cl_carry_data.lua`, ci-dessous). Un gilet porté écarte les armes
-de `Config.CarryVestThickness`, un sac fait passer les modes d'épaule par-dessus
-(`Config.CarryOverPack`). Quand le lance-roquettes et l'arme principale sont tous deux côté dos et
+de `Config.CarryVestThickness` ; avec un sac, une arme portée à l'épaule (`Config.CarryOverPack`)
+est décalée sur le côté jusqu'à dégager la demi-largeur du sac (`Config.CarryBesidePack = false` :
+elle passe par-dessus, écartée de son épaisseur). Quand le lance-roquettes et l'arme principale sont tous deux côté dos et
 se croisent, l'un passe sur l'autre. Un playermodel sans l'os d'un mode n'affiche pas cette arme.
 Les modèles sont supprimés à la mort, à la déconnexion et au rechargement du Lua.
 
@@ -263,6 +265,109 @@ préréglage), TFA (accessoires choisis), CW 2.0 (accessoires). N'importe quelle
 - les munitions des trousses et caisses de munitions de CW 2.0 vont dans des boîtes de munitions
   génériques de leur calibre.
 
+## Addons du Workshop compatibles
+
+Quand le serveur a un de ces addons, ses modèles deviennent des objets de l'inventaire : portés,
+rangés, pris sur les corps, enregistrés comme les autres, et ajustés à chacun des 87 playermodels
+par défaut. Rien de ces addons n'est livré avec l'inventaire : les installer sur le serveur (et sa
+collection du Workshop) ; le serveur fait télécharger à ses joueurs ceux qu'il a
+(`advinv_compat_download 1`). Les objets d'un addon absent n'apparaissent nulle part.
+
+| Addon du Workshop | Objets | Menu de spawn |
+|---|---|---|
+| [Fallout 76 - Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=3234192542) | 54 sacs à dos | Inventaire : Fallout 76 |
+| [Fallout 3 Custom Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=891790188) | 6 sacs à dos | Inventaire : Fallout 3 |
+| [FO3 Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=315810701) | sac à armature | Inventaire : Fallout 3 |
+| [Imperial Helmet Props Star wars](https://steamcommunity.com/sharedfiles/filedetails/?id=943349673) | 8 casques | Inventaire : Star Wars |
+| [[AN] Mace Windu's Clone Helmets](https://steamcommunity.com/sharedfiles/filedetails/?id=973353552) | 2 casques | Inventaire : Star Wars |
+| [[NGRP] Rebel Pilot Helmet Prop](https://steamcommunity.com/sharedfiles/filedetails/?id=1268434165) | casque de pilote | Inventaire : Star Wars |
+| [TF2 Hex - Helmet of Victory](https://steamcommunity.com/sharedfiles/filedetails/?id=242772309) | 9 casques (leurs textures sont celles de Team Fortress 2 : le monter) | Inventaire : TF2 |
+| [US & Soviet Tank crew helmets](https://steamcommunity.com/sharedfiles/filedetails/?id=327527107) | 2 casques | Inventaire : militaire |
+| [Amnesia « Adrian helmet »](https://steamcommunity.com/sharedfiles/filedetails/?id=3613961508) | casque Adrian | Inventaire : militaire |
+| [DayZ Police vest](https://steamcommunity.com/sharedfiles/filedetails/?id=1448797869) | gilet de police | Inventaire : militaire |
+| [Petruz PMC Vests](https://steamcommunity.com/sharedfiles/filedetails/?id=3626263716) | 2 porte-chargeurs, 2 porte-plaques | Inventaire : militaire |
+| [Tactical Vest H.E.V Replacement](https://steamcommunity.com/sharedfiles/filedetails/?id=3838802156) | gilet tactique | Inventaire : militaire |
+
+Sacs : capacité selon leur taille (40 à 200), sur le dos (pas d'arme longue en travers). Gilets :
+blindage et poches ; les porte-chargeurs prennent l'avant. Casques : blindage. ID 1000 à 1999. Les
+ajustements sont faits par `tools/fit_compat.py` à partir de `tools/compat_packs.py` (pour ajouter
+un addon : voir DEVELOPERS.md).
+
+## Playermodels du Workshop déjà ajustés
+
+En plus des 87 playermodels de Garry's Mod, chaque objet porté (objets fournis et équipement des
+addons compatibles) est ajusté à ces playermodels du Workshop, quand le serveur les a (rien d'eux
+n'est livré) :
+
+| Addon du Workshop | Playermodels |
+|---|---|
+| [Rusty's National Guard Redux](https://steamcommunity.com/sharedfiles/filedetails/?id=3037475566) | 15 soldats (9 hommes, 6 femmes) |
+| [Vault Dwellers Part 1](https://steamcommunity.com/sharedfiles/filedetails/?id=3612720459) | 4 habitants d'abri |
+| [Star Wars Imperial Officers (Imperial Gaming)](https://steamcommunity.com/sharedfiles/filedetails/?id=1133511197) | 9 officiers |
+| [[NGRP] Rebel Pilot Variant](https://steamcommunity.com/sharedfiles/filedetails/?id=1268173091) | pilote rebelle |
+| [Rogue One Imperial Naval Officers](https://steamcommunity.com/sharedfiles/filedetails/?id=2593940310) | 34 membres d'équipage impériaux (17 hommes, 17 femmes) |
+| [[IC] WW1 French army playermodels 1916](https://steamcommunity.com/sharedfiles/filedetails/?id=3433822040) | 6 soldats français (visages : [{PM0V3} Shared Materials](https://steamcommunity.com/sharedfiles/filedetails/?id=1722627125)) |
+| [Russian Army \| RF Soldier](https://steamcommunity.com/sharedfiles/filedetails/?id=2764717646) | 5 soldats russes |
+| [Civil War Soldiers [Playermodel + Ragdolls]](https://steamcommunity.com/sharedfiles/filedetails/?id=3614216336) | 8 soldats (4 de l'Union, 4 confédérés) |
+| [RS2: Forces of the East](https://steamcommunity.com/sharedfiles/filedetails/?id=2944903873) | 4 soldats (2 de l'APVN, 2 Viêt-minh) |
+| [PMC Pack Redux (Playermodels & NPCs)](https://steamcommunity.com/sharedfiles/filedetails/?id=1769231405) | 8 soldats de SMP |
+
+Tout autre playermodel utilise l'ajustement par défaut de chaque objet (fait sur male_07). La liste
+des modèles ajustés est `tools/playermodels.txt` (Garry's Mod) et `tools/playermodels_workshop.txt` ;
+DEVELOPERS.md explique comment en ajouter.
+
+**Leur équipement appartient à l'inventaire.** Ces playermodels ont des casquettes, casques, gilets ou
+sacs à eux, en bodygroups. L'équipement, c'est l'inventaire qui le donne : ces bodygroups ne se
+choisissent plus dans un menu ni par un métier (ils reviennent à « aucun ») ; ils n'apparaissent que
+quand l'objet correspondant est porté. Un objet qui *est* l'équipement du modèle est montré par le
+modèle lui-même, riggé pour ce corps (le casque Adrian sur les soldats français de 14-18) ; tout autre
+objet porté prend leur place. Les autres bodygroups (visages, moustaches, grades, écharpes...) restent
+au choix du joueur. La table est `AdvInv.ModelGear` (sh_modelgear.lua) ; les serveurs y ajoutent leurs
+playermodels (DEVELOPERS.md).
+
+**Leur équipement en objets : les extensions.** Une extension fait de l'équipement d'un addon de
+playermodels des objets que tout playermodel peut porter : *Advanced Inventory System: WW1 French gear*
+(les casques Adrian, le képi, le bonnet, le sac, le rouleau de couverture et les brêlages des soldats
+français de 14-18) et *Advanced Inventory System: Vietnam US gear* (les casques M1, le chapeau de
+brousse, les sacs, la radio PRC-25 et les brêlages des ragdolls Vietnam era US Soldiers, Workshop
+146299217 ou sa version corrigée 3627113533), *Russian Army gear* (casque 6B47, gilet porte-plaques),
+*Civil War gear* (képis de l'Union et confédéré), *PAVN and Vietcong gear* (casques coloniaux,
+porte-chargeurs AK, sac, chapeau de brousse, chapeau conique) et *PMC gear* (casquettes, casques à
+lunettes ou visière, masques à gaz, vision nocturne, casque audio, sacs, ceinturons). Chacune ne
+contient que du Lua et demande cet addon, sur le serveur et chez les joueurs. Sur ses propres playermodels l'objet est montré par leur bodygroup ; sur tout autre,
+une copie ajustée à ce corps ; par terre, l'équipement seul.
+
+**Un équipement qu'on ne peut pas enlever.** Quand le couvre-chef, le gilet ou le sac à dos d'un
+playermodel fait partie de son maillage (pas de bodygroup), aucun des nôtres ne se porte par-dessus :
+impossible de mettre un couvre-chef sur un autre couvre-chef, un gilet sur un autre gilet, un sac à dos
+sur un autre sac à dos, et l'inventaire le dit.
+
+- Couvre-chefs : les soldats du Cartel et la Protection civile, les rebelles (leur bonnet) et la
+  médecin à la casquette, Odessa, le zombine, les casques et cagoules de Counter-Strike: Source, les
+  tenues de sécurité et anti-radiations de Vault-Tec.
+- Gilets : les soldats du Cartel, la Protection civile, le zombine, Barney, Eli, les rebelles et les
+  médecins, les gilets de Counter-Strike: Source, les brêlages des soldats de Day of Defeat, le gilet
+  du pilote rebelle, l'équipe au sol de Rogue One, et les corps blindés de l'équipage de Rogue One et
+  de la tenue de sécurité de Vault-Tec (seulement ces choix de bodygroup).
+- Sacs à dos : les rebelles et les médecins.
+
+Un joueur qui prend un tel playermodel (ou une telle tenue) en portant le nôtre le récupère : dans son
+inventaire, ou à ses pieds s'il n'a pas la place ou si l'objet contient quelque chose (un gilet ou un
+sac garde son contenu). Un équipement en bodygroup est enlevé sous le nôtre, comme ceux ci-dessus : le
+casque des soldats de Day of Defeat, le harnais de la Garde nationale, les bretelles et cartouchières
+des soldats de 14-18, les bâtons de l'équipe au sol de Rogue One. La table est `AdvInv.GearBuiltIn`
+(sh_modelgear.lua).
+
+## Grenades
+
+Les grenades sont des objets, pas des armes dans un emplacement : une grenade = un objet, rangé et
+empilé comme les autres (grenade de HL2, grenades à fragmentation, aveuglantes et fumigènes de
+CW 2.0 ; d'autres : `AdvInv.Grenades[classe] = type de munitions`). Clic droit sur une grenade >
+**Utiliser** la met en main ; chaque grenade lancée retire un objet, et l'arme part avec la
+dernière. Une arme grenade donnée par un autre code (un métier, le menu de spawn, une caisse de
+munitions) devient autant d'objets qu'elle a de grenades. Les grenades se lâchent depuis
+l'inventaire (`/drop` de DarkRP et le lâcher de CW 2.0 ne les prennent pas).
+
 ## Utiliser des objets, décharger les armes
 
 Clic droit sur un objet de son inventaire > **Utiliser** (ou double-clic) : la trousse de soins
@@ -300,8 +405,11 @@ Admins : menu contextuel (C) sur une caisse > **Réglages du stockage** :
 personnel du joueur (capacité `Config.BankLoad`, 300), conservé entre les sessions.
 
 **Verrous** : le joueur qui a fait apparaître ou acheté une caisse, et les admins, peuvent la
-verrouiller et lui donner un code (menu contextuel > Verrouiller / déverrouiller, Choisir le code).
-Les autres doivent entrer le code pour l'ouvrir.
+verrouiller et lui donner un code (menu contextuel > Verrouiller / déverrouiller, Choisir le code :
+4 à 8 chiffres). Les autres doivent entrer le code pour l'ouvrir, à portée. Tous les 3 mauvais codes
+sur une caisse, quel que soit le joueur qui les essaie, elle refuse les codes un moment (30 s,
+doublé à chaque fois, jusqu'à une heure) et son propriétaire est prévenu. Un véhicule verrouillé
+(clés DarkRP, simfphys) n'ouvre son coffre qu'à ses propriétaires.
 
 **Points de butin** (menu d'administration > Points de butin) : des points invisibles où un objet
 au hasard d'une table de butin apparaît, et réapparaît quelques secondes après avoir été pris. En
@@ -341,10 +449,11 @@ advinv_death_body_max 20     // corps au plus, le plus ancien part en premier
 advinv_death_loot_name 1     // le nom du mort est affiché sur son corps
 ```
 
-Hooks (serveur) : `AdvInv_DeathDrop(ply)` (renvoyer false : rien ne reste sur le corps cette fois) et
-`AdvInv_DeathBody(ply, body)`. Avec un système de personnages, l'inventaire vidé est enregistré tout
+Avec `advinv_death_drop` en dessous de 3, ce qui ne reste pas sur le corps est toujours au joueur
+quand il réapparaît. Hooks (serveur) : `AdvInv_DeathDrop(ply)` (renvoyer false : rien ne reste sur
+le corps cette fois, le joueur garde tout) et `AdvInv_DeathBody(ply, body)`. Avec un système de personnages, l'inventaire vidé est enregistré tout
 de suite : le prochain chargement ne rend pas les objets ; sans système de personnages, l'inventaire
-est remis à zéro à chaque apparition.
+vidé repart de rien à la prochaine apparition.
 
 ## Fouiller un joueur
 
@@ -352,7 +461,9 @@ Menu contextuel (C) sur un joueur à portée > **Fouiller**. Au bout de quelques
 joueurs restant proches, celui qui fouille voit l'inventaire de l'autre à droite de l'écran : les
 objets illégaux ont un cadre rouge et sont listés dans la discussion. Il peut prendre des objets (les
 faire glisser, ou clic droit sur une arme équipée > Prendre) mais ne peut rien mettre sur l'autre.
-Le joueur fouillé voit qui le fouille ; s'éloigner annule ou termine la fouille.
+Le joueur fouillé voit qui le fouille ; s'éloigner, se perdre de vue ou changer de métier annule
+ou termine la fouille, et une fouille terminée dure 2 minutes (`AdvInv.Config.SearchViewTime`). Les
+règles (métier, hook) sont vérifiées de nouveau pendant toute la fouille.
 
 ```
 advinv_search_mode 1    // 0 personne (sauf les admins), 1 métiers autorisés, 2 tout le monde
@@ -375,14 +486,57 @@ peut fouiller. Objets illégaux : `ENT.Illegal = true` sur un objet enregistré,
   armes qu'elles donnent, comme toute arme DarkRP qui traîne, se prennent avec Utiliser (chargeur
   plein), une à la fois.
 - Les munitions DarkRP qui traînent deviennent des boîtes de munitions.
-- `/drop` sur une arme de l'inventaire : DarkRP la lâche comme d'habitude et son emplacement est
-  libéré. Le lâcher à la mort de DarkRP ne lâche jamais une arme de l'inventaire (elle reste sur le
-  corps).
-- L'inventaire affiche le portefeuille, avec **Déposer de l'argent**.
-- `advinv_darkrp_loadout_to_inventory 1` (désactivé par défaut) : les armes du métier qui ont un
-  emplacement libre deviennent des armes de l'inventaire (sur le corps, modes de port, lâchées à la
-  mort). Avec le lâcher à la mort, chaque réapparition en redonne de nouvelles à lâcher : à
-  réfléchir avant de l'activer.
+- `/drop` sur une arme de l'inventaire : DarkRP la lâche comme d'habitude, puis son emplacement est
+  libéré ; l'arme lâchée garde son chargeur et ses accessoires mais pas de réserve (les boîtes de
+  munitions restent dans l'inventaire). Le lâcher à la mort de DarkRP ne lâche jamais une arme de
+  l'inventaire (elle reste sur le corps).
+- La confiscation du détecteur d'armes retire les armes de l'inventaire de leurs emplacements
+  (DarkRP les rend ensuite comme des armes ordinaires). L'arrestation, le changement de métier et le
+  retrait par un admin ne prennent rien d'autre : les boîtes restent, et les armes des emplacements
+  reviennent au prochain équipement (pas pendant une arrestation).
+- `gm_giveswep` (menu de spawn) suit les règles de DarkRP (armes d'admin, arrêté) ; l'arme qu'il
+  donne va dans l'inventaire.
+- L'inventaire affiche le portefeuille, avec **Déposer de l'argent** (le `/dropmoney` de DarkRP :
+  sa limite de tas d'argent, le placement et les journaux).
+- **Prison** : DarkRP retire les armes et les munitions d'un joueur arrêté ; son inventaire reste
+  (équipement porté, poches, armes gardées dans leurs emplacements avec leur chargeur). Il peut le
+  regarder mais pas le modifier, ni rien prendre avec Utiliser, et la police peut le fouiller. À sa
+  libération, ses armes reviennent avec leur chargeur.
+- **Changer de métier** garde l'inventaire : les armes des emplacements reviennent après
+  l'équipement du nouveau métier, avec leur chargeur et leurs accessoires ; les armes du nouveau
+  métier sont des armes ordinaires.
+- **Isolation des métiers** (RP militaire ou Star Wars, où un métier est un autre personnage) :
+  entrer dans un métier isolé ou en sortir oublie l'inventaire, et le nouveau métier commence vide.
+  `advinv_job_isolation 1` isole tous les métiers ; sinon `advinv_isolated_jobs "clone,arc"` liste
+  les métiers isolés (commandes ou noms, séparés par des virgules). Dans la table
+  `DarkRP.createJob` d'un métier, `AdvInvIsolated = true` ou `false` décide pour ce métier quels que
+  soient les réglages. Les deux réglages sont dans le menu d'administration. Hook :
+  `AdvInv_JobIsolation(ply, oldTeam, newTeam)` (false : garder, true : oublier). Avec un système de
+  personnages qui enregistre les inventaires, le laisser désactivé.
+- Une arme que le `/drop` de DarkRP refuse (armes du métier avec `dropspawnedweapons` désactivé,
+  `DisallowDrop`, `restrictdrop`) ne peut pas non plus quitter son joueur par l'inventaire : ni
+  lâchée, ni mise dans une caisse ou sur un corps. Un autre code peut décider avec le hook
+  `AdvInv_CanWeaponLeave(ply, class)`.
+- Les entités qui ont une limite DarkRP (`max` dans leur entrée F4) restent des entités : les
+  prendre dans l'inventaire libérerait une place dans la limite et laisserait l'acheteur en racheter.
+- `advinv_darkrp_loadout_to_inventory 1` (désactivé par défaut) : les armes propres au métier (sa
+  liste F4) qui ont un emplacement libre deviennent des armes de l'inventaire (visibles sur le corps,
+  modes de port). Elles restent au métier : elles partent quand le joueur change de métier ou meurt
+  (jamais laissées sur son corps, jamais enregistrées), et le prochain équipement les redonne.
+
+## Protections
+
+- Les caisses, corps, coffres, fouilles et établis s'utilisent à portée et en vue : pas à travers un
+  mur, un sol, une porte fermée ou un mur de props.
+- Utiliser et la touche de ramassage respectent la protection des props (CPPI : FPP...) et le
+  `canDarkRPUse` de DarkRP ; le hook `AdvInv_CanPickup(ply, ent)` peut en refuser davantage.
+- Les munitions qui traînent, quelle que soit leur quantité (un tas DarkRP fusionné...), vont dans
+  des boîtes de la taille d'une boîte ; ce qui ne trouve pas de place reste au sol comme une boîte
+  avec le reste.
+- Chaque action est vérifiée par le serveur ; un joueur mort peut seulement fermer et arrêter une
+  fouille. Au plus 15 actions par seconde et par joueur, 255 objets par contenant, 5 vraies armes
+  lâchées à la fois.
+- Ce qui vient d'être lâché près d'une caisse ou d'un coffre n'y est pas rangé avant une seconde.
 
 ## Administration
 
@@ -407,7 +561,8 @@ chaque demande, note chaque action dans sa console et appelle le hook
 
 - **Infobulles** : encombrement, emplacement, rareté, munitions et chargeur, type de munitions,
   modes de port, blindage, capacité, ce que l'utilisation donne, et « Illégal ».
-- **Rareté** (1 commun ... 5 légendaire) : `ENT.Rarity` sur un objet ou
+- **Rareté** (désactivée par défaut : `advinv_rarity 1`, ou le menu d'administration ; 1 commun ...
+  5 légendaire) : `ENT.Rarity` sur un objet ou
   `AdvInv.ItemRarity[classe] = 3` pour n'importe quelle classe ; le cadre de l'objet prend sa
   couleur.
 - **Blindage par partie du corps** : tout objet porté avec `ENT.Armor` protège les parties qu'il
@@ -490,7 +645,6 @@ Menu de spawn (Entités) : « Inventaire : équipement », « Inventaire : armes
 munitions » et « Inventaire : mobilier » (caisses, casier de banque, établi) ; l'outil Inventaire
 est dans Armes > « Inventaire ». Les objets sans icône propre montrent leur modèle, comme les
 props. Ils n'utilisent que des modèles installés avec Garry's Mod.
-ID réservés : 100 à 127.
 
 | Objet | Emplacement | Modèle | Affichage |
 |---|---|---|---|
@@ -546,8 +700,8 @@ ENT.Attach = {
 
 -- n'importe où dans un fichier partagé (lua/autorun/...) :
 AdvInv = AdvInv or {}
-AdvInv.ClassID = AdvInv.ClassID or {}
-AdvInv.ClassID["mon_casque"] = 42
+AdvInv.Items = AdvInv.Items or {}
+AdvInv.Items["mon_casque"] = true -- le nom de classe est l'identifiant de l'objet
 ```
 
 **Modèle riggé sur le squelette ValveBiped** : ne pas mettre d'`ENT.Attach`,
@@ -584,8 +738,9 @@ Si le modèle n'a pas de collision (`.phy`), l'objet posé au sol reçoit une bo
 collision autour du modèle ; `ENT.PhysBox = { Vector(...), Vector(...) }` permet de la
 définir à la main.
 
-Règles des ID : entre 2 et 127, uniques, et **jamais modifiés** une fois en
-production (ils sont enregistrés en base).
+L'identifiant d'un objet est son nom de classe : unique quels que soient les addons (mettez-y votre
+nom, par ex. `monnom_casque`), et **jamais renommé** une fois en production (la base enregistre les
+noms de classe). L'ancien `AdvInv.ClassID["mon_casque"] = 42` marche toujours (DEVELOPERS.md, Item IDs).
 
 Champs utiles selon la base : `Mass` (encombrement, tous les objets), `MaxLoad` (capacité d'un
 sac, d'un gilet à poches ou d'une tenue), `Armor` (casque,
@@ -630,7 +785,9 @@ vers le haut, Y vers l'arrière et Z vers la droite (utile pour écrire `ENT.Att
 
 ## Sauvegarde et intégration à un système de personnages
 
-Seul, l'addon remet l'inventaire à zéro à chaque apparition et n'enregistre rien. Pour enregistrer les
+Seul, l'addon commence l'inventaire vide à la première apparition et après une mort qui a tout
+laissé sur le corps ; toute autre apparition (arrestation DarkRP, réapparition par un admin) le
+garde. Il n'enregistre rien. Pour enregistrer les
 inventaires (par joueur, par personnage...), indiquer à qui appartient l'inventaire porté et appeler
 Load / Save :
 

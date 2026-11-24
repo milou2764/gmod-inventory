@@ -20,6 +20,12 @@
 --]]
 local I = AdvInv
 
+-- Created here (shared) so that the client reads the server's values (sv_generic.lua uses them).
+local PFLAGS = { FCVAR_ARCHIVE, FCVAR_NOTIFY, FCVAR_REPLICATED }
+CreateConVar("advinv_pickup_weapons", "1", PFLAGS, "Weapons lying in the world are taken with Use into the inventory (not by walking over them)", 0, 1)
+CreateConVar("advinv_pickup_any_weapon", "1", PFLAGS, "Weapons with no registered item of their own become generic inventory items", 0, 1)
+CreateConVar("advinv_pickup_entities", "1", PFLAGS, "Whitelisted entities (health kits, batteries, HL2 ammo...) are taken with Use into the inventory", 0, 1)
+
 I.GENERIC_WEAPON = 100
 I.GENERIC_ENTITY = 103
 I.GENERIC_AMMO = 125
@@ -92,8 +98,8 @@ local function guessCategory(class, swep)
     local hold = swep and string.lower(swep.HoldType or swep.NormalHoldType or "") or ""
     local ammo = swep and swep.Primary and string.lower(tostring(swep.Primary.Ammo or "")) or ""
     if hold == "rpg" or ammo == "rpg_round" then return "RocketLauncher" end
-    local slot = swep and swep.Slot
-    if slot == 0 or slot == 1 or hold == "pistol" or hold == "revolver" or hold == "melee" or hold == "knife"
+    -- (not SWEP.Slot: many weapons set it on the client only, the server would guess another slot)
+    if hold == "pistol" or hold == "revolver" or hold == "melee" or hold == "knife"
         or hold == "fist" or hold == "grenade" or hold == "slam" or hold == "melee2" then
         return "SecondaryWep"
     end
@@ -133,7 +139,20 @@ function I.DefTable(id, c)
             d.Mass = (swep and swep.AdvInvMass) or WEAPON_MASS[d.AdvInvCategory] or 20
         end
     elseif id == I.GENERIC_AMMO then
-        if game.GetAmmoID(c) ~= -1 then
+        local grenade = I.GrenadeOfAmmo and I.GrenadeOfAmmo(c)
+        if grenade and game.GetAmmoID(c) ~= -1 then
+            -- a grenade (sh_grenades.lua): one per item, named and shown like the weapon
+            local swep, hl2 = weapons.Get(grenade), HL2[grenade]
+            local fr = I.Language and I.Language() == "fr"
+            local sname = swep and swep.PrintName
+            if sname == "Scripted Weapon" then sname = nil end -- (named on the client only: weapon_base's default)
+            d = {
+                ClassName = "advinv_any_ammo", Generic = true, Ammo = c, Grenade = grenade,
+                PrintName = phrase(sname) or (hl2 and (fr and hl2[2] or hl2[1])) or c,
+                Model = (swep and swep.WorldModel ~= "" and swep.WorldModel) or (hl2 and hl2[3]) or "models/weapons/w_grenade.mdl",
+                Capacity = 1, Rounds = 1, Mass = I.AmmoBoxMass[c] or 6,
+            }
+        elseif game.GetAmmoID(c) ~= -1 then
             local name = c
             if CLIENT then
                 local p = language.GetPhrase(c .. "_ammo")
@@ -171,7 +190,7 @@ function I.ItemForWeapon(class)
     if not byWeapon then
         byWeapon = {}
         for id, cls in pairs(AdvInv.IDClass or {}) do
-            local t = id > 1 and not I.IsGeneric(id) and scripted_ents.Get(cls)
+            local t = id > 1 and not I.IsGeneric(id) and AdvInv.ClassTable(cls)
             if t and t.WeaponClass and not byWeapon[t.WeaponClass] then byWeapon[t.WeaponClass] = id end
         end
     end
@@ -187,7 +206,14 @@ I.ItemRarity = I.ItemRarity or {}
 I.RarityColors = I.RarityColors or {
     Color(170, 170, 170), Color(90, 190, 90), Color(70, 140, 235), Color(170, 90, 230), Color(240, 150, 40),
 }
+-- Off by default (server setting advinv_rarity 1, or the admin menu).
+local rarityVar = CreateConVar("advinv_rarity", "0", { FCVAR_ARCHIVE, FCVAR_NOTIFY, FCVAR_REPLICATED },
+    "Rarity of items: coloured frames and tooltips (0: off)", 0, 1)
+function I.RarityEnabled() return rarityVar:GetBool() end
+cvars.AddChangeCallback("advinv_rarity", function() if I.ClearInfoCache then I.ClearInfoCache() end end, "AdvInv")
+
 function I.Rarity(t)
+    if not rarityVar:GetBool() then return nil end
     local r = t.Rarity or I.ItemRarity[t.WeaponClass or t.EntityClass or t.ClassName or ""]
     return isnumber(r) and r > 1 and math.min(math.floor(r), 5) or nil
 end

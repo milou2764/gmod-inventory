@@ -3,11 +3,31 @@
 
     attach == nil : bonemerge. Le modèle doit être riggé sur le squelette ValveBiped.
     attach = { bone = "ValveBiped.Bip01_Head1", pos = Vector(...), ang = Angle(...), scale = 1 } :
-        n'importe quel prop. Il suit l'os avec ce décalage (Entity:FollowBone, calculé par
-        le moteur, sans Lua à chaque image). Sa taille suit celle du personnage.
+        n'importe quel prop. Il est placé sur l'os avec ce décalage à chaque image (AdvInv.GearPlacement,
+        le même calcul que les ajustements). Sa taille suit celle du personnage.
     bodyFit ("vest", "back" ou nil) : en bonemerge, adapte la position au playermodel
         (voir cl_bodyfit.lua).
 --]]
+-- Tables keyed by playermodel path are looked up in lowercase (a model's path can be written with
+-- capitals, "models/nada/pms/male/Naval_Officer.mdl"): their keys are lowercased once loaded.
+function AdvInv.LowerKeys(t)
+    if not istable(t) then return end
+    local moves = {}
+    for k in pairs(t) do
+        if isstring(k) and k ~= string.lower(k) then moves[#moves + 1] = k end
+    end
+    for _, k in ipairs(moves) do
+        local l = string.lower(k)
+        if t[l] == nil then t[l] = t[k] end
+        t[k] = nil
+    end
+end
+AdvInv.LowerKeys(AdvInv.Fits)
+-- the fits of the gear packs taken from playermodels (sh_modelgear_items.lua), on top of the inventory's
+AdvInv.FitsLoaded = true
+for _, pack in ipairs(AdvInv.ModelGearPacks or {}) do AdvInv.MergePackFits(pack) end
+AdvInv.LowerKeys(AdvInv.BodyFit and AdvInv.BodyFit.models)
+
 -- Placement of an item on a playermodel: its fit for that model (cl_fits_data.lua, made by
 -- tools/fit_items.py), or the item's own ENT.Attach for models that are not in the table.
 local fitCache = {}
@@ -27,10 +47,132 @@ end
 -- The wearer's own gear is not drawn in first person: it would sit in front of the camera (mask,
 -- bucket, backpack...). It still shows in third person and to everyone else; the inventory
 -- preview draws its own copies directly.
+-- Is the wearer not drawn (dead, out of view, no-draw, cloaked by an admin tool)? Then neither is
+-- what he wears or carries.
+local CLOAK = "models/effects/vol_light001"
+function AdvInv.OwnerHidden(owner)
+    if not IsValid(owner) or owner:IsDormant() or owner:GetNoDraw() then return true end
+    if owner:IsPlayer() and not owner:Alive() then return true end
+    return owner:GetMaterial() == CLOAK or owner:GetColor().a == 0
+end
+
+--[[
+    Rigid vests (props fitted on Spine4) bend with the torso: drawn halfway between where Spine1 and
+    Spine4 would each put them. The two agree in the reference pose the fits were made in; when the
+    spine bends (crouching hunches the lower back, a body lying down), the vest follows the middle of
+    the torso instead of staying with the shoulders.
+--]]
+local SPINE2, SPINE4 = "ValveBiped.Bip01_Spine1", "ValveBiped.Bip01_Spine4" -- (SPINE2: the lower bone of the blend)
+local refRel = {} -- [playermodel] = Spine2 -> Spine4 in the reference pose (VMatrix), or false
+
+local function bindBone(bind, base, id, inverse)
+    local b = bind[id + base]
+    if not (b and b.matrix) then return end
+    if inverse then return b.matrix:GetInverse() end
+    return b.matrix
+end
+
+local pending = {}
+local function computeRelation(mdl, b2, b4)
+    local r = false
+    local ok, _, bind = pcall(util.GetModelMeshes, mdl, 0, 0)
+    if ok and istable(bind) and b2 and b4 then
+        local base = bind[0] and 0 or 1
+        -- the bind matrices are world -> bone; their inverses place the bones in the reference pose
+        for _, inverse in ipairs({ true, false }) do
+            local m2, m4 = bindBone(bind, base, b2, inverse), bindBone(bind, base, b4, inverse)
+            if m2 and m4 then
+                local z2, z4 = m2:GetTranslation().z, m4:GetTranslation().z
+                if z4 > z2 and z4 > 20 and z4 < 120 then
+                    local inv2 = m2:GetInverse()
+                    if inv2 then r = inv2 * m4 break end
+                end
+            end
+        end
+    end
+    refRel[mdl] = r
+end
+
+-- The relation of target's playermodel, or nil while it is not known yet: it is read from the model
+-- once, out of the drawing (a heavy call), and the vest follows Spine4 until then.
+local function torsoRelation(target)
+    local mdl = string.lower(target:GetModel() or "")
+    local r = refRel[mdl]
+    if r ~= nil then return r or nil end
+    if not pending[mdl] then
+        pending[mdl] = true
+        local b2, b4 = target:LookupBone(SPINE2), target:LookupBone(SPINE4)
+        timer.Simple(0, function()
+            if b2 and b4 then computeRelation(mdl, b2, b4) else refRel[mdl] = false end
+        end)
+    end
+end
+
+-- Where a torso-blended vest is drawn on target now. -> pos, ang (nil: as the bone puts it)
+function AdvInv.TorsoPlacement(model, target)
+    local attach = model.advinvAttach
+    if not (attach and model.advinvTorso) then return end
+    local rel = torsoRelation(target)
+    local b2, b4 = target:LookupBone(SPINE2), target:LookupBone(SPINE4)
+    local M2, M4 = b2 and target:GetBoneMatrix(b2), b4 and target:GetBoneMatrix(b4)
+    if not (rel and M2 and M4) then return end
+    local T = Matrix()
+    T:SetAngles(attach.ang or angle_zero)
+    T:SetTranslation((attach.pos or vector_origin) * target:GetModelScale())
+    local W4, W2 = M4 * T, M2 * rel * T
+    local f = (W2:GetForward() + W4:GetForward()):GetNormalized()
+    local u = W2:GetUp() + W4:GetUp()
+    u = (u - f * u:Dot(f)):GetNormalized()
+    return (W2:GetTranslation() + W4:GetTranslation()) * 0.5, f:AngleEx(u)
+end
+
+-- Props following a bone are lit where their wearer is: the engine lights a model at its origin,
+-- which for many props is far from their mesh (a vest's origin can sink into the ground when its
+-- wearer crouches: drawn black). Sampled once per wearer and frame.
+local LIGHT_DIRS = { Vector(1, 0, 0), Vector(-1, 0, 0), Vector(0, 1, 0), Vector(0, -1, 0), Vector(0, 0, 1), Vector(0, 0, -1) }
+local lightCache = setmetatable({}, { __mode = "k" })
+local function lightFrom(owner)
+    local frame = FrameNumber()
+    local c = lightCache[owner]
+    if not c or c.frame ~= frame then
+        c = c or {}
+        c.frame, c.pos = frame, owner:WorldSpaceCenter()
+        for i, d in ipairs(LIGHT_DIRS) do c[i] = render.ComputeLighting(c.pos, d) end
+        lightCache[owner] = c
+    end
+    render.SuppressEngineLighting(true)
+    render.SetLightingOrigin(c.pos)
+    render.ResetModelLighting(0, 0, 0)
+    for i = 1, 6 do render.SetModelLighting(i - 1, c[i].x, c[i].y, c[i].z) end
+end
+
+-- worn gear of an extension painted on its hidden body's material (sh_modelgear_items.lua)
+local function drawShared(self)
+    local t = self.advinvClass and AdvInv.ClassTable(self.advinvClass)
+    -- (a rigid copy only: a bonemerged one bends with its wearer, the mesh at rest wouldn't follow)
+    if t and t.ModelSharedLooks and self.advinvAttach then AdvInv.DrawSharedParts(self, t, true) end
+end
+
 local function drawGear(self, flags)
     local owner = self:GetParent()
+    -- (a preview's character is a no-draw entity drawn by its panel: its gear is drawn with it)
+    if not (IsValid(owner) and owner.advinvPreview) and AdvInv.OwnerHidden(owner) then return end
     if owner == LocalPlayer() and not owner:ShouldDrawLocalPlayer() then return end
+    if owner.advinvPreview or not self.advinvAttach then
+        self:DrawModel(flags)
+        drawShared(self)
+        return
+    end
+    local pos, ang = AdvInv.GearPlacement(self, owner)
+    if not pos then return end
+    lightFrom(owner)
+    self:SetRenderOrigin(pos)
+    self:SetRenderAngles(ang)
     self:DrawModel(flags)
+    drawShared(self)
+    self:SetRenderOrigin(nil)
+    self:SetRenderAngles(nil)
+    render.SuppressEngineLighting(false)
 end
 
 function AdvInv.MountGearModel(model, target, attach, bodyFit, class)
@@ -68,34 +210,44 @@ function AdvInv.MountGearModel(model, target, attach, bodyFit, class)
         model.advinvHiddenNoBone = nil
     end
 
-    model:FollowBone(target, boneID)
-    model:SetLocalPos(attach.pos or vector_origin)
-    model:SetLocalAngles(attach.ang or angle_zero)
+    -- Parented to the wearer and placed each time it is drawn (drawGear, AdvInv.GearPlacement): the
+    -- engine's FollowBone places a prop in another frame than the bone matrix on some Workshop
+    -- playermodels (their skeleton compiled with another root), which the fits are measured in.
+    model:SetParent(target)
+    model:SetLocalPos(vector_origin)
+    model:SetLocalAngles(angle_zero)
+    model:SetRenderBounds(Vector(-96, -96, -48) * scale, Vector(96, 96, 112) * scale) -- around the wearer
+    -- a rigid vest on the chest: drawn between Spine1 and Spine4 (see AdvInv.TorsoPlacement)
+    model.advinvTorso = (attach.bone == SPINE4) and AdvInv.Config.VestFollowsTorso ~= false or nil
 end
 
 --[[
     Pour les aperçus (panneau d'inventaire, création de personnage) : place un objet
     en mode attach à la main, juste avant de le dessiner. Ne coûte rien hors des menus.
 --]]
-function AdvInv.PlaceGearModel(model, target)
+-- Where a prop worn on a bone is drawn on target now: its fit on the bone's matrix (what the fits
+-- are measured in), or between Spine1 and Spine4 for a vest. -> pos, ang (nil: no such bone)
+function AdvInv.GearPlacement(model, target)
     local attach = model.advinvAttach
     if not attach then return end
+    local tpos, tang = AdvInv.TorsoPlacement(model, target)
+    if tpos then return tpos, tang end
     local boneID = target:LookupBone(attach.bone or "ValveBiped.Bip01_Head1")
     local matrix = boneID and target:GetBoneMatrix(boneID)
     if not matrix then return end
-    local scale = target:GetModelScale()
-    local pos, ang = LocalToWorld(
-        (attach.pos or vector_origin) * scale,
-        attach.ang or angle_zero,
-        matrix:GetTranslation(),
-        matrix:GetAngles()
-    )
+    return LocalToWorld((attach.pos or vector_origin) * target:GetModelScale(), attach.ang or angle_zero,
+        matrix:GetTranslation(), matrix:GetAngles())
+end
+
+function AdvInv.PlaceGearModel(model, target)
+    local attach = model.advinvAttach
+    if not attach then return end
+    local pos, ang = AdvInv.GearPlacement(model, target)
+    if not pos then return end
     model:SetRenderOrigin(pos)
     model:SetRenderAngles(ang)
-    local wanted = (attach.scale or 1) * scale
-    if model:GetModelScale() ~= wanted then
-        model:SetModelScale(wanted, 0)
-    end
+    local wanted = (attach.scale or 1) * target:GetModelScale()
+    if model:GetModelScale() ~= wanted then model:SetModelScale(wanted, 0) end
 end
 
 -- Si le playermodel ou sa taille change, les index d'os peuvent changer : on réattache.
@@ -122,7 +274,7 @@ net.Receive("advinv_gear_playerspawn", function()
 end)
 
 net.Receive("advinv_gear_mnt", function()
-    local itemID = net.ReadUInt(7)
+    local itemID = net.ReadUInt(AdvInv.NET_ID_BITS)
     local itemTable = AdvInv.EntityTable(itemID)
     local target = net.ReadEntity()
     local userid
@@ -136,7 +288,7 @@ net.Receive("advinv_gear_mnt", function()
 end)
 
 net.Receive("advinv_gear_umnt", function()
-    local itemID = net.ReadUInt(7)
+    local itemID = net.ReadUInt(AdvInv.NET_ID_BITS)
     local itemTable = AdvInv.EntityTable(itemID)
     local target = net.ReadEntity()
     itemTable:unmount(target)
@@ -149,8 +301,8 @@ local function hideGear(g)
 end
 
 local hideGears = function(uid)
-    for k, g in pairs(AdvInv.mountedGear[uid]) do
-        if g:IsValid() then
+    for k, g in pairs(AdvInv.mountedGear[uid] or {}) do
+        if IsValid(g) then
             hideGear(g)
         else
             AdvInv.mountedGear[uid][k] = nil
@@ -159,6 +311,7 @@ local hideGears = function(uid)
 end
 
 local function showGear(g)
+    if not IsValid(g) then return end
     g:DrawShadow(true)
     g:SetMaterial("")
     g:SetRenderMode(RENDERMODE_NORMAL)
@@ -166,6 +319,7 @@ end
 
 net.Receive("advinv_gear_vis", function()
     local p = net.ReadEntity()
+    if not (IsValid(p) and p:IsPlayer()) then return end
     local uid = p:UserID()
     local bool = net.ReadBool()
     local vis = net.ReadInt(8)
@@ -184,14 +338,14 @@ local function updateCSGear(ent, uid, cat, gearID, replace)
     AdvInv.mountedGear[uid] = AdvInv.mountedGear[uid] or {}
     -- a model is already drawn
     if IsValid(AdvInv.mountedGear[uid][cat]) then
-        if replace then
-            AdvInv.mountedGear[uid][cat]:Remove()
-        else
-            return
-        end
+        if not replace then return end
+        AdvInv.mountedGear[uid][cat]:Remove()
     end
+    AdvInv.mountedGear[uid][cat] = nil
+    -- the wearer's playermodel shows this item itself, as a bodygroup (sh_modelgear.lua)
+    if AdvInv.ShownByModel(ent, gearID) then return end
     -- draw the new one
-    if gearID > 1 then
+    if isnumber(gearID) and gearID > 1 then
         local tab = AdvInv.EntityTable(gearID)
         if not tab then
             AdvInv.Log.d("Gear", "invalid gearID " .. gearID)
@@ -221,11 +375,25 @@ function AdvInv.LoadPlayerGear(p)
     end
 end
 
+-- A playermodel change (a job, a model chooser, or the item arriving before the model) can change
+-- what the model shows itself (sh_modelgear.lua): the gear of that player is mounted again.
+timer.Create("AdvInv_GearModelWatch", 0.5, 0, function()
+    for _, p in ipairs(player.GetAll()) do
+        local m = string.lower(p:GetModel() or "")
+        local old = p.AdvInvGearModel
+        if old ~= m then
+            p.AdvInvGearModel = m
+            if old and p:Alive() and (AdvInv.ModelGear[old] or AdvInv.ModelGear[m]) then AdvInv.LoadPlayerGear(p) end
+        end
+    end
+end)
+
 hook.Add(
     "EntityNetworkedVarChanged",
     "AdvInv_Gear_Update",
     function(ent, name, oldval, newval)
-        if AdvInv.GearCat[name] then
+        -- players and dead bodies only (other entities may use the same names)
+        if AdvInv.GearCat[name] and isnumber(newval) and IsValid(ent) and (ent:IsPlayer() or AdvInv.IsBody(ent)) then
             local uid
             if ent.UserID then
                 uid = ent:UserID()
@@ -253,8 +421,8 @@ hook.Add("InitPostEntity", "AdvInv_EnableGearRendering", function()
         "AdvInv_ShouldTransmitGear",
         function(ent, shouldTransmit)
             if not ent:IsPlayer() then return end
-            if AdvInv.mountedGear[ent:UserID()] then
-                for _, v in pairs(AdvInv.mountedGear[ent:UserID()]) do
+            do
+                for _, v in pairs(AdvInv.mountedGear[ent:UserID()] or {}) do
                     if IsValid(v) and shouldTransmit then
                         v:SetNoDraw(false)
                         AdvInv.MountGearModel(v, ent, v.advinvBaseAttach or v.advinvAttach, v.advinvBodyFit, v.advinvClass)
@@ -285,41 +453,21 @@ net.Receive("advinv_gear_follow", function()
 end)
 
 local function unmountGear(userid)
-    AdvInv.mountedGear = AdvInv.mountedGear or {}
-    AdvInv.mountedGear[userid] = AdvInv.mountedGear[userid] or {}
-    for _, v in pairs(AdvInv.mountedGear[userid]) do
-        if v.Remove then v:Remove() end
+    for _, v in pairs(AdvInv.mountedGear[userid] or {}) do
+        if IsValid(v) then v:Remove() end
     end
+    AdvInv.mountedGear[userid] = nil
 end
+
+-- The item list is built after the first snapshot: the players already here get their gear then.
+hook.Add("AdvInv_ItemsInitialized", "AdvInv_LoadAllGear", function()
+    timer.Simple(0, function()
+        for _, p in ipairs(player.GetAll()) do AdvInv.LoadPlayerGear(p) end
+    end)
+end)
 gameevent.Listen("player_disconnect")
 hook.Add("player_disconnect", "AdvInv_RemovePlayerGear", function(data)
     unmountGear(data.userid)
 end)
 
--- À la mort du joueur, son équipement affiché passe sur son corps (ragdoll côté client).
-hook.Add("NetworkEntityCreated", "AdvInvNetworkEntityCreated", function(ent)
-    local owner = ent:GetOwner()
-    if not (IsValid(owner) and owner:IsPlayer() and ent:GetClass() == "prop_ragdoll") then return end
-    local ragdoll = ent
-    local userid = owner:UserID()
-    local ragdollid = ragdoll:EntIndex()
-    AdvInv.mountedGear[userid] = AdvInv.mountedGear[userid] or {}
-    AdvInv.mountedGear[ragdollid] = {}
-    for k, gear in pairs(AdvInv.mountedGear[userid]) do
-        AdvInv.mountedGear[userid][k] = nil
-        if IsValid(gear) then
-            local model = ClientsideModel(gear:GetModel(), RENDERGROUP_OPAQUE)
-            AdvInv.MountGearModel(model, ragdoll, gear.advinvBaseAttach or gear.advinvAttach, gear.advinvBodyFit, gear.advinvClass)
-            model:SetIK(false)
-            model:SetTransmitWithParent(true)
-            AdvInv.mountedGear[ragdollid][k] = model
-            gear:Remove()
-        end
-    end
-    ragdoll:CallOnRemove("AdvInvCleanUpRagdoll", function()
-        for _, gear in pairs(AdvInv.mountedGear[ragdollid] or {}) do
-            if IsValid(gear) then gear:Remove() end
-        end
-        AdvInv.mountedGear[ragdollid] = nil
-    end)
-end)
+-- (The gear of a dead player is on his body: cl_death.lua.)

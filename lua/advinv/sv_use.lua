@@ -7,11 +7,18 @@
 local I = AdvInv
 local handlers = I.ActHandlers
 
--- Uses item (taken from ply's containers by the caller if this returns true). -> ok, reason
+-- Uses item (taken from ply's containers by the caller if this returns true, unless keep).
+-- -> ok, reason, keep
 function I.UseItem(ply, item)
     local use = I.UseOf(item)
     if not use then return false, I.L("use_cannot") end
     if hook.Run("AdvInv_UseItem", ply, item) == false then return false end
+    if use.grenade then -- the grenade weapon in the hands; the item goes when it is thrown
+        if not ply:HasWeapon(use.grenade) then ply:Give(use.grenade, true) end
+        ply:SelectWeapon(use.grenade)
+        I.MarkDirty(ply, "Uniform") -- its reserve: the grenade items
+        return true, nil, true
+    end
     if use.custom then
         local t = I.EntTable(item.id)
         return t:OnUseItem(ply, item) == true
@@ -33,8 +40,9 @@ handlers[I.ACT.USE] = function(ply)
     local items = I.Get(ply, cont)
     local item = items[index]
     if not item then return end
-    local ok, why = I.UseItem(ply, item)
+    local ok, why, keep = I.UseItem(ply, item)
     if not ok then return false, why end
+    if keep then return true end
     if items[index] == item then table.remove(items, index) end
     I.MarkDirty(ply, cont)
     return true

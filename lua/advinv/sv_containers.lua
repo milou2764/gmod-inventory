@@ -67,8 +67,9 @@ end
 function I.Used(holder, cont) return I.ItemsLoad(I.Get(holder, cont)) end
 function I.Free(holder, cont) return I.MaxLoad(holder, cont) - I.Used(holder, cont) end
 
+I.MAX_ITEMS = 255 -- items in one container (sent with 8 bits)
 function I.CanFit(holder, cont, id, c)
-    return I.HasContainer(holder, cont) and I.ItemMass(id, c) <= I.Free(holder, cont)
+    return I.HasContainer(holder, cont) and #I.Get(holder, cont) < I.MAX_ITEMS and I.ItemMass(id, c) <= I.Free(holder, cont)
 end
 
 -- Contenants d'un porteur, dans l'ordre où l'on range (comme Arma : tenue, gilet, sac).
@@ -110,11 +111,17 @@ function I.MarkAllDirty(holder)
     for _, cont in ipairs(I.ContainersOf(holder)) do I.MarkDirty(holder, cont) end
 end
 
+local function stillViewing(ply, holder)
+    if not holder:IsPlayer() then return true end -- crates, bodies: the viewer timer checks them
+    return (ply.AdvInvAdminView == holder and I.IsAdmin(ply)) or (I.IsSearching and I.IsSearching(ply, holder)) or false
+end
+
 local function recipients(holder)
     local rf = RecipientFilter()
     if holder:IsPlayer() then rf:AddPlayer(holder) end
-    for ply in pairs(holder.AdvInvViewers or {}) do
-        if IsValid(ply) then rf:AddPlayer(ply) end
+    local viewers = holder.AdvInvViewers
+    for ply in pairs(viewers or {}) do
+        if IsValid(ply) and stillViewing(ply, holder) then rf:AddPlayer(ply) else viewers[ply] = nil end
     end
     return rf
 end
@@ -170,11 +177,19 @@ end)
 
 local settingAmmo = {}
 
+-- Ammo taken away all at once by other code (DarkRP arrest and job change, admin tools, DarkRP's
+-- /drop): the boxes stay in the inventory and the reserve comes back from them. (RemoveAmmo is not
+-- guarded: weapons without a magazine and grenades fire through it.)
+local guardTick = {}
+function I.GuardAmmo(ply) guardTick[ply] = engine.TickCount() + 2 end
+local function guarded(ply) return (guardTick[ply] or 0) >= engine.TickCount() end
+
 local function sameAmmo(a, b) return a and b and string.lower(a) == string.lower(b) end
 
 -- Réserve du joueur = total des boîtes rangées dans ses contenants.
 function I.SyncAmmo(ply)
     if not ply:Alive() then return end
+    if I.ReconcileGrenades then I.ReconcileGrenades(ply) end -- throws first (sv_grenades.lua)
     local totals = {}
     for _, cont in ipairs(I.PLAYER_CONTAINERS) do
         for _, it in ipairs(I.Get(ply, cont)) do
@@ -187,20 +202,38 @@ function I.SyncAmmo(ply)
             end
         end
     end
+    local grenades = I.GrenadeTypes and I.GrenadeTypes() or {}
+    if next(grenades) then
+        ply.AdvInvAmmoTypes = ply.AdvInvAmmoTypes or {}
+        for key, ammo in pairs(grenades) do ply.AdvInvAmmoTypes[key] = ammo end
+    end
+    local emptyGrenades = {}
     settingAmmo[ply] = true
     for key, ammo in pairs(ply.AdvInvAmmoTypes or {}) do
         if game.GetAmmoID(ammo) ~= -1 then
             local want = totals[key] or 0
+            if grenades[key] then
+                -- grenades: the one loaded in the weapon is an item too
+                if want == 0 then emptyGrenades[key] = true end
+                local inside = I.GrenadesLoaded(ply, ammo)
+                if inside > want then
+                    I.UnloadGrenades(ply, ammo, inside - want)
+                    inside = want
+                end
+                want = want - inside
+            end
             if ply:GetAmmoCount(ammo) ~= want then ply:SetAmmo(want, ammo) end
         end
     end
     settingAmmo[ply] = nil
+    if I.GrenadesSynced then I.GrenadesSynced(ply, emptyGrenades) end
 end
 
 -- Recharger (ou tout ce qui baisse la réserve) vide les boîtes, les moins pleines d'abord.
 hook.Add("PlayerAmmoChanged", "AdvInv_Ammo", function(ply, ammoID, oldCount, newCount)
-    if settingAmmo[ply] or newCount >= oldCount or not ply:Alive() then return end
+    if settingAmmo[ply] or guarded(ply) or newCount >= oldCount or not ply:Alive() then return end
     local ammo = game.GetAmmoName(ammoID)
+    if I.GrenadeOfAmmo and I.GrenadeOfAmmo(ammo) then return end -- grenades: sv_grenades.lua
     local need = oldCount - newCount
     local boxes = {}
     for _, cont in ipairs(I.PLAYER_CONTAINERS) do
@@ -257,14 +290,15 @@ local function isWeaponCat(cat) return cat and table.HasValue(AdvInv.WeaponCat, 
 -- Objet rangé correspondant à une entité au sol (registered item, or a weapon / whitelisted entity:
 -- sv_generic.lua).
 function I.ItemFromEntity(ent)
-    if not IsValid(ent) then return end
+    if not IsValid(ent) or ent.AdvInvStored or (ent.IsMarkedForDeletion and ent:IsMarkedForDeletion()) then return end
+    if istable(ent.DarkRPItem) and (tonumber(ent.DarkRPItem.max) or 0) > 0 then return end -- DarkRP's limit
     local id = AdvInv.ClassID[ent:GetClass()]
     if not id or id <= 1 or I.IsGeneric(id) then return I.GenericItemFromEntity and I.GenericItemFromEntity(ent) end
     local info = I.Info(id)
     local item = { id = id, r = 0, a = 0 }
     if info.isBox or info.isWeapon then item.r = math.max(math.floor(ent.Rounds or 0), 0) end
     if info.isWeapon and ent.CarryMode then item.m = ent.CarryMode end -- its carry mode goes with it
-    if info.armor then item.a = math.Clamp(math.floor(ent.Armor or info.armor), 0, 255) end
+    if info.armor then item.a = math.max(math.floor(ent.Armor or info.armor), 0) end
     return item
 end
 
@@ -345,7 +379,8 @@ function I.DropStack(item, n, pos)
     end
     local key = I.StackKey(item)
     for _, e in ipairs(ents.FindInSphere(pos, 48)) do
-        if e.AdvInvStackKey == key and not e.AdvInvStored and not IsValid(e:GetOwner()) then
+        if e.AdvInvStackKey == key and not e.AdvInvStored and not IsValid(e:GetOwner())
+            and not util.TraceLine({ start = pos, endpos = e:WorldSpaceCenter(), mask = MASK_SOLID_BRUSHONLY }).Hit then
             e:SetNWInt("AdvInvCount", math.max(e:GetNWInt("AdvInvCount", 1), 1) + n)
             if I.GroundItems[e] then I.GroundItems[e] = CurTime() end -- the stack starts again
             return e
@@ -378,6 +413,9 @@ function I.Equip(ply, item, contents)
     local cat = info.cat
     if not cat or not (AdvInv.GearCat[cat] or isWeaponCat(cat)) then return false, I.L("msg_not_equipable") end
     if slotID(ply, cat) > 1 then return false, I.L("msg_remove_first", SLOT_NAMES[cat] or cat) end
+    -- the playermodel's own headgear, vest or backpack is part of its mesh (sh_modelgear.lua): nothing goes over it
+    local builtinMsg = I.GearBuiltInMessages and I.GearBuiltInMessages[cat]
+    if builtinMsg and I.HasBuiltInGear(ply, cat) then return false, I.L(builtinMsg) end
 
     if info.isWeapon then
         local carryOK, carryWhy = I.CarryEquipCheck(ply, cat, item) -- a place to carry it
@@ -385,10 +423,14 @@ function I.Equip(ply, item, contents)
         local wep = ply:GetWeapon(info.weaponClass)
         if not IsValid(wep) then
             -- arme sans chargeur (lance-roquettes HL2) : aucune munition offerte
-            wep = ply:Give(info.weaponClass, (info.clipSize or 0) <= 0)
+            wep = ply:Give(info.weaponClass, true) -- no ammo: the magazine is set below, the reserve is the boxes
         end
         if IsValid(wep) and wep:GetMaxClip1() > 0 then wep:SetClip1(item.r or 0) end
         if IsValid(wep) and I.ApplyWeaponExtra then I.ApplyWeaponExtra(wep, item.x) end
+        ply.AdvInvSlotExtra = ply.AdvInvSlotExtra or {}
+        ply.AdvInvSlotExtra[cat] = item.x
+        ply.AdvInvJobSlot = ply.AdvInvJobSlot or {}
+        ply.AdvInvJobSlot[cat] = item.j or nil -- a job's weapon (sv_darkrp.lua)
         ply:SetNWString(cat .. "Class", I.IsGeneric(item.id) and item.c or "")
         ply:SetNWInt(cat, item.id)
         ply:SetNWInt(cat .. "Rounds", item.r or 0)
@@ -432,7 +474,13 @@ function I.TakeOff(ply, cat)
     if isWeaponCat(cat) then
         local wep = info.weaponClass and ply:GetWeapon(info.weaponClass)
         item.r = IsValid(wep) and math.max(wep:Clip1(), 0) or ply:GetNWInt(cat .. "Rounds")
-        if IsValid(wep) and I.WeaponExtra then item.x = I.WeaponExtra(wep) end -- attachments...
+        -- attachments: from the weapon, else those kept when it was taken away (sv_inventory.lua)
+        if IsValid(wep) then item.x = I.WeaponExtra(wep) elseif ply.AdvInvSlotExtra then item.x = ply.AdvInvSlotExtra[cat] end
+        if ply.AdvInvSlotExtra then ply.AdvInvSlotExtra[cat] = nil end
+        if ply.AdvInvJobSlot and ply.AdvInvJobSlot[cat] then
+            item.j = true
+            ply.AdvInvJobSlot[cat] = nil
+        end
         if IsValid(wep) then ply:StripWeapon(info.weaponClass) end
         if I.CarryConfig(id, c) then item.m = ply:GetNWInt(cat .. "Carry", 0) end -- saved with the item
         ply:SetNWInt(cat .. "Carry", I.CARRY_INDEX.stowed)
@@ -469,25 +517,7 @@ function I.PickupEntity(ply, ent)
     end
     local info = I.Info(item.id, item.c)
     local n = I.GroundCount(ent)
-    if info.isBox and n == 1 then -- a single box tops up the started boxes first
-        for _, cont in ipairs(I.PLAYER_CONTAINERS) do
-            for _, it in ipairs(I.Get(ply, cont)) do
-                if item.r <= 0 then break end
-                if it.id == item.id and it.c == item.c and (it.r or 0) < info.boxRounds then
-                    local add = math.min(info.boxRounds - (it.r or 0), item.r)
-                    it.r = (it.r or 0) + add
-                    item.r = item.r - add
-                    I.MarkDirty(ply, cont)
-                end
-            end
-        end
-        if item.r <= 0 then
-            I.TakeFromGround(ent, 1)
-            return true
-        end
-        ent.Rounds = item.r
-        ent:SetNWInt("AdvInvRounds", item.r)
-    end
+    if info.isBox and n == 1 and (item.r or 0) > 0 then return I.PickupRounds(ply, ent, item, info) end
     local taken = 0
     for _ = 1, n do
         if not I.Store(ply, table.Copy(item)) then break end
@@ -498,6 +528,62 @@ function I.PickupEntity(ply, ent)
     return taken > 0
 end
 
+-- Ammunition lying around (one box, or another addon's ammo of any amount): the started boxes are
+-- topped up, then new boxes of at most a box's rounds. The entity goes; what found no room lies
+-- there as one of our boxes (another addon's entity would come back full).
+local MAX_NEW_BOXES = 50
+function I.PickupRounds(ply, ent, item, info)
+    local size = math.max(info.boxRounds or 0, 1)
+    local left = math.max(math.floor(item.r or 0), 0)
+    local start = left
+    for _, cont in ipairs(I.PLAYER_CONTAINERS) do
+        for _, it in ipairs(I.Get(ply, cont)) do
+            if left <= 0 then break end
+            if it.id == item.id and it.c == item.c and (it.r or 0) < size then
+                local add = math.min(size - (it.r or 0), left)
+                it.r = (it.r or 0) + add
+                left = left - add
+                I.MarkDirty(ply, cont)
+            end
+        end
+    end
+    for _ = 1, MAX_NEW_BOXES do
+        if left <= 0 then break end
+        local box = table.Copy(item)
+        box.r = math.min(left, size)
+        if not I.Store(ply, box) then break end
+        left = left - box.r
+    end
+    if left == start then
+        tell(ply, I.L("msg_no_room_for", info.name))
+        return false
+    end
+    local pos = ent:GetPos()
+    I.TakeFromGround(ent, 1)
+    if left > 0 then
+        tell(ply, I.L("msg_no_room_for", info.name))
+        local rest = table.Copy(item)
+        rest.r = left
+        I.SpawnItem(rest, pos)
+    end
+    return true
+end
+
+-- May ply take ent with Use / the pickup key? Within reach, in sight, not arrested, and allowed by
+-- prop protection (CPPI) and DarkRP (canDarkRPUse, PlayerUse = false).
+function I.CanPickup(ply, ent)
+    if ply.isArrested and ply:isArrested() then return false, I.L("msg_arrested") end
+    if not I.InReach(ply, ent, math.max(C.UseDistance, 130)) then return false end
+    if ent.PlayerUse == false then return false end
+    if ent.CPPICanUse and ent:CPPICanUse(ply) == false then return false end
+    if DarkRP then
+        local can, why = hook.Call("canDarkRPUse", nil, ply, ent, ply)
+        if can == false then return false, why end
+    end
+    if hook.Run("AdvInv_CanPickup", ply, ent) == false then return false end
+    return true
+end
+
 -- Touche Utiliser sur un objet : l'équiper si l'emplacement est libre, sinon le ranger.
 -- Une arme remplace celle de son emplacement (l'ancienne est posée au sol).
 function I.Use(ply, ent)
@@ -505,6 +591,11 @@ function I.Use(ply, ent)
     ply.AdvInvUseDelay = CurTime() + 0.4
     local item = I.ItemFromEntity(ent)
     if not item then return end
+    local can, cantWhy = I.CanPickup(ply, ent)
+    if not can then
+        if cantWhy then tell(ply, cantWhy) end
+        return
+    end
     local info = I.Info(item.id, item.c)
     if info.isWeapon then
         -- checked before the old weapon leaves its slot (it would be on the ground for nothing)
@@ -536,6 +627,7 @@ end
 -- Un objet qui touche une caisse ou un véhicule y est rangé s'il a la place.
 function I.StoreEntityIn(holder, ent)
     if not IsValid(ent) or ent.AdvInvStored or (ent.AdvInvContents and #ent.AdvInvContents > 0) then return false end
+    if (I.GroundItems[ent] or 0) > CurTime() - 1 then return false end -- just dropped
     if holder:GetNWBool("AdvInvPersonal") or holder:GetNWBool("AdvInvLocked") then return false end -- whose? / locked
     local item = I.ItemFromEntity(ent)
     if not item or not I.CanFit(holder, "Storage", item.id, item.c) then return false end
@@ -564,16 +656,26 @@ function I.CanAccess(ply, holder)
     if holder == ply then return true end
     if holder:IsPlayer() and ply.AdvInvAdminView == holder and I.IsAdmin(ply) then return true end
     if holder:IsPlayer() and I.IsSearching and I.IsSearching(ply, holder) then return true end
-    if I.IsBody(holder) then -- a dead player's body within reach
-        local p = holder:NearestPoint(ply:EyePos())
-        return p:DistToSqr(ply:EyePos()) <= C.UseDistance * C.UseDistance
+    if I.IsBody(holder) then -- a dead player's body within reach, not behind a wall
+        return I.InReach(ply, holder)
     end
     if I.IsStorage(holder) then
         if holder:GetNWBool("AdvInvLocked") and not (I.CanOpenLocked and I.CanOpenLocked(ply, holder)) then return false end
-        local p = holder:NearestPoint(ply:EyePos())
-        return p:DistToSqr(ply:EyePos()) <= C.UseDistance * C.UseDistance
+        if I.VehicleLockedFor(ply, holder) then return false end
+        return I.InReach(ply, holder)
     end
     return false
+end
+
+-- A vehicle's trunk while the vehicle is locked (DarkRP keys, simfphys): only its owners.
+function I.VehicleLockedFor(ply, veh)
+    if not (veh:IsVehicle() or veh.IsSimfphyscar or veh:GetClass() == "gmod_sent_vehicle_fphysics_base") then return false end
+    local locked = veh.VehicleLocked == true or veh:GetNWBool("VehicleLocked")
+        or (veh.GetIsVehicleLocked and veh:GetIsVehicleLocked()) or false
+    if not locked then return false end
+    if veh.isKeysOwnedBy and veh:isKeysOwnedBy(ply) then return false end
+    if veh.CPPIGetOwner and veh:CPPIGetOwner() == ply then return false end
+    return true
 end
 
 -- Another player's containers: an admin viewing them may take and put; a searcher may only take
@@ -643,6 +745,12 @@ handlers[I.ACT.MOVE] = function(ply)
     local count = math.max(net.ReadUInt(8), 1)
     if not (fromCont and toCont and I.CanAccess(ply, from) and I.CanAccess(ply, to)) then return end
     if not (I.CanTakeFrom(ply, from) and I.CanPutInto(ply, to)) then return false end
+    if from == ply and to ~= ply then
+        local it = I.Get(from, fromCont)[index]
+        local may, mayWhy = true, nil
+        if it then may, mayWhy = I.MayLeave(ply, it.id, it.c) end
+        if not may then return false, mayWhy end
+    end
     return I.MoveSame(ply, from, fromCont, index, to, toCont, count)
 end
 
@@ -654,6 +762,11 @@ handlers[I.ACT.DROP] = function(ply)
     local items = I.Get(holder, cont)
     local item = items[index]
     if not item then return end
+    if holder == ply then
+        local may, mayWhy = I.MayLeave(ply, item.id, item.c)
+        if not may then return false, mayWhy end
+    end
+    if item.id == I.GENERIC_WEAPON then count = math.min(count, 5) end -- one real weapon each
     local key, first, n = I.StackKey(item), item, 0
     for _ = 1, count do
         table.remove(items, index)
@@ -696,12 +809,17 @@ handlers[I.ACT.UNEQUIP] = function(ply)
     local ok, why = I.CanTakeOff(ply, cat)
     if not ok then return false, why end
     local id, c = I.SlotRef(ply, cat)
+    if toDrop or (IsValid(to) and to ~= ply) then
+        local may, mayWhy = I.MayLeave(ply, id, c)
+        if not may then return false, mayWhy end
+    end
     if toDrop then
         local item, contents = I.TakeOff(ply, cat)
         if item then I.SpawnItem(item, I.DropPos(ply), contents) end
         return true
     end
     if not (toCont and I.CanAccess(ply, to)) then return end
+    if to ~= ply and not I.CanPutInto(ply, to) then return false end
     if to == ply and toCont == cat then return false, I.L("msg_not_in_itself") end
     if (cat == "Vest" or cat == "Rucksack") and #I.Get(ply, cat) > 0 then
         return false, I.L("msg_empty_it_first")
@@ -726,7 +844,7 @@ handlers[I.ACT.SPLIT] = function(ply)
     if rounds < 1 or rounds >= (item.r or 0) then return false end
     if not I.CanFit(holder, cont, item.id, item.c) then return false, I.L("msg_no_room_in", I.ContainerNames[cont] or cont) end
     item.r = item.r - rounds
-    table.insert(I.Get(holder, cont), { id = item.id, r = rounds, a = 0 })
+    table.insert(I.Get(holder, cont), { id = item.id, c = item.c, r = rounds, a = 0 })
     I.MarkDirty(holder, cont)
     return true
 end
@@ -752,6 +870,36 @@ handlers[I.ACT.CLOSE] = function(ply)
     return true
 end
 
+-- What an arrested player may still do: look, close, change a carry mode; admins act as usual.
+local ARRESTED_OK = { [I.ACT.OPEN] = true, [I.ACT.CLOSE] = true, [I.ACT.CARRY] = true, [I.ACT.ADMIN] = true }
+
+-- DarkRP's drop rules for a weapon leaving its player (dropped, put into a crate or a body): job
+-- weapons (dropspawnedweapons off), DisallowDrop, restrictdrop. -> true, or false and a reason
+function I.MayLeave(ply, id, c)
+    if not id or id <= 1 then return true end
+    local info = I.Info(id, c)
+    if not info.isWeapon then return true end
+    local class = (id == I.GENERIC_WEAPON and c) or info.weaponClass
+    if not isstring(class) then return true end
+    local name = info.name or class
+    if hook.Run("AdvInv_CanWeaponLeave", ply, class) == false then return false, I.L("msg_cannot_drop", name) end
+    local cfg = DarkRP and GAMEMODE and GAMEMODE.Config
+    if not cfg then return true end
+    class = string.lower(class)
+    if not cfg.dropspawnedweapons and ply.getJobTable then
+        local job = ply:getJobTable()
+        if job and istable(job.weapons) and table.HasValue(job.weapons, class) then return false, I.L("msg_cannot_drop", name) end
+    end
+    if cfg.DisallowDrop and cfg.DisallowDrop[class] then return false, I.L("msg_cannot_drop", name) end
+    if cfg.restrictdrop then
+        for _, v in pairs(CustomShipments or {}) do
+            if v.entity == class then return true end
+        end
+        return false, I.L("msg_cannot_drop", name)
+    end
+    return true
+end
+
 net.Receive("advinv_act", function(_, ply)
     -- au plus 15 actions par seconde et par joueur
     local now = CurTime()
@@ -762,11 +910,20 @@ net.Receive("advinv_act", function(_, ply)
     ply.AdvInvActCount = (ply.AdvInvActCount or 0) + 1
     if ply.AdvInvActCount > 15 then return end
 
-    local handler = handlers[net.ReadUInt(I.ACT_BITS)]
+    local act = net.ReadUInt(I.ACT_BITS)
+    local handler = handlers[act]
     if not handler then return end
+    if not ply:Alive() and act ~= I.ACT.CLOSE and act ~= I.ACT.SEARCH and act ~= I.ACT.ADMIN then return end
+    if ply.isArrested and ply:isArrested() and not ARRESTED_OK[act] then
+        tell(ply, I.L("msg_arrested"))
+        I.MarkAllDirty(ply)
+        return
+    end
     I.Actor = ply -- personal storages: whose store (sv_storage.lua)
-    local ok, why = handler(ply)
+    local ok, why
+    local fine = xpcall(function() ok, why = handler(ply) end, function(e) ErrorNoHalt(debug.traceback(tostring(e)) .. "\n") end)
     I.Actor = nil
+    if not fine then ok, why = false, nil end
     if ok == false and why then tell(ply, why) end
     if ok == false then
         -- refusé : le client réaffiche l'état réel
@@ -796,3 +953,27 @@ hook.Add("PlayerSpawn", "AdvInv_Resync", function(ply)
         if IsValid(ply) then I.MarkAllDirty(ply) end
     end)
 end)
+
+-- StripAmmo / RemoveAllAmmo by other code: guarded (see I.GuardAmmo), then the reserve comes back
+-- from the boxes.
+do
+    local meta = FindMetaTable("Player")
+    for _, name in ipairs({ "StripAmmo", "RemoveAllAmmo" }) do
+        local orig = meta["AdvInvOrig" .. name] or meta[name]
+        if orig then
+            meta["AdvInvOrig" .. name] = orig
+            meta[name] = function(ply, ...)
+                if IsValid(ply) then
+                    I.GuardAmmo(ply)
+                    if I.ReconcileGrenades then I.ReconcileGrenades(ply) end
+                end
+                local r = { orig(ply, ...) }
+                if IsValid(ply) then
+                    if I.GrenadeBaseline and ply.AdvInvGrenades then I.GrenadeBaseline(ply) end -- not thrown
+                    I.MarkDirty(ply, "Uniform")
+                end
+                return unpack(r)
+            end
+        end
+    end
+end

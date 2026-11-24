@@ -33,7 +33,8 @@ timer.Create("AdvInv_BodiesGear", 0.5, 0, function()
             for cat in pairs(AdvInv.GearCat) do
                 local id = ent:GetNW2Int(cat, 1)
                 local have = AdvInv.mountedGear and AdvInv.mountedGear[ent] and AdvInv.mountedGear[ent][cat]
-                if id > 1 and not IsValid(have) then
+                -- (a clientside model loses its parent when the body leaves the view range)
+                if id > 1 and (not IsValid(have) or have:GetParent() ~= ent) then
                     AdvInv.UpdateCSGear(ent, ent, cat, id, true)
                 elseif id <= 1 and IsValid(have) then
                     have:Remove()
@@ -48,11 +49,12 @@ timer.Create("AdvInv_BodiesGear", 0.5, 0, function()
 end)
 
 -- weapons carried on bodies (cl_weapons.lua / cl_carry.lua place them like on players)
-hook.Add("PostDrawOpaqueRenderables", "AdvInv_BodiesWeapons", function(_, skybox)
-    if skybox then return end
-    local eye = EyePos()
+hook.Add("PostDrawOpaqueRenderables", "AdvInv_BodiesWeapons", function(depth, skybox)
+    if depth or skybox or not (AdvInv.Config and AdvInv.Config.ShowMountedWeapons) then return end
+    local eye, dir = EyePos(), EyeVector()
     for body in pairs(bodies) do
-        if IsValid(body) and not body:IsDormant() and body:GetPos():DistToSqr(eye) < 3000 * 3000 then
+        local pos = IsValid(body) and body:GetPos()
+        if pos and not body:IsDormant() and pos:DistToSqr(eye) < 3000 * 3000 and (pos - eye):Dot(dir) > -80 then
             I.DrawWeaponList(body, body, I.EquippedWeaponList(body))
         end
     end

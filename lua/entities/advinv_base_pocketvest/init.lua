@@ -4,5 +4,5 @@ include("shared.lua")
 
 function ENT:Initialize()
     baseclass.Get("advinv_base_gear").Initialize(self)
-    self:SetBodygroup(1, self.pocketID)
+    if self.pocketID then self:SetBodygroup(1, self.pocketID) end
 end

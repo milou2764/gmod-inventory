@@ -61,6 +61,12 @@ function I.CanSearch(searcher, target)
     if not (IsValid(searcher) and IsValid(target) and target:IsPlayer() and target ~= searcher) then return false end
     if not (searcher:Alive() and target:Alive()) then return false end
     if searcher:GetPos():DistToSqr(target:GetPos()) > (C.SearchRange + 30) ^ 2 then return false, I.L("search_too_far") end
+    if not I.InSight(searcher, target) then return false, I.L("search_too_far") end
+    return I.SearchAllowed(searcher, target)
+end
+
+-- The rules alone (no distance): checked again during the whole search.
+function I.SearchAllowed(searcher, target)
     local h = hook.Run("CanSearchInventory", searcher, target)
     if h ~= nil then return h and true or false, h == false and I.L("search_denied") or nil end
     if I.IsAdmin(searcher) then return true end

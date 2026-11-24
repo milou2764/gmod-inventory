@@ -33,9 +33,16 @@ function I.PersonalID(ply)
     return ply:SteamID64() or ply:SteamID()
 end
 
+-- A storage's own key: its permanent UID, else one given once (never its entity index, which
+-- another entity gets later).
+local function keyUID(holder)
+    holder.AdvInvKeyUID = holder.AdvInvUID or holder.AdvInvKeyUID or (os.time() .. "_" .. math.random(100000, 999999))
+    return holder.AdvInvKeyUID
+end
+
 function I.StoreKey(holder, who)
     if not I.IsKeyed(holder) then return end
-    local base = (holder.AdvInvSyncName or "") ~= "" and holder.AdvInvSyncName or ("u" .. (holder.AdvInvUID or holder:EntIndex()))
+    local base = (holder.AdvInvSyncName or "") ~= "" and holder.AdvInvSyncName or ("u" .. keyUID(holder))
     if holder.AdvInvPersonal then
         if not (IsValid(who) and who:IsPlayer()) then return end
         return "p:" .. base .. ":" .. I.PersonalID(who)
@@ -48,9 +55,19 @@ function I.LoadStore(key)
     local v = sql.QueryValue("SELECT Data FROM advinv_stores WHERE StoreKey = " .. SQLStr(key))
     local data = v and util.JSONToTable(v)
     if istable(data) then
-        for cont, list in pairs(data) do s[cont] = I.UnpackItems(list) end
+        I.StoreUnknown[key] = {}
+        for cont, list in pairs(data) do
+            I.StoreUnknown[key][cont] = {}
+            s[cont] = I.UnpackItems(list, I.StoreUnknown[key][cont]) -- items of missing addons kept as saved
+        end
     end
     return s
+end
+I.StoreUnknown = I.StoreUnknown or {}
+
+local function withUnknown(packed, raw)
+    for _, v in ipairs(raw or {}) do packed[#packed + 1] = v end
+    return packed
 end
 
 local pendingKeys, pendingEnts = {}, {}
@@ -60,16 +77,18 @@ local function saveStores()
         local s = I.Stores[key]
         if s then
             local data = {}
-            for cont, items in pairs(s) do data[cont] = I.PackItems(items) end
+            local uk = I.StoreUnknown[key] or {}
+            for cont, items in pairs(s) do data[cont] = withUnknown(I.PackItems(items), uk[cont]) end
             sql.Query("REPLACE INTO advinv_stores (StoreKey, Data) VALUES (" .. SQLStr(key) .. ", " .. SQLStr(util.TableToJSON(data)) .. ")")
         end
     end
     pendingKeys = {}
 end
 
+-- Saved 3 s after the first change (not postponed by later ones).
 function I.StoreChanged(key)
     pendingKeys[key] = true
-    timer.Create("AdvInv_StoresSave", 3, 1, saveStores)
+    if not timer.Exists("AdvInv_StoresSave") then timer.Create("AdvInv_StoresSave", 3, 1, saveStores) end
 end
 
 ---------------------------------------------------------------- permanent storages
@@ -101,7 +120,9 @@ end
 function I.SaveStorage(ent)
     if not (IsValid(ent) and ent.AdvInvUID) then return end
     local data = settingsOf(ent)
-    if not I.IsKeyed(ent) then data.items = I.PackItems(ent.AdvInvData and ent.AdvInvData.Storage or {}) end
+    if not I.IsKeyed(ent) then
+        data.items = withUnknown(I.PackItems(ent.AdvInvData and ent.AdvInvData.Storage or {}), ent.AdvInvUnknownItems)
+    end
     sql.Query("REPLACE INTO advinv_storage (UID, Map, Class, Pos, Ang, Data) VALUES (" ..
         SQLStr(ent.AdvInvUID) .. ", " .. SQLStr(game.GetMap()) .. ", " .. SQLStr(ent:GetClass()) .. ", " ..
         SQLStr(tostring(ent:GetPos())) .. ", " .. SQLStr(tostring(ent:GetAngles())) .. ", " ..
@@ -115,7 +136,14 @@ end
 
 function I.StorageChanged(ent)
     pendingEnts[ent] = true
-    timer.Create("AdvInv_StorageSave", 3, 1, saveEnts)
+    if not timer.Exists("AdvInv_StorageSave") then timer.Create("AdvInv_StorageSave", 3, 1, saveEnts) end
+    -- removed before the save (cleanup, remover): saved while it still exists
+    ent:CallOnRemove("AdvInv_StorageSave", function(e)
+        if pendingEnts[e] then
+            pendingEnts[e] = nil
+            I.SaveStorage(e)
+        end
+    end)
 end
 
 local function freeze(ent)
@@ -124,7 +152,7 @@ local function freeze(ent)
 end
 
 function I.MakePermanent(ent)
-    ent.AdvInvUID = ent.AdvInvUID or (os.time() .. "_" .. math.random(100000, 999999))
+    ent.AdvInvUID = ent.AdvInvUID or keyUID(ent) -- the same key: stores keep their contents
     ent:SetNWBool("AdvInvPermanent", true)
     freeze(ent)
     I.SaveStorage(ent)
@@ -132,6 +160,7 @@ end
 
 function I.RemovePermanent(ent)
     if ent.AdvInvUID then sql.Query("DELETE FROM advinv_storage WHERE UID = " .. SQLStr(ent.AdvInvUID)) end
+    ent.AdvInvKeyUID = ent.AdvInvUID or ent.AdvInvKeyUID -- the same key: stores keep their contents
     ent.AdvInvUID = nil
     ent:SetNWBool("AdvInvPermanent", false)
 end
@@ -154,7 +183,10 @@ local function loadPermanent()
                 freeze(ent)
                 local d = util.JSONToTable(r.Data or "") or {}
                 applySettings(ent, d)
-                if istable(d.items) then ent.AdvInvData = { Storage = I.UnpackItems(d.items) } end
+                if istable(d.items) then
+                    ent.AdvInvUnknownItems = {}
+                    ent.AdvInvData = { Storage = I.UnpackItems(d.items, ent.AdvInvUnknownItems) }
+                end
                 ent:SetNWBool("AdvInvPermanent", true)
             end
         end
@@ -164,14 +196,16 @@ I.LoadPermanentStorages = loadPermanent
 
 hook.Add("InitPostEntity", "AdvInv_PermanentStorages", function() timer.Simple(2, loadPermanent) end)
 hook.Add("PostCleanupMap", "AdvInv_PermanentStorages", function() timer.Simple(0.5, loadPermanent) end)
-hook.Add("ShutDown", "AdvInv_Storages", function()
+-- Everything pending is written before a map cleanup and at shutdown (any permanent storage,
+-- ENT.AdvInvStorage entities and loot points included).
+local function flush()
     saveStores()
-    for _, class in ipairs(table.GetKeys(I.StorageClasses)) do
-        for _, e in ipairs(ents.FindByClass(class)) do
-            if e.AdvInvUID then I.SaveStorage(e) end
-        end
-    end
-    for _, e in ipairs(ents.FindByClass("advinv_loot_spawn")) do
+    saveEnts()
+end
+hook.Add("PreCleanupMap", "AdvInv_Storages", flush)
+hook.Add("ShutDown", "AdvInv_Storages", function()
+    flush()
+    for _, e in ipairs(ents.GetAll()) do
         if e.AdvInvUID then I.SaveStorage(e) end
     end
 end)
@@ -225,10 +259,26 @@ net.Receive("advinv_storage_code", function(_, ply)
     if not (IsValid(ent) and I.IsStorage(ent) and ent.AdvInvCode) then return end
     if (ply.AdvInvCodeWait or 0) > CurTime() then return end
     ply.AdvInvCodeWait = CurTime() + 1
+    if not (ply:Alive() and I.InReach(ply, ent)) then return end
+    local wait = (ent.AdvInvCodeLockUntil or 0) - CurTime()
+    if wait > 0 then
+        I.Tell(ply, I.L("storage_code_wait", math.ceil(wait)))
+        return
+    end
     if code ~= ent.AdvInvCode then
+        -- every 3 wrong codes (whoever tries): a wait, doubled each time, and the owner is told
+        ent.AdvInvCodeFails = (ent.AdvInvCodeFails or 0) + 1
+        if ent.AdvInvCodeFails % 3 == 0 then
+            local t = math.min(30 * 2 ^ (ent.AdvInvCodeFails / 3 - 1), 3600)
+            ent.AdvInvCodeLockUntil = CurTime() + t
+            local owner = player.GetBySteamID64(ent:GetNWString("AdvInvOwner", ""))
+            if IsValid(owner) and owner ~= ply then I.Tell(owner, I.L("storage_code_alert", ent:GetNWString("AdvInvSync", "") ~= "" and ent:GetNWString("AdvInvSync") or ent.PrintName or ent:GetClass())) end
+            hook.Run("AdvInv_StorageCodeFailed", ply, ent, ent.AdvInvCodeFails)
+        end
         I.Tell(ply, I.L("storage_wrong_code"))
         return
     end
+    ent.AdvInvCodeFails = 0
     ply.AdvInvCodes = ply.AdvInvCodes or {}
     ply.AdvInvCodes[ent] = true
     I.StorageUse(ent, ply)
@@ -239,6 +289,11 @@ end)
 local ADMIN_KEYS = { permanent = true, personal = true, sync = true, cap = true, loot = true, every = true, spawnEvery = true }
 
 net.Receive("advinv_storage_set", function(_, ply)
+    -- at most 8 settings a second (the settings window sends one per change)
+    local now = CurTime()
+    if (ply.AdvInvSetWindow or 0) < now then ply.AdvInvSetWindow, ply.AdvInvSetCount = now + 1, 0 end
+    ply.AdvInvSetCount = (ply.AdvInvSetCount or 0) + 1
+    if ply.AdvInvSetCount > 8 then return end
     local ent, key, value = net.ReadEntity(), net.ReadString(), net.ReadString()
     if not (IsValid(ent) and (I.IsStorage(ent) or ent:GetClass() == "advinv_loot_spawn")) then return end
     local admin = I.IsAdmin(ply)
@@ -274,7 +329,12 @@ net.Receive("advinv_storage_set", function(_, ply)
         ent:SetNWBool("AdvInvLocked", on)
     elseif key == "code" then
         local code = string.sub(string.gsub(value, "%D", ""), 1, 8)
+        if code ~= "" and #code < 4 then
+            I.Tell(ply, I.L("storage_code_short"))
+            return
+        end
         ent.AdvInvCode = code ~= "" and code or nil
+        ent.AdvInvCodeFails, ent.AdvInvCodeLockUntil = 0, nil
         ent:SetNWBool("AdvInvHasCode", ent.AdvInvCode ~= nil)
         for _, p in ipairs(player.GetAll()) do
             if p.AdvInvCodes then p.AdvInvCodes[ent] = nil end

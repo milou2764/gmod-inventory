@@ -1,0 +1,11 @@
+# Long guns of other addons: carry positions computed by fit_carry.py, set in the fit editor.
+# class	slot	world model	name	where it was found  (a line starting with # is left out)
+cw_ak74	PrimaryWep	models/weapons/w_rif_ak47.mdl	AK-74	cw20
+cw_akm_official	PrimaryWep	models/weapons/w_rif_ak47.mdl	AKM	cw20
+cw_ar15	PrimaryWep	models/weapons/w_rif_m4a1.mdl	AR-15	cw20
+cw_famasg2_official	PrimaryWep	models/weapons/w_rif_famas.mdl	FAMAS G2	cw20
+cw_g3a3	PrimaryWep	models/weapons/w_snip_g3sg1.mdl	G3A3	cw20
+cw_l115	PrimaryWep	models/weapons/w_cstm_l96.mdl	L115	cw20
+cw_mp5	PrimaryWep	models/weapons/w_smg_mp5.mdl	HK MP5	cw20
+cw_svd_official	PrimaryWep	models/cw2/rifles/svd_world.mdl	SVD	cw20
+weapon_ak47custom	PrimaryWep	models/weapons/w_rif_ak47.mdl	AK47	darkrpmodification

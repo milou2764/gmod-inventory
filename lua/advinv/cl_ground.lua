@@ -4,7 +4,7 @@
     entities (sh_generic.lua).
 --]]
 local I = AdvInv
-local REACH = 120
+local REACH = 130 -- same reach as the pickup key (sv_extra.lua)
 -- Client option (Options > Advanced Inventory > More): no text box at all, for immersion.
 local hoverVar = CreateClientConVar("advinv_hover_text", "1", true, false,
     "Text box when looking at an item on the ground or a body (0: none)", 0, 1)
@@ -16,6 +16,8 @@ local function groundItem(ent)
     if id and id > 1 and not I.IsGeneric(id) then return id, nil end
     if ent:IsWeapon() then
         if IsValid(ent:GetOwner()) or not GetConVar("advinv_pickup_weapons"):GetBool() or I.WeaponBlacklist[class] then return end
+        local grenade = I.GrenadeAmmo(class)
+        if grenade and game.GetAmmoID(grenade) ~= -1 then return I.GENERIC_AMMO, grenade end
         local reg = I.ItemForWeapon(class)
         if reg then return reg, nil end
         if GetConVar("advinv_pickup_any_weapon"):GetBool() and I.DefTable(I.GENERIC_WEAPON, class) then return I.GENERIC_WEAPON, class end
@@ -25,6 +27,27 @@ local function groundItem(ent)
     local conv = I.PickupConvert[class]
     if conv and AdvInv.ClassID[conv] then return AdvInv.ClassID[conv], nil end
     if I.PickupWhitelist[class] then return I.GENERIC_ENTITY, class end
+end
+
+-- The label next to the crosshair: a title and lines, in the inventory's fonts and colours.
+local function drawLabel(title, lines)
+    local S, COL = I.S, I.Colors or {}
+    local titleFont, lineFont = "AdvInvText", "AdvInvSmall"
+    local x, y = ScrW() / 2 + S(28), ScrH() / 2 + S(12)
+    local pad, gap = S(10), S(4)
+    surface.SetFont(titleFont)
+    local w, th = surface.GetTextSize(title)
+    surface.SetFont(lineFont)
+    local lh = select(2, surface.GetTextSize("Ag"))
+    for _, l in ipairs(lines) do w = math.max(w, (surface.GetTextSize(l))) end
+    local h = pad * 2 + th + #lines * (lh + gap)
+    draw.RoundedBox(4, x, y, w + pad * 2, h, ColorAlpha(COL.badge or Color(20, 22, 26), 210))
+    surface.SetDrawColor(COL.accent or Color(230, 200, 90))
+    surface.DrawRect(x, y, S(3), h)
+    draw.SimpleText(title, titleFont, x + pad, y + pad, COL.text or Color(235, 235, 235))
+    for k, l in ipairs(lines) do
+        draw.SimpleText(l, lineFont, x + pad, y + pad + th + gap + (k - 1) * (lh + gap), COL.dim or Color(190, 195, 205))
+    end
 end
 
 hook.Add("HUDPaint", "AdvInv_GroundItem", function()
@@ -37,12 +60,7 @@ hook.Add("HUDPaint", "AdvInv_GroundItem", function()
         local key = input.LookupBinding("+use") or "E"
         local title = I.L("body_of", I.HolderName(ent))
         local line = I.L("ground_search_body", string.upper(key))
-        local x, y = ScrW() / 2 + 28, ScrH() / 2 + 12
-        surface.SetFont("DermaDefaultBold")
-        local w = math.max(surface.GetTextSize(title), (surface.GetTextSize(line)))
-        draw.RoundedBox(4, x, y, w + 16, 40, Color(20, 22, 26, 200))
-        draw.SimpleText(title, "DermaDefaultBold", x + 8, y + 4, Color(235, 235, 235))
-        draw.SimpleText(line, "DermaDefault", x + 8, y + 20, Color(190, 195, 205))
+        drawLabel(title, { line })
         return
     end
     local id, c = groundItem(ent)
@@ -58,15 +76,5 @@ hook.Add("HUDPaint", "AdvInv_GroundItem", function()
     lines[#lines + 1] = I.L("tip_mass", info.mass * count)
     local key = input.LookupBinding("+use") or "E"
     lines[#lines + 1] = I.L("ground_take", string.upper(key))
-    local x, y = ScrW() / 2 + 28, ScrH() / 2 + 12
-    surface.SetFont("DermaDefaultBold")
-    local w = surface.GetTextSize(title)
-    surface.SetFont("DermaDefault")
-    for _, l in ipairs(lines) do w = math.max(w, (surface.GetTextSize(l))) end
-    local h = 20 + #lines * 16
-    draw.RoundedBox(4, x, y, w + 16, h, Color(20, 22, 26, 200))
-    draw.SimpleText(title, "DermaDefaultBold", x + 8, y + 4, Color(235, 235, 235))
-    for k, l in ipairs(lines) do
-        draw.SimpleText(l, "DermaDefault", x + 8, y + 4 + k * 16, Color(190, 195, 205))
-    end
+    drawLabel(title, lines)
 end)

@@ -8,6 +8,7 @@ ENT.Type = "anim"
 ENT.Base = "base_anim"
 ENT.PrintName = "Loot spawn"
 ENT.Spawnable = false
+ENT.DisableDuplicator = true -- its contents would be copied
 
 if SERVER then
     function ENT:Initialize()

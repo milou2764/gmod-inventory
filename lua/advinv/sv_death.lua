@@ -47,6 +47,8 @@ local function makeRagdoll(ply, dmginfo)
     rag:SetAngles(Angle(0, ply:EyeAngles().y, 0))
     rag:SetSkin(ply:GetSkin())
     for k = 0, ply:GetNumBodyGroups() - 1 do rag:SetBodygroup(k, ply:GetBodygroup(k)) end
+    -- bodygroups changed for his gear (sv_modelgear.lua): back to his own when it is taken from the body
+    rag.AdvInvOwnBodygroups = ply.AdvInvOwnBodygroups and table.Copy(ply.AdvInvOwnBodygroups) or nil
     rag:SetColor(ply:GetColor())
     rag:SetMaterial(ply:GetMaterial())
     rag:Spawn()
@@ -164,18 +166,36 @@ local function transfer(ply, body, mode)
     end
 end
 
+-- Nothing left on a body (looted, or nothing carried)?
+function I.BodyEmpty(body)
+    if next(body.AdvInvSlots or {}) ~= nil then return false end
+    for _, cont in ipairs(I.PLAYER_CONTAINERS) do
+        if #I.Get(body, cont) > 0 then return false end
+    end
+    return #(body.AdvInvUnknownItems or {}) == 0
+end
+
+-- Over the limit: the empty bodies go first, then the oldest.
 local function removeOldest()
     local list = {}
     for b in pairs(I.Bodies) do
         if IsValid(b) then list[#list + 1] = b else I.Bodies[b] = nil end
     end
-    table.sort(list, function(a, b) return (a.AdvInvBorn or 0) < (b.AdvInvBorn or 0) end)
+    local empty = {}
+    for _, b in ipairs(list) do empty[b] = I.BodyEmpty(b) end
+    table.sort(list, function(a, b)
+        if empty[a] ~= empty[b] then return empty[a] end
+        return (a.AdvInvBorn or 0) < (b.AdvInvBorn or 0)
+    end)
     for k = 1, #list - bodyMax:GetInt() do list[k]:Remove() end
 end
 
 -- ply's body with his things. -> the body, or nil (nothing left on it: no body of ours).
 function I.MakeBody(ply, dmginfo)
+    if I.RemoveJobItems then I.RemoveJobItems(ply) end -- they belong to the job, not to the body
     local mode = dropMode:GetInt()
+    -- what stays on the player is his at the next spawn: only an emptied player is reset
+    -- (sv_inventory.lua)
     if mode <= 0 or hook.Run("AdvInv_DeathDrop", ply) == false then return end
     local body = makeRagdoll(ply, dmginfo)
     if not IsValid(body) then return end
@@ -184,6 +204,11 @@ function I.MakeBody(ply, dmginfo)
     body.AdvInvBorn = CurTime()
     if lootTime:GetFloat() > 0 then body.AdvInvExpire = CurTime() + lootTime:GetFloat() end
     transfer(ply, body, mode)
+    if mode >= 3 then ply.AdvInvResetNextSpawn = true end
+    if I.BodyEmpty(body) then -- nothing on it: the gamemode's ragdoll as usual
+        body:Remove()
+        return
+    end
     local cid = I.GetOwnerID(ply)
     if cid then I.Save(ply, cid) end -- the database must not keep a copy
     I.Bodies[body] = true

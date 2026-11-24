@@ -7,6 +7,8 @@ block = SRC[SRC.index("I.NET_ID_BITS"):SRC.index("-- Actions demandées")] + SRC
 L = lupa.LuaRuntime(unpack_returned_tuples=True)
 L.execute("""
 math.Clamp = function(v, a, b) return math.min(math.max(v, a), b) end
+istable = function(v) return type(v) == "table" end
+isnumber = function(v) return type(v) == "number" end
 I = {}
 function I.IsGeneric(id) return id == 100 or id == 103 or id == 125 end
 BUF, POS = {}, 0

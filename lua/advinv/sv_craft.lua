@@ -50,6 +50,8 @@ handlers[I.ACT.CRAFT] = function(ply)
         ply.AdvInvCrafting = nil
         ply:SetNWFloat("AdvInvCraftEnd", 0)
         if not ply:Alive() then return end
+        if not I.CraftingEnabled() then I.Tell(ply, I.L("craft_disabled")) return end
+        if hook.Run("AdvInv_CanCraft", ply, r) == false then return end
         local ok2, why2 = I.CanCraft(ply, r, I.NearBench(ply))
         if not ok2 then I.Tell(ply, why2) return end
         for _, spec in ipairs(r.needs or {}) do take(ply, spec, spec.count or 1) end

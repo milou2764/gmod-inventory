@@ -21,7 +21,7 @@ from fit_carry import WEAPONS, MODES  # noqa: E402
 TOOLS = Path(__file__).resolve().parent
 DATA = TOOLS.parent / "lua" / "advinv" / "cl_carry_data.lua"
 THUMB, COLS = 150, 10
-VIEW = {"sling_up": 200, "sling_down": 200, "cross_body": 245, "back_carry": 180, "front_hang": 20}
+VIEW = {"sling_up": 200, "sling_down": 180, "front_hang": 20}
 
 
 def carry_data():

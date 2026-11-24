@@ -79,15 +79,14 @@ function I.CarryGearCheck(ply, id, gearCat)
     for _, cat in ipairs(I.CARRY_CATS) do
         if hasCarry(ply, cat) then
             local mode = I.CarryMode(ply, cat)
-            local zone = I.CarryZone[mode]
-            if refuseGear:GetBool() and zone and blocked[zone] == gearCat then
+            if refuseGear:GetBool() and I.CarryModeBlocked(blocked, mode) == gearCat then
                 return false, I.L("carry_gear_refused", I.SlotInfo(ply, cat).name, I.L("carry_" .. mode))
             end
         end
     end
     if I.CarryPlan(ply, { blocked = blocked }) then return true end
     for _, cat in ipairs(I.CARRY_CATS) do -- name a weapon that loses its place
-        if hasCarry(ply, cat) and blocked[I.CarryZone[I.CarryMode(ply, cat)] or ""] then
+        if hasCarry(ply, cat) and I.CarryModeBlocked(blocked, I.CarryMode(ply, cat)) then
             return false, I.L("carry_gear_no_room", I.SlotInfo(ply, cat).name)
         end
     end

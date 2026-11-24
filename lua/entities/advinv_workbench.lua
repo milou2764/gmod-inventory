@@ -9,6 +9,7 @@ ENT.PrintName = AdvInv.T("Workbench", "Établi")
 ENT.Category = AdvInv.T("Inventory: Furniture", "Inventaire : mobilier")
 ENT.Model = "models/props_wasteland/controlroom_desk001b.mdl" -- (spawn menu icon)
 ENT.Spawnable = true
+ENT.DisableDuplicator = true -- its contents would be copied
 ENT.AdminOnly = true
 
 if SERVER then

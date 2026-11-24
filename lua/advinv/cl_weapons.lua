@@ -33,9 +33,13 @@ local boundsCache, geomCache = {}, {}
 -- Hull of a model (cached; a temporary model is created once per path).
 local function modelBounds(path)
     local b = boundsCache[path]
+    if b == false then return end -- (a model that can't be created: not tried again every frame)
     if b then return b[1], b[2] end
     local ent = ClientsideModel(path, RENDERGROUP_OTHER)
-    if not IsValid(ent) then return end
+    if not IsValid(ent) then
+        boundsCache[path] = false
+        return
+    end
     local mn, mx = ent:GetModelBounds()
     ent:Remove()
     boundsCache[path] = { mn, mx }
@@ -115,9 +119,13 @@ end
 -- core.y / core.z: band holding most of its surface across (what rests against the body);
 -- muzzleBack: its muzzle is on the -X end.
 function I.WeaponGeometry(path)
-    if geomCache[path] then return geomCache[path] end
+    local cached = geomCache[path]
+    if cached ~= nil then return cached or nil end
     local ent = ClientsideModel(path, RENDERGROUP_OTHER)
-    if not IsValid(ent) then return end
+    if not IsValid(ent) then
+        geomCache[path] = false
+        return
+    end
     ent:SetNoDraw(true)
     ent:SetPos(vector_origin)
     ent:SetAngles(angle_zero)
@@ -294,15 +302,41 @@ local function mountedModel(store, slot, path)
     return m
 end
 
+-- Size the worn backpack is drawn at on owner: its fit on owner's playermodel, else its default.
+local function packScale(owner, sack)
+    local class = AdvInv.IDClass[owner:GetNW2Int("Rucksack")]
+    local per = AdvInv.Fits and AdvInv.Fits[string.lower(owner:GetModel() or "")]
+    local fit = per and class and per[class]
+    return (fit and fit[3]) or (sack.Attach and sack.Attach.scale) or 1
+end
+
 -- Thickness of the worn backpack (its thinnest dimension), 0 without one.
 function I.BackpackThickness(owner)
     if not IsValid(owner) or owner:GetNW2Int("Rucksack") <= 1 then return 0 end
     local sack = AdvInv.EntityTable(owner:GetNW2Int("Rucksack"))
     if not (sack and sack.Model) then return 0 end
+    -- gear drawn from a playermodel (sh_modelgear_items.lua): its model is the whole playermodel, the
+    -- pack's own depth comes with it
+    if sack.BackDepth then return sack.BackDepth * packScale(owner, sack) end
     local mn, mx = modelBounds(sack.Model)
     if not mn then return 0 end
     local d = mx - mn
-    return math.min(d.x, d.y, d.z) * ((sack.Attach and sack.Attach.scale) or 1)
+    return math.min(d.x, d.y, d.z) * packScale(owner, sack)
+end
+
+-- Half width of the worn backpack behind the back (a rifle slung over the shoulder hangs beside it),
+-- 0 without one. A prop backpack: half its middle dimension (thinnest: depth, largest: height).
+function I.BackpackHalfWidth(owner)
+    if not IsValid(owner) or owner:GetNW2Int("Rucksack") <= 1 then return 0 end
+    local sack = AdvInv.EntityTable(owner:GetNW2Int("Rucksack"))
+    if not (sack and sack.Model) then return 0 end
+    local scale = packScale(owner, sack)
+    if sack.BackHalfWidth then return sack.BackHalfWidth * scale end
+    local mn, mx = modelBounds(sack.Model)
+    if not mn then return 0 end
+    local d = { mx.x - mn.x, mx.y - mn.y, mx.z - mn.z }
+    table.sort(d)
+    return d[2] / 2 * scale
 end
 
 -- Room taken on the back by the worn backpack and vest.
@@ -385,6 +419,9 @@ function I.DrawWeaponList(ent, gearOwner, list)
         if w.mode then
             if w.mode ~= "stowed" then
                 local pos, ang = I.CarryTransform(ent, w, pushes[w.cat] or 0)
+                if pos and pushes.beside and pushes.beside[w.cat] then
+                    pos, ang = I.CarryBeside(ent, w, pos, ang, pushes.beside[w.cat]) -- against the backpack's side
+                end
                 if pos then
                     local m = mountedModel(store, w.cat, w.model)
                     if IsValid(m) then
@@ -446,7 +483,7 @@ end
 -- Drawn with the player: hidden with the player (out of view, invisible), and also when dead, in
 -- a vehicle, and for the local player in first person.
 hook.Add("PostPlayerDraw", "AdvInv_MountedWeapons", function(ply)
-    if not ply:Alive() or ply:InVehicle() then return end
+    if not ply:Alive() or ply:InVehicle() or AdvInv.OwnerHidden(ply) then return end
     if ply == LocalPlayer() and not ply:ShouldDrawLocalPlayer() then return end
     I.DrawMountedWeapons(ply, ply, heldInHands(ply))
 end)

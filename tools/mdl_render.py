@@ -97,7 +97,7 @@ def vmt_info(text):
 
 def material(dirs, name):
     for d in dirs:
-        path = f"materials/{d}{name}.vmt".replace("//", "/")
+        path = f"materials/{d}{name}.vmt".replace("\\", "/").replace("//", "/")
         data = vpk_read(path)
         if data is None:
             continue
@@ -108,7 +108,10 @@ def material(dirs, name):
             inc_data = vpk_read(inc.group(1))
             if inc_data:
                 base, translucent, alphatest = vmt_info(inc_data.decode("latin-1"))
-        img = vtf_image(base.replace("\\", "/").lower()) if base else None
+        if base:  # (the game also takes "...\NAME.vtf": backslashes, the extension given)
+            base = base.replace("\\", "/").lower()
+            base = base[:-4] if base.endswith(".vtf") else base
+        img = vtf_image(base) if base else None
         return img, translucent, alphatest
     return None, False, False
 
@@ -119,8 +122,24 @@ def cstr(d, off):
     return d[off:d.index(b"\0", off)].decode("latin-1")
 
 
+def _bodygroups():
+    """playermodel_bodygroups.txt : « modèle bodypart=sous-modèle ... » par ligne (# : commentaire)."""
+    out = {}
+    f = Path(__file__).resolve().parent / "playermodel_bodygroups.txt"
+    if f.exists():
+        for line in f.read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].split()
+            if line:
+                out[line[0].lower()] = {int(a): int(b) for a, b in (w.split("=") for w in line[1:])}
+    return out
+
+
+BODYGROUPS = _bodygroups()
+
+
 def load_model(model):
     base = model[:-4].lower()
+    groups = BODYGROUPS.get(base + ".mdl", {})
     mdl, vvd, vtx = vpk_read(base + ".mdl"), vpk_read(base + ".vvd"), vpk_read(base + ".dx90.vtx")
     if not (mdl and vvd and vtx):
         raise SystemExit(f"fichiers du modèle introuvables : {model}")
@@ -150,46 +169,62 @@ def load_model(model):
     skin0 = [struct.unpack_from("<h", mdl, skinindex + k * 2)[0] for k in range(nskinref)]
     mats = [material(dirs, t) for t in tex_names]
 
-    # VTX : triangles du LOD 0, premier sous-modèle non vide de chaque bodypart
-    tris = []
-    mdl_bp, vtx_bp = i(mdl, 236), i(vtx, 32)
-    for b in range(i(mdl, 232)):
-        mb = mdl_bp + b * 16
-        xb = vtx_bp + b * 8
-        for m in range(i(mdl, mb + 4)):
-            mm = mb + i(mdl, mb + 12) + m * 148
-            if i(mdl, mm + 72) == 0:
-                continue  # sous-modèle vide (bodygroup « blank »)
-            model_vert = i(mdl, mm + 84) // 48
-            xm = xb + i(vtx, xb + 4) + m * 8
-            xl = xm + i(vtx, xm + 4)  # LOD 0
-            for s in range(i(mdl, mm + 72)):
-                ms = mm + i(mdl, mm + 76) + s * 116
-                mat_ref, mesh_vert = i(mdl, ms), i(mdl, ms + 12)
-                tex = skin0[mat_ref] if mat_ref < len(skin0) else mat_ref
-                xs = xl + i(vtx, xl + 4) + s * 9
-                for g in range(i(vtx, xs)):
-                    xg = xs + i(vtx, xs + 4) + g * 25
-                    nverts, voff, nidx, ioff, nstrips, soff = struct.unpack_from("<6i", vtx, xg)
-                    gverts = [struct.unpack_from("<H", vtx, xg + voff + k * 9 + 4)[0] for k in range(nverts)]
-                    gidx = struct.unpack_from(f"<{nidx}H", vtx, xg + ioff)
-                    for st in range(nstrips):
-                        xst = xg + soff + st * 27
-                        sn, so = struct.unpack_from("<2i", vtx, xst)
-                        flags = vtx[xst + 18]
-                        idx = gidx[so:so + sn]
-                        conv = lambda k: model_vert + mesh_vert + gverts[k]
-                        if flags & 2:  # tristrip
-                            for k in range(len(idx) - 2):
-                                a, bb, c = idx[k], idx[k + 1], idx[k + 2]
-                                if k % 2:
-                                    a, bb = bb, a
-                                tris.append((conv(a), conv(bb), conv(c), tex))
-                        else:
-                            for k in range(0, len(idx) - 2, 3):
-                                tris.append((conv(idx[k]), conv(idx[k + 1]), conv(idx[k + 2]), tex))
-            break  # bodygroup par défaut seulement
-    return pos, nrm, uv, tris, mats
+    # VTX : triangles du LOD 0, sous-modèle 0 de chaque bodypart (le bodygroup par défaut, comme en jeu ;
+    # vide = rien : un bodygroup « blank » par défaut ne montre pas l'équipement des autres sous-modèles),
+    # ou celui de playermodel_bodygroups.txt
+    def read_tris(sg_size, st_size):
+        tris = []
+        mdl_bp, vtx_bp = i(mdl, 236), i(vtx, 32)
+        for b in range(i(mdl, 232)):
+            mb = mdl_bp + b * 16
+            xb = vtx_bp + b * 8
+            for m in range(i(mdl, mb + 4)):
+                if m != groups.get(b, 0):
+                    continue
+                mm = mb + i(mdl, mb + 12) + m * 148
+                if i(mdl, mm + 72) == 0:
+                    break  # sous-modèle choisi vide (bodygroup « blank ») : rien de ce bodypart
+                model_vert = i(mdl, mm + 84) // 48
+                xm = xb + i(vtx, xb + 4) + m * 8
+                xl = xm + i(vtx, xm + 4)  # LOD 0
+                for s in range(i(mdl, mm + 72)):
+                    ms = mm + i(mdl, mm + 76) + s * 116
+                    mat_ref, mesh_vert = i(mdl, ms), i(mdl, ms + 12)
+                    tex = skin0[mat_ref] if mat_ref < len(skin0) else mat_ref
+                    xs = xl + i(vtx, xl + 4) + s * 9
+                    for g in range(i(vtx, xs)):
+                        xg = xs + i(vtx, xs + 4) + g * sg_size
+                        nverts, voff, nidx, ioff, nstrips, soff = struct.unpack_from("<6i", vtx, xg)
+                        gverts = [struct.unpack_from("<H", vtx, xg + voff + k * 9 + 4)[0] for k in range(nverts)]
+                        gidx = struct.unpack_from(f"<{nidx}H", vtx, xg + ioff)
+                        for st in range(nstrips):
+                            xst = xg + soff + st * st_size
+                            sn, so = struct.unpack_from("<2i", vtx, xst)
+                            flags = vtx[xst + 18]
+                            idx = gidx[so:so + sn]
+                            conv = lambda k: model_vert + mesh_vert + gverts[k]
+                            if flags & 2:  # tristrip
+                                for k in range(len(idx) - 2):
+                                    a, bb, c = idx[k], idx[k + 1], idx[k + 2]
+                                    if k % 2:
+                                        a, bb = bb, a
+                                    tris.append((conv(a), conv(bb), conv(c), tex))
+                            else:
+                                for k in range(0, len(idx) - 2, 3):
+                                    tris.append((conv(idx[k]), conv(idx[k + 1]), conv(idx[k + 2]), tex))
+                break  # bodygroup par défaut seulement
+        return tris
+
+    # en-têtes des strip groups et strips : 25 et 27 octets, ou 33 et 35 avec le studiomdl récent
+    # (numTopologyIndices, topologyOffset en plus) ; la mauvaise taille donne des indices hors limites
+    for sizes in ((25, 27), (33, 35)):
+        try:
+            tris = read_tris(*sizes)
+        except (IndexError, struct.error):
+            continue
+        if tris and max(max(t[:3]) for t in tris) < len(pos):
+            return pos, nrm, uv, tris, mats
+    raise SystemExit(f"triangles illisibles (.vtx) : {model}")
 
 
 # ---------------------------------------------------------------- rendering
@@ -244,6 +279,18 @@ def rasterize(pos, nrm, uv, tris, mats, yaw, pitch, fit, size=RENDER):
 
 
 
+_TEX = {}  # id(image) -> (image, uint8 array): the textures are converted once, not at every view
+
+
+def _tex_array(img):
+    hit = _TEX.get(id(img))
+    if hit is None or hit[0] is not img:
+        if len(_TEX) > 96:  # bounded: a tool going through many playermodels
+            _TEX.pop(next(iter(_TEX)))
+        hit = _TEX[id(img)] = (img, np.asarray(img))
+    return hit[1]
+
+
 def _fill(sx, sy, zc, near, nrm, uv, tris, mats, to_cam, right, W, H):
     """Triangles already projected (screen sx, sy; depth zc) -> W x H RGBA image."""
     light1 = to_cam + np.array([0.0, 0.0, 0.9]) + right * 0.6
@@ -254,7 +301,7 @@ def _fill(sx, sy, zc, near, nrm, uv, tris, mats, to_cam, right, W, H):
     zbuf = np.full((H, W), np.inf)
     rgb = np.zeros((H, W, 3))
     alpha = np.zeros((H, W))
-    tex_arrays = [(np.asarray(m[0], dtype=np.float64) if m[0] else None, m[1], m[2]) for m in mats]
+    tex_arrays = [(_tex_array(m[0]) if m[0] else None, m[1], m[2]) for m in mats]
 
     for i0, i1, i2, t in tris:
         if min(zc[i0], zc[i1], zc[i2]) < near:

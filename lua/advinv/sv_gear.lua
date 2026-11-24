@@ -65,12 +65,20 @@ hook.Add("ScalePlayerDamage", "AdvInv_Gear_SPD", function(ply, hitgroup, dmginfo
             local left = ply:GetNWInt(cat .. "Armor")
             if zones and left > 0 and table.HasValue(zones, hitgroup) then
                 local newArmor = math.Clamp(math.floor(left - dmginfo:GetDamage()), 0, base)
-                ply:SetNWInt(cat .. "Armor", newArmor)
+                -- worn once the damage is really taken (not blocked later: god mode, safe zone...)
+                ply.AdvInvArmorWear = { cat = cat, armor = newArmor, tick = engine.TickCount() }
                 dmginfo:ScaleDamage(1 - newArmor / base)
                 return
             end
         end
     end
+end)
+
+hook.Add("PostEntityTakeDamage", "AdvInv_Gear_Wear", function(ent, _, took)
+    local w = ent.AdvInvArmorWear
+    if not w then return end
+    ent.AdvInvArmorWear = nil
+    if took and w.tick == engine.TickCount() and ent:IsPlayer() then ent:SetNWInt(w.cat .. "Armor", w.armor) end
 end)
 
 

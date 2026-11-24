@@ -64,8 +64,42 @@ cvars.AddChangeCallback("advinv_theme", function()
     if AdvInv.CloseInventory then AdvInv.CloseInventory() end
 end, "AdvInv_Theme")
 I.Themes = THEMES
+I.Colors = COL -- the current theme's colours (other client files draw with them)
 
 local function isWeaponCat(cat) return cat and table.HasValue(AdvInv.WeaponCat, cat) end
+
+-- The world behind a window, blurred (drawn first in its Paint).
+local blurMat = Material("pp/blurscreen")
+local function drawBlur(panel)
+    local x, y = panel:LocalToScreen(0, 0)
+    local w, h = panel:GetSize()
+    render.SetScissorRect(x, y, x + w, y + h, true) -- (painted manually, nothing clips it)
+    surface.SetDrawColor(255, 255, 255)
+    surface.SetMaterial(blurMat)
+    for i = 1, 3 do
+        blurMat:SetFloat("$blur", i * 1.6)
+        blurMat:Recompute()
+        render.UpdateScreenEffectTexture()
+        surface.DrawTexturedRect(-x, -y, ScrW(), ScrH())
+    end
+    render.SetScissorRect(0, 0, 0, 0, false)
+end
+I.DrawBlur = drawBlur
+
+-- Buttons in the inventory's colours (Derma's default ones are white).
+local function themeButton(b)
+    b:SetFont("AdvInvSmall")
+    b:SetTextColor(COL.text)
+    b.Paint = function(self, w, h)
+        local hover = self:IsHovered() and not self:GetDisabled()
+        draw.RoundedBox(4, 0, 0, w, h, hover and COL.slot or COL.barBg)
+        surface.SetDrawColor(COL.accent.r, COL.accent.g, COL.accent.b, hover and 200 or 90)
+        surface.DrawOutlinedRect(0, 0, w, h, 1)
+    end
+    b.UpdateColours = function(self) self:SetTextStyleColor(COL.text) end
+    return b
+end
+I.ThemeButton = themeButton
 local function isEquipable(info) return info.cat and (AdvInv.GearCat[info.cat] or isWeaponCat(info.cat)) end
 
 local function slotID(target, cat)
@@ -149,6 +183,12 @@ end
 -- Weapon seen from the side, horizontal, fitted to the panel (cl_weapons.lua); other items: spawn icon.
 local function itemIcon(parent, id, c)
     local m = itemModel(id, c)
+    local class = not I.IsGeneric(id) and AdvInv.IDClass[id] or nil
+    if class and I.UsesGearIcon and I.UsesGearIcon(class) then -- a prop of another addon, as worn
+        local icon = vgui.Create("AdvInvGearIcon", parent)
+        icon:SetItemClass(class)
+        return icon
+    end
     if isWeaponItem(id, c) then
         local icon = vgui.Create("AdvInvWeaponIcon", parent)
         icon:SetWeaponModel(m.model, m.skin)
@@ -462,7 +502,9 @@ local function makeContainerView(parent, x, y, w, h)
     scroll:Dock(FILL)
     scroll:DockMargin(S(8), S(8), S(8), S(8))
     local layout = vgui.Create("DIconLayout", scroll)
-    layout:Dock(FILL)
+    -- TOP, not FILL: the layout takes the height of its tiles and the scroll canvas that of the layout
+    -- (docked FILL, each waited for the other and a list filled late showed no tile)
+    layout:Dock(TOP)
     layout:SetSpaceX(S(8))
     layout:SetSpaceY(S(8))
 
@@ -471,9 +513,19 @@ local function makeContainerView(parent, x, y, w, h)
         self:Refresh()
     end
 
+    -- Whatever order the contents and the container arrive in (a body just made: its contents can
+    -- come before the client knows it), the view catches up: received lists are new tables.
+    function view:Think()
+        if (self.nextCheck or 0) > RealTime() then return end
+        self.nextCheck = RealTime() + 0.25
+        local ok = IsValid(self.holder) and self.cont and I.HasContainer(self.holder, self.cont) or false
+        if ok ~= self.lastOk or (ok and I.Get(self.holder, self.cont) ~= self.items) then self:Refresh() end
+    end
+
     function view:Refresh()
         layout:Clear()
-        local ok = IsValid(self.holder) and self.cont and I.HasContainer(self.holder, self.cont)
+        local ok = IsValid(self.holder) and self.cont and I.HasContainer(self.holder, self.cont) or false
+        self.lastOk = ok
         self.items = ok and I.Get(self.holder, self.cont) or {}
         -- identical items make one stack (first index, count), in the order they first appear
         local stacks, order = {}, {}
@@ -490,6 +542,7 @@ local function makeContainerView(parent, x, y, w, h)
         end
         for _, s in ipairs(order) do layout:Add(makeTile(self.holder, self.cont, s.index, s.item, s.count)) end
         layout:Layout()
+        scroll:InvalidateLayout(true)
     end
 
     acceptDrop(view,
@@ -557,8 +610,15 @@ local function makeGearSlot(panel, target, cat, x, y, w, h)
                 menu:Open()
             end
         end
+        -- searching another player: what he wears or holds that is illegal is framed in red too
+        local illegal = target ~= LocalPlayer() and target:IsPlayer() and I.IsIllegal(item)
         content.PaintOver = function(_, pw, ph)
             drawSlotFrame(pw, ph)
+            if illegal then
+                surface.SetDrawColor(220, 40, 40, 255)
+                surface.DrawOutlinedRect(0, 0, pw, ph, math.max(2, S(3)))
+            end
+            if not IsValid(target) then return end -- (gone while the window closes)
             if info.armor and info.armor > 0 then
                 drawSideGauge(pw, ph, target:GetNWInt(cat .. "Armor") / info.armor, COL.armor)
             elseif isWeaponCat(cat) then
@@ -574,7 +634,8 @@ local function makeGearSlot(panel, target, cat, x, y, w, h)
         self.content = content
         panel[cat] = content
         -- objet porté affiché sur le personnage de l'aperçu (pas pour les armes ni la tenue)
-        if not isWeaponCat(cat) and not AdvInv.NoMountCat[cat] and IsValid(panel.pmodel) and t.createCSModel then
+        if not isWeaponCat(cat) and not AdvInv.NoMountCat[cat] and IsValid(panel.pmodel) and t.createCSModel
+            and not AdvInv.ShownByModel(target, id) then -- (else a bodygroup of the playermodel shows it)
             local model = t:createCSModel(panel.pmodel.Entity)
             if IsValid(model) then
                 model:SetNoDraw(true)
@@ -656,7 +717,7 @@ local function updateHeldWeapon(pmodel, target)
         ent:SetCycle(0)
     end
     local mdl = wep:GetModel()
-    if mdl and mdl ~= "" and util.IsValidModel(mdl) then
+    if mdl and mdl ~= "" and (util.IsValidModel(mdl) or file.Exists(mdl, "GAME")) then
         local worldModel = ClientsideModel(mdl, RENDERGROUP_OPAQUE)
         worldModel:SetNoDraw(true)
         AdvInv.MountGearModel(worldModel, ent, nil)
@@ -670,17 +731,19 @@ local function makePreview(panel, target)
     pmodel:SetPos(25, 25)
     pmodel:SetSize(325, 470)
     local ent = pmodel.Entity
-    local ang = ent:GetAngles()
-    ang:RotateAroundAxis(Vector(0, 0, 1), 45)
-    ent:SetAngles(ang)
+    ent:SetAngles(Angle(0, 20, 0)) -- facing the camera, a little turned; dragging turns him (cl_vgui.lua)
     local head = ent:LookupBone("ValveBiped.Bip01_Head1") or 1
-    ent:SetEyeTarget(ent:GetBonePosition(head) - Vector(-15, 0, 0))
+    ent:SetEyeTarget(ent:GetBonePosition(head) + Vector(40, 0, 0)) -- towards the camera
     for k = 0, target:GetNumBodyGroups() - 1 do ent:SetBodygroup(k, target:GetBodygroup(k)) end
     ent:SetSkin(target:GetSkin())
     updateHeldWeapon(pmodel, target)
-    -- the whole character stays in the window, the weapon in his hands too (cl_vgui.lua)
+    -- his upper body, where the gear is, stays in the window whichever side he shows, the weapon in his
+    -- hands too; the camera stays put and he turns when dragged (cl_vgui.lua)
     pmodel.advinvAutoFit = true
-    pmodel.advinvFitMinDist = pmodel.vCamPos:Length2D()
+    pmodel.advinvTurntable = true
+    pmodel.advinvFitUpper = true
+    pmodel.advinvFitBottom = 0.09 -- the wallet bar covers the bottom of the window
+    pmodel.advinvFitMinDist = 24
     pmodel.advinvFitExtra = function(add)
         local held = pmodel.advinvHeldModel
         if not IsValid(held) then return end
@@ -700,7 +763,7 @@ local function makePreview(panel, target)
     local baseThink = pmodel.Think
     function pmodel:Think()
         if baseThink then baseThink(self) end
-        updateHeldWeapon(self, target)
+        if IsValid(target) then updateHeldWeapon(self, target) end
     end
     pmodel.OnRemove = function(self)
         if IsValid(self.Entity) then
@@ -743,7 +806,8 @@ function AdvInv.OpenPlyInvPanel(target, mode)
     if other then AdvInv.adminPanel = panel else AdvInv.plyInvPanel = panel end
     panel:SetSize(S(650), ScrH())
     if other then panel:SetX(ScrW() - S(650)) end
-    panel.Paint = function(_, w, h)
+    panel.Paint = function(self, w, h)
+        drawBlur(self)
         draw.RoundedBox(2, 0, 0, w, h, COL.bg)
         if other and IsValid(target) then
             local key = admin and "admin_view_title" or search and "search_view_title" or "body_of"
@@ -769,6 +833,7 @@ function AdvInv.OpenPlyInvPanel(target, mode)
     loadInfo.Paint = function(_, w, h)
         draw.RoundedBox(0, 0, 0, w, h, COL.slotFill)
         draw.SimpleText(I.L("load"), "AdvInvSmall", w / 2, h * 0.25, COL.dim, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        if not IsValid(target) then return end
         draw.SimpleText(target:GetNWInt("AdvInvLoad"), "AdvInvTitle", w / 2, h * 0.52, COL.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
         if I.LoadSlowdownEnabled() then
             local f = I.SpeedFactor(target)
@@ -784,6 +849,7 @@ function AdvInv.OpenPlyInvPanel(target, mode)
         craft:SetSize(S(150), S(36))
         craft:SetText(I.L("craft_title"))
         craft:SetIcon("icon16/wrench.png")
+        themeButton(craft)
         craft.DoClick = function() I.OpenCrafting() end
     end
 
@@ -803,6 +869,7 @@ function AdvInv.OpenPlyInvPanel(target, mode)
         drop:DockMargin(0, S(4), S(4), S(4))
         drop:SetWide(S(130))
         drop:SetText(I.L("money_drop"))
+        themeButton(drop)
         drop.DoClick = function()
             Derma_StringRequest(I.L("money_drop"), I.L("money_amount"), "", function(v)
                 local amount = math.floor(tonumber(v) or 0)
@@ -1029,10 +1096,12 @@ hook.Add("HUDShouldDraw", "AdvInv_HideHUD", function(name)
 end)
 
 -- Contenu reçu du serveur : les vues concernées se mettent à jour.
-hook.Add("AdvInv_Changed", "AdvInv_Panels", function(holder, cont)
+hook.Add("AdvInv_Changed", "AdvInv_Panels", function(holder, cont, idx)
     for _, p in ipairs({ AdvInv.plyInvPanel, AdvInv.storagePanel, AdvInv.adminPanel }) do
-        if IsValid(p) and IsValid(p.view) and p.view.holder == holder and p.view.cont == cont then
-            p.view:Refresh()
+        local v = IsValid(p) and p.view
+        if IsValid(v) and v.cont == cont and (v.holder == holder
+            or (idx and IsValid(v.holder) and v.holder:EntIndex() == idx)) then
+            v:Refresh()
         end
     end
 end)
@@ -1043,9 +1112,13 @@ hook.Add("OnScreenSizeChanged", "AdvInv_Fonts", function()
 end)
 
 local keyReleased = true
+local chatOpen = false
+hook.Add("StartChat", "AdvInv_Key", function() chatOpen = true end)
+hook.Add("FinishChat", "AdvInv_Key", function() chatOpen = false end)
 hook.Add("Think", "AdvInv_Key", function()
     local key = AdvInv.InventoryKey()
-    if input.IsKeyDown(key) then
+    -- typing (chat, a text box) doesn't open or close the inventory
+    if input.IsKeyDown(key) and not chatOpen and not IsValid(vgui.GetKeyboardFocus()) then
         if not keyReleased then return end
         keyReleased = false
         if IsValid(AdvInv.dropZone) then

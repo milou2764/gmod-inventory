@@ -61,9 +61,15 @@ local function setup()
         CW.AdvInvDrop = CW.dropWeapon
         CW.dropWeapon = function(self, ply, wep, ...)
             local w = wep or (IsValid(ply) and ply:GetActiveWeapon())
+            if IsValid(w) and I.GrenadeAmmo(w:GetClass()) then return end -- grenades: dropped as items
             local cat = IsValid(ply) and IsValid(w) and slotOf(ply, w:GetClass())
             if cat then
                 if w.disableDropping or not ply:Alive() then return end
+                local may, why = I.MayLeave(ply, I.SlotRef(ply, cat))
+                if not may then
+                    if why then I.Tell(ply, why) end
+                    return
+                end
                 local item = I.TakeOff(ply, cat)
                 if item then I.SpawnItem(item, I.DropPos(ply)) end
                 return

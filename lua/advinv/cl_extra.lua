@@ -56,10 +56,19 @@ local function inventoryEntity(class)
     return isstring(class) and (string.StartWith(class, "advinv_") or AdvInv.ClassID[class] ~= nil)
 end
 
+-- (on the client, util.IsValidModel is only true once the model has been loaded: the spawn menu is
+-- built before most of them are)
+local function modelExists(mdl)
+    return isstring(mdl) and mdl ~= "" and (util.IsValidModel(mdl) or file.Exists(mdl, "GAME"))
+end
+
 local function wrapEntityIcons()
     if not (GAMEMODE and GAMEMODE.IsSandboxDerived and spawnmenu and spawnmenu.GetContentType) then return end
-    local make = spawnmenu.GetContentType("entity")
-    if not make or make == AdvInv.EntityIconMaker then return end
+    local cur = spawnmenu.GetContentType("entity")
+    if not cur then return end
+    -- (a Lua refresh wraps the game's maker again, not our previous wrapper)
+    local make = cur == AdvInv.EntityIconMaker and AdvInv.EntityIconBase or cur
+    AdvInv.EntityIconBase = make
     local function maker(container, obj)
         local icon = make(container, obj)
         if not (IsValid(icon) and IsValid(icon.Image) and obj and inventoryEntity(obj.spawnname)) then return icon end
@@ -67,8 +76,22 @@ local function wrapEntityIcons()
         if mat and not mat:IsError() then return icon end -- it has an icon
         local t = scripted_ents.Get(obj.spawnname)
         local mdl = t and t.Model
-        if not (isstring(mdl) and mdl ~= "" and util.IsValidModel(mdl)) then return icon end
-        local img = vgui.Create("ModelImage", icon)
+        if not modelExists(mdl) then return icon end
+        local img
+        if t.PhysHull and AdvInv.UsesGearIcon and AdvInv.UsesGearIcon(obj.spawnname) then
+            -- gear drawn from a playermodel: the gear alone, as worn (the model is the whole playermodel)
+            img = vgui.Create("AdvInvGearIcon", icon)
+            img:SetItemClass(obj.spawnname)
+            img:SetMouseInputEnabled(false)
+            img:SetPaintedManually(true)
+            icon.Image.PaintAt = function(_, x, y, w, h)
+                img:SetPos(x, y)
+                img:SetSize(w, h)
+                img:PaintManual()
+            end
+            return icon
+        end
+        img = vgui.Create("ModelImage", icon)
         img:SetMouseInputEnabled(false)
         img:SetKeyboardInputEnabled(false)
         img:SetPaintedManually(true)

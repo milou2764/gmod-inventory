@@ -27,6 +27,10 @@ end
 function I.UseOf(item)
     if not item then return end
     if I.IsGeneric(item.id) then
+        if item.id == I.GENERIC_AMMO then
+            local grenade = I.GrenadeOfAmmo and I.GrenadeOfAmmo(item.c)
+            return grenade and { grenade = grenade } or nil -- in the hands (not used up here)
+        end
         return item.id == I.GENERIC_ENTITY and I.Consumables[item.c] or nil
     end
     local t = I.EntTable(item.id)

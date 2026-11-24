@@ -49,7 +49,7 @@ local function modesOf(class)
     local conf = I.CarryWeapons[class]
     local out = {}
     for _, m in ipairs((conf and conf.modes) or I.CARRY_MODES) do
-        if m ~= "stowed" then out[#out + 1] = m end
+        if I.CarryZone[m] then out[#out + 1] = m end -- (not "stowed", nor a removed mode)
     end
     return out
 end
