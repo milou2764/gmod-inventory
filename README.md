@@ -12,6 +12,20 @@ the inventory): https://github.com/milou2764/gmod-inventory
 No required dependency. If ULX/ULib is installed, the gear of invisible players is hidden. If
 simfphys is installed, vehicles work as trunks.
 
+## On the Workshop
+
+[Advanced Inventory System](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180672) and its gear extensions (Lua only, each needs its
+playermodel addon; the gear of that addon becomes items any playermodel can wear):
+
+| Extension | Items | Needs |
+|---|---|---|
+| [WW1 French gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180717) | Adrian helmets, kepi, beanie, backpack, blanket roll, webbing | WW1 French soldiers playermodels |
+| [Vietnam US gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180730) | M1 helmets, boonie hat, rucksacks, PRC-25 radio, M1956 web gear | Vietnam era US Soldiers |
+| [Russian Army gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180748) | 6B47 helmet, plate carrier | Russian Army | RF Soldier |
+| [Civil War gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180762) | Union and Confederate kepis | Civil War Soldiers |
+| [PAVN and Vietcong gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180776) | pith helmets, AK chest rigs, backpack, bush hat, conical hat | RS2: Forces of the East |
+| [PMC gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180794) | caps, helmets with goggles or visor, gas masks, night vision, headset, packs, belt kits | PMC Pack Redux |
+
 ## Language
 
 English by default; French, German, Spanish and Russian available. The server chooses for everyone, in `server.cfg`:
@@ -304,7 +318,7 @@ bodygroups (faces, moustaches, ranks, scarves...) stay the player's choice. The 
 `AdvInv.ModelGear` (sh_modelgear.lua); servers add their playermodels to it (DEVELOPERS.md).
 
 **Their gear as items: extensions.** An extension turns a playermodel addon's own gear into items that
-any playermodel can wear: *Advanced Inventory System: WW1 French gear* (the Adrian helmets, kepi,
+any playermodel can wear (Workshop links: "On the Workshop" above): *Advanced Inventory System: WW1 French gear* (the Adrian helmets, kepi,
 beanie, backpack, blanket roll and webbing of the WW1 French soldiers) and *Advanced Inventory
 System: Vietnam US gear* (the M1 helmets, boonie hat, rucksacks, PRC-25 radio and web gear of the
 Vietnam era US Soldiers ragdolls, Workshop 146299217 or its fixed re-upload 3627113533), *Russian
@@ -767,5 +781,6 @@ gmad.exe create -folder "addons/advanced-inventory" -out "advanced-inventory.gma
 gmpublish.exe create -addon "advanced-inventory.gma" -icon "icon_512x512.jpg"
 ```
 
-The Workshop page's description (Steam formatting, every feature, link to GitHub) is in
-`workshop/description.txt`: paste it into the page after publishing.
+The Workshop page's description (Steam formatting, a short overview linking here for the details)
+is in `workshop/description.txt`: paste it into the page after publishing. Update an item with
+`gmpublish.exe update -addon "advanced-inventory.gma" -id 3845180672 -changes "..."`.

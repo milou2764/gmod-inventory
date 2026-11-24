@@ -624,6 +624,8 @@ game's models from its VPK files):
 | `mount_check.py` | renders worn items on playermodels, without the game |
 | `bodyfit.py`, `bodyfit_lua.py` | torso measurements of playermodels (`cl_bodyfit_data.lua`) |
 | `weapon_check.py`, `mdl_render.py`, `studio.py`, `vpk.py`, `anim0.py`, `refbody.py` | model reading and rendering |
+| `workshop.py` | Workshop items through Garry's Mod's Steamworks DLL: animated (GIF) icon, description, screenshots, required items, visibility (what `gmpublish` can't do) |
+| `shots/gear_gif.lua`, `shots/make_gif.py` | frames and GIF of the animated Workshop icon (a playermodel switching gear) |
 
 In game: `advinv_attach_editor` (worn item positions), `advinv_carry_tune` / `advinv_carry_cycle`
 (carry positions), `advinv_admin` (admin menu). Tests: `tests/README.md`.

@@ -13,6 +13,21 @@ addon compatible avec l'inventaire) : https://github.com/milou2764/gmod-inventor
 Aucune dépendance obligatoire. Si ULX/ULib est installé, l'équipement des joueurs
 invisibles est caché. Si simfphys est installé, les véhicules servent de coffre.
 
+## Sur le Workshop
+
+[Advanced Inventory System](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180672) et ses extensions d'équipement (Lua seulement, chacune
+demande son addon de playermodels ; l'équipement de cet addon devient des objets que tout playermodel
+peut porter) :
+
+| Extension | Objets | Demande |
+|---|---|---|
+| [WW1 French gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180717) | casques Adrian, képi, bonnet, sac, rouleau de couverture, brêlages | playermodels WW1 French soldiers |
+| [Vietnam US gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180730) | casques M1, chapeau de brousse, sacs, radio PRC-25, brêlages M1956 | Vietnam era US Soldiers |
+| [Russian Army gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180748) | casque 6B47, porte-plaques | Russian Army | RF Soldier |
+| [Civil War gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180762) | képis de l'Union et confédéré | Civil War Soldiers |
+| [PAVN and Vietcong gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180776) | casques coloniaux, porte-chargeurs AK, sac, chapeau de brousse, chapeau conique | RS2: Forces of the East |
+| [PMC gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180794) | casquettes, casques à lunettes ou visière, masques à gaz, vision nocturne, casque radio, sacs, ceinturons | PMC Pack Redux |
+
 (English documentation: `README.md`.)
 
 ## Langue
@@ -326,7 +341,7 @@ au choix du joueur. La table est `AdvInv.ModelGear` (sh_modelgear.lua) ; les ser
 playermodels (DEVELOPERS.md).
 
 **Leur équipement en objets : les extensions.** Une extension fait de l'équipement d'un addon de
-playermodels des objets que tout playermodel peut porter : *Advanced Inventory System: WW1 French gear*
+playermodels des objets que tout playermodel peut porter (liens : « Sur le Workshop » plus haut) : *Advanced Inventory System: WW1 French gear*
 (les casques Adrian, le képi, le bonnet, le sac, le rouleau de couverture et les brêlages des soldats
 français de 14-18) et *Advanced Inventory System: Vietnam US gear* (les casques M1, le chapeau de
 brousse, les sacs, la radio PRC-25 et les brêlages des ragdolls Vietnam era US Soldiers, Workshop
@@ -822,5 +837,6 @@ gmad.exe create -folder "addons/advanced-inventory" -out "advanced-inventory.gma
 gmpublish.exe create -addon "advanced-inventory.gma" -icon "icone_512x512.jpg"
 ```
 
-La description de la page du Workshop (format Steam, toutes les fonctionnalités, lien vers GitHub)
-est dans `workshop/description.txt` : la coller dans la page après la publication.
+La description de la page du Workshop (format Steam, un aperçu court qui renvoie ici pour le
+détail) est dans `workshop/description.txt` : la coller dans la page après la publication. Mise à
+jour : `gmpublish.exe update -addon "advanced-inventory.gma" -id 3845180672 -changes "..."`.

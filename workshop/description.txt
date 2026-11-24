@@ -1,128 +1,37 @@
 [h1]Advanced Inventory System[/h1]
-An Arma 3-style inventory for Garry's Mod: what you wear is what you carry. Uniform pockets, vest, backpack, helmet and weapons all have their place on your character, and every item takes room according to its size, not a slot.
+An Arma 3-style inventory for Garry's Mod: what you wear is what you carry. Helmet, vest, backpack, uniform pockets and weapons all have their place on your character, and every item takes room according to its size, not a slot.
 
-[b]Source code, developer guide and issues: [url=https://github.com/milou2764/gmod-inventory]github.com/milou2764/gmod-inventory[/url][/b]
+[b]Full feature list, settings, developer guide and issues: [url=https://github.com/milou2764/gmod-inventory]github.com/milou2764/gmod-inventory[/url][/b]
 
-[h2]Inventory[/h2]
+[h2]Features[/h2]
 [list]
-[*][b]Equipment slots:[/b] uniform, vest, backpack, helmet, night vision, gas mask, radio headset, primary weapon, sidearm and launcher.
-[*][b]Capacity, not slots:[/b] every item has a weight in points, every container a capacity. Two pistol magazines don't take the room of two drum magazines. Bars show what is used.
-[*][b]Containers:[/b] uniform pockets (capacity set by the uniform worn), vest pockets and backpack. A vest or backpack keeps its contents when dropped or stored.
-[*]Drag and drop, right-click menus, double-click to equip or use, Shift + drag for a whole stack, store or drop an amount, split ammo boxes.
-[*]Character preview you can turn with the mouse, showing your gear and the weapon in your hands.
-[*]Tooltips: weight, slot, rarity, rounds, ammunition, armour, capacity, carry modes, "Illegal".
-[*]Optional rarity colours, three themes (dark, light, military), five languages (English, French, German, Spanish, Russian).
-[*]Opens with I (rebindable), chat commands !inventory / !inv, or the Inventory tool.
+[*][b]Capacity, not slots:[/b] uniform, vest and backpack each hold so many points; drag and drop, stacks, ammo boxes as your reserve.
+[*][b]Gear on the body:[/b] helmets, vests, backpacks, gas masks, night vision and radios worn on the player, fitted to the 87 default playermodels and 94 popular Workshop ones.
+[*][b]Weapons on the body:[/b] long guns slung, on the back or in front; armour by body part.
+[*][b]Death and looting:[/b] bodies keep their gear; search them, or search other players (illegal items, confiscation).
+[*][b]Storage:[/b] permanent, shared or personal crates, locks with codes, banks, loot tables, vehicle trunks.
+[*][b]DarkRP ready:[/b] purchases go to the inventory, job and jail keep it, optional inventory per job.
+[*][b]Any weapon base[/b] (attachments kept for ARC9, TFA, CW 2.0), grenades as items, usable items, crafting (off by default).
+[*][b]Admin menu[/b] for inventories and every setting, CAMI privileges, logs. Server-authoritative and rate limited.
+[*]Five languages, three themes. Lua only: every model comes with Garry's Mod.
 [/list]
 
-[h2]Gear and weapons on the body[/h2]
+[h2]Compatible gear[/h2]
+When a server has them, these addons' models become inventory items fitted to every playermodel (nothing of them is shipped): Fallout 76 and Fallout 3 backpacks, Star Wars helmets, TF2 Helmets of Victory, tank crew helmets, the Amnesia Adrian helmet, DayZ police vest, Petruz PMC vests, H.E.V tactical vest.
+
+[h2]Gear extensions[/h2]
+The gear of playermodel addons as items, worn on any playermodel (each needs its playermodel addon):
 [list]
-[*]Worn gear is shown on the player and fitted to each of the 87 default playermodels; rigged vests and backpacks bend with the body and adapt to its build.
-[*]Also fitted to popular Workshop playermodels: Rusty's National Guard Redux, Vault Dwellers, Star Wars Imperial Officers, Rebel Pilot, Rogue One Imperial crew, WW1 French soldiers, Russian Army RF soldiers, Civil War soldiers, RS2: Forces of the East, PMC Pack Redux (94 models).
-[*]Playermodels with a cap or helmet of their own take it off under a helmet, and get it back after. An item that is the model's own gear (the Adrian helmet on the WW1 French soldiers) is shown by the model itself.
-[*]Gear that is part of a playermodel (the Combine soldiers' helmet and vest, the rebels' beanie, vest and backpack, Counter-Strike: Source vests...) can't have ours put over it: the inventory says it is impossible. Gear that is a bodygroup comes off under ours.
-[*]Rigid vests follow the torso when crouching or lying dead.
-[*]Your own helmet or mask never blocks your first-person view.
-[*]Equipped weapons are shown on the body. Long guns are carried in one of three ways: sling arms (muzzle up from the shoulder), back carry (flat across the back, muzzle down) or hanging in front. One weapon per body zone; a backpack takes the back, a chest rig the front.
-[*]Armour by body part: helmets protect the head, vests the chest and stomach, and wear down as they are hit.
-[*]Optional: the load slows the player down.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180717]WW1 French gear[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180730]Vietnam US gear[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180748]Russian Army gear[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180762]Civil War gear[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180776]PAVN and Vietcong gear[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180794]PMC gear[/url]
 [/list]
 
-[h2]Ammunition[/h2]
-[list]
-[*]Your reserve is the ammo boxes in your inventory: reloading uses them up, unloading a weapon fills them.
-[*]Every ammo type has a box, including those of other weapon bases.
-[/list]
-
-[h2]Items in the world[/h2]
-[list]
-[*]Weapons and items are taken with Use, not by walking over them. Any weapon from any addon becomes an inventory item, with its magazine and attachments.
-[*]Health kits, vials, batteries and HL2 ammo are taken into the inventory and used from it.
-[*]Identical items dropped together lie as one stack.
-[*]Looking at an item shows what it is (can be turned off for immersion).
-[*]Dropped items disappear after a delay set by the server.
-[/list]
-
-[h2]Grenades[/h2]
-[list]
-[*]Grenades are items: stored and stacked, right-click > Use puts one in your hands, each grenade thrown uses up one item.
-[*]HL2 and CW 2.0 grenades built in; any other grenade with one line of config.
-[/list]
-
-[h2]Compatible Workshop addons[/h2]
-When your server has them, their models become inventory items fitted to every default playermodel (nothing of them is shipped with this addon; players download them automatically):
-[list]
-[*]Fallout 76 - Backpacks (54 backpacks), Fallout 3 Custom Backpacks, FO3 Backpacks
-[*]Imperial Helmet Props Star wars, Mace Windu's Clone Helmets, Rebel Pilot Helmet
-[*]TF2 Hex - Helmet of Victory (needs Team Fortress 2 mounted), US & Soviet Tank crew helmets, Amnesia "Adrian helmet"
-[*]DayZ Police vest, Petruz PMC Vests, Tactical Vest H.E.V Replacement
-[/list]
-
-[h2]Death and looting[/h2]
-[list]
-[*]A dead player's body keeps everything he wore and carried: helmet, vest, backpack, pockets, weapons on his back. The weapon in his hands falls to the ground.
-[*]Anyone can search the body and take items one by one: a helmet taken disappears from his head.
-[*]The server chooses what stays on the body, how long bodies last and how many there can be.
-[/list]
-
-[h2]Searching players[/h2]
-[list]
-[*]Search another player from the context menu: police jobs, everyone or nobody.
-[*]Illegal items show in red; the searcher may confiscate them. The searched player is told.
-[/list]
-
-[h2]Storage[/h2]
-[list]
-[*]Crates: permanent (saved with the map), shared between crates of the same name, personal (each player has his own contents), with their own capacity.
-[*]Locks with optional codes, set by the owner or admins.
-[*]Banks: every bank opens the player's own store, kept between sessions.
-[*]Loot tables: crates refill with random items, and invisible loot points spawn items again after they are taken.
-[*]Vehicle trunks (simfphys), Wiremod outputs on crates.
-[/list]
-
-[h2]Protections[/h2]
-[list]
-[*]Server-authoritative: every action is checked, rate limited and capped.
-[*]Crates, bodies, trunks and searches only within reach and in sight: no looting through walls or doors.
-[*]Lock codes: attempts slowed down after 3 wrong codes, the owner is told.
-[*]DarkRP's rules kept: drop rules for job weapons, money pile limit, entity limits, prop protection, arrested players.
-[/list]
-
-[h2]Administration[/h2]
-[list]
-[*]Admin menu: see and change any player's inventory, give any item, place loot points, change every server setting in game.
-[*]CAMI privilege (works with ULX, SAM, serverguard...), and every admin action is logged.
-[/list]
-
-[h2]DarkRP[/h2]
-[list]
-[*]What players buy goes straight into their inventory; shipments work as usual.
-[*]/drop frees the weapon's slot, money can be dropped from the inventory.
-[*]Changing job and going to jail keep the inventory; slot weapons come back with their magazine.
-[*]Job isolation for military and Star Wars RP: every job, or chosen jobs, with their own inventory.
-[*]Optional: job weapons become inventory weapons (they stay with the job).
-[/list]
-
-[h2]Other weapon bases[/h2]
-[list]
-[*]Works with any weapon base. Attachments are kept for ARC9, TFA and CW 2.0.
-[*]CW 2.0 tested: its drop command, dropped weapons and ammo kits all go through the inventory.
-[/list]
-
-[h2]More[/h2]
-[list]
-[*]Crafting with recipes and workbenches (off by default).
-[*]Items can be used: health, armour, or any effect an addon defines.
-[*]Saving through a simple API: plug in your character system, or save per player.
-[*]Lua only: every model comes with Garry's Mod.
-[/list]
-
-[h2]Server settings[/h2]
-All in the admin menu (console: advinv_admin), or in server.cfg: language, death drops, body time and count, pickup rules, ground item time, crafting, load slowdown, searching, DarkRP options.
+[h2]Getting started[/h2]
+Subscribe (server and players), open the inventory with I or !inv, admin menu with advinv_admin.
 
 [h2]Credits[/h2]
-The screenshots show the compatible addons' gear and these Workshop playermodels (not included, all made by their authors): Rusty's National Guard Redux, Vault Dwellers Part 1, Star Wars Imperial Officers (Imperial Gaming), [NGRP] Rebel Pilot Variant, Rogue One Imperial Naval Officers, [IC] WW1 French army playermodels 1916 (Imperial Community) with {PM0V3} Shared Materials (ComradeBear). Map: rp_southside_day.
-
-[h2]For developers[/h2]
-Item packs, weapon bases, storage entities and character systems plug into the inventory through a documented API: item fields, hooks, server functions. Read DEVELOPERS.md on GitHub:
-[url=https://github.com/milou2764/gmod-inventory]https://github.com/milou2764/gmod-inventory[/url]
+Screenshots: Workshop playermodels by their authors (not included): Rusty's National Guard Redux, Vault Dwellers, Star Wars Imperial Officers, [NGRP] Rebel Pilot Variant, Rogue One Imperial crew, [IC] WW1 French army 1916 with {PM0V3} Shared Materials. Map: rp_southside_day.
