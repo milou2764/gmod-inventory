@@ -35,6 +35,10 @@ if C.CarryBesidePack == nil then C.CarryBesidePack = true end
 -- beside the pack: part of the weapon's depth that goes forward of the back (0: all of it behind);
 -- sideways in line with the shoulder joint (C.CarryBesideShoulder = false: against the pack's side)
 C.CarryBesideForward = C.CarryBesideForward or 0.75
+-- weapons without offsets: the gun the mode templates were fitted with (tools/fit_carry.py), and
+-- the modes where a longer gun hangs from where that gun's butt is instead of being centred
+C.CarryTemplateGun = C.CarryTemplateGun or "models/weapons/w_irifle.mdl"
+C.CarryLongHang = C.CarryLongHang or { front_hang = true }
 
 I.CarryOffsets = I.CarryOffsets or {}
 I.CarryAliases = I.CarryAliases or {}
@@ -119,8 +123,42 @@ local function templateEntry(mode, path)
     -- its anchor (t.anchor): its middle, or its butt (muzzle +X: the butt is its lowest X) for the
     -- modes whose butt has its place, a longer gun going further from it
     local ax = t.anchor == "butt" and mn.x or (mn.x + mx.x) / 2
-    local inner = Vector(ax, yAxis:Dot(out) > 0 and lo or hi, (mn.z + mx.z) / 2)
+    local face, zmid = yAxis:Dot(out) > 0 and lo or hi, (mn.z + mx.z) / 2
+    local inner = Vector(ax, face, zmid)
     local pos = t.pos + out * C.CarryGap - R * inner
+    -- a gun longer than the one the templates were fitted with, in the modes that would centre it
+    -- (C.CarryLongHang: the front carry): its butt where that gun's butt is, turned toward the
+    -- vertical so it spans no wider; the extra length hangs down (centred, a 130 cm rifle stuck out
+    -- past the shoulder)
+    local ref = C.CarryLongHang[mode] and t.anchor ~= "butt" and I.WeaponGeometry(C.CarryTemplateGun)
+    local refLen, len = ref and (ref.maxs.x - ref.mins.x), mx.x - mn.x
+    if refLen and len > refLen + 0.5 then
+        local d = t.ang:Forward() -- muzzle direction (bone frame: the template's angles)
+        local up = Vector(1, 0, 0) -- the spine bone's length axis
+        up = (up - out * up:Dot(out)):GetNormalized()
+        local side = out:Cross(up)
+        local s, u, n = d:Dot(side), d:Dot(up), d:Dot(out)
+        local s2 = s * refLen / len
+        local u2 = (u < 0 and -1 or 1) * math.sqrt(math.max(0, 1 - s2 * s2 - n * n))
+        local d2 = (side * s2 + up * u2 + out * n):GetNormalized()
+        local a = Angle(t.ang.p, t.ang.y, t.ang.r)
+        local axis = d:Cross(d2)
+        if axis:Length() > 1e-5 then
+            local deg = math.deg(math.atan2(axis:Length(), d:Dot(d2)))
+            axis:Normalize()
+            local a1 = Angle(a.p, a.y, a.r)
+            a1:RotateAroundAxis(axis, deg)
+            if a1:Forward():Dot(d2) < 0.999 then
+                a1 = Angle(a.p, a.y, a.r)
+                a1:RotateAroundAxis(axis, -deg)
+            end
+            a = a1
+        end
+        R = Matrix()
+        R:SetAngles(a)
+        local butt = t.pos + out * C.CarryGap - d * (refLen / 2)
+        pos = butt - R * Vector(mn.x, face, zmid)
+    end
     local M = R * Q
     local e = { bone = t.bone, pos = pos, ang = M:GetAngles(), out = out }
     templateCache[key] = e
@@ -276,7 +314,95 @@ function I.CarryBeside(ent, w, pos, ang, halfWidth)
     local am = C.CarryBesideShoulder ~= false and arm and ent:GetBoneMatrix(arm)
     if am then shift = side * (am:GetTranslation() - center):Dot(right) - (inner + outer) / 2 end
     p2 = p2 + right * (side * shift) + back * (want - front)
-    return p2, a
+    return I.CarryBesideCrouch(ent, g, p2, a, right, back, am, cornersAt)
+end
+
+--[[
+    A weapon slung beside a pack whose lower end would reach the ground or, crouched, sit in front
+    of the hip: hung as a sling holds it, its lower end swung back. Without this it kept the
+    torso's forward lean and, crouched, a long rifle stood on its butt in front of the knees.
+    Standing, its lower end is above the ground: nothing changes (the hip test is only for a
+    crouching player).
+      1. straight down from the point level with the shoulder joint (gravity: the torso's lean
+         taken out);
+      2. its lower end swung back around its upper end, which stays up by the shoulder, until it
+         clears the ground and, crouched, is no further forward of the hip than
+         C.CarryBesideHipFront (at most C.CarryBesideMaxSwing degrees).
+--]]
+C.CarryGroundGap = C.CarryGroundGap or 1
+C.CarryBesideHipFront = C.CarryBesideHipFront or 5
+C.CarryBesideMaxSwing = C.CarryBesideMaxSwing or 70
+function I.CarryBesideCrouch(ent, g, p, a, right, back, am, cornersAt)
+    local scale = ent:GetModelScale()
+    local floor = ent:GetPos().z + C.CarryGroundGap
+    local pel = ent:IsPlayer() and ent:Crouching() and ent:LookupBone("ValveBiped.Bip01_Pelvis")
+    local pm = pel and ent:GetBoneMatrix(pel)
+    local hip = pm and pm:GetTranslation()
+    local half = (g.maxs.x - g.mins.x) * scale / 2
+    -- its lower end (on its axis) and its lowest corner
+    local function lowEnd(pp, aa)
+        local _, m = cornersAt(pp, aa)
+        local f = aa:Forward()
+        local e1, e2 = m + f * half, m - f * half
+        return e1.z < e2.z and e1 or e2
+    end
+    local function lowest(pp, aa)
+        local z = math.huge
+        for _, c in ipairs((cornersAt(pp, aa))) do z = math.min(z, c.z) end
+        return z
+    end
+    local function fine(pp, aa)
+        if lowest(pp, aa) < floor then return false end
+        return not hip or (lowEnd(pp, aa) - hip):Dot(back) >= -C.CarryBesideHipFront - 0.01
+    end
+    if fine(p, a) then return p, a end
+    -- the point it hangs from: on its axis, level with the shoulder joint
+    local _, m0 = cornersAt(p, a)
+    local f0 = a:Forward()
+    local sp = am and am:GetTranslation() or (m0 + f0 * half)
+    local pivot = m0 + f0 * (sp - m0):Dot(f0)
+    local lp = WorldToLocal(pivot, angle_zero, p, a)
+    local function around(base, deg)
+        local na = turned(base, right, deg)
+        return pivot - LocalToWorld(lp, angle_zero, vector_origin, na), na
+    end
+    -- 1. straight down: the turn about the body's right axis that makes its axis vertical
+    local up = f0.z >= 0 and f0 or -f0
+    local deg = math.deg(math.atan2(up:Cross(Vector(0, 0, 1)):Length(), up.z))
+    local best, bestZ = a, -1
+    for _, s in ipairs({ deg, -deg }) do
+        local _, na = around(a, s)
+        local u = na:Forward()
+        if math.abs(u.z) > bestZ then best, bestZ = na, math.abs(u.z) end
+    end
+    -- 2. its lower end swung back around its upper end (which stays up by the shoulder: turned
+    -- around the shoulder point, its upper part went forward across the chest)
+    local vp, va = around(best, 0)
+    local _, mv = cornersAt(vp, va)
+    local fv = va:Forward()
+    local top = (mv + fv * half).z > (mv - fv * half).z and mv + fv * half or mv - fv * half
+    local tl = WorldToLocal(top, angle_zero, vp, va)
+    local function swung(d)
+        local na = turned(va, right, d)
+        return top - LocalToWorld(tl, angle_zero, vector_origin, na), na
+    end
+    pivot = top
+    -- which way takes its lower end back, then the smallest swing that is fine
+    local function lowBack(d)
+        local np, na = swung(d)
+        return (lowEnd(np, na) - pivot):Dot(back)
+    end
+    local sgn = lowBack(5) >= lowBack(-5) and 1 or -1
+    local lo, hi = 0, C.CarryBesideMaxSwing
+    if fine(swung(0)) then
+        hi = 0
+    elseif fine(swung(sgn * hi)) then
+        for _ = 1, 12 do
+            local mid = (lo + hi) / 2
+            if fine(swung(sgn * mid)) then hi = mid else lo = mid end
+        end
+    end
+    return swung(sgn * hi)
 end
 
 -- World position and angles of a carried weapon w = { cat, class, model, mode } on ent, pushed out

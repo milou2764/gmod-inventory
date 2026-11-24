@@ -154,7 +154,10 @@ mode (`lua/advinv/cl_carry_data.lua`, below). A worn vest pushes the weapons out
 soft vest; `ENT.CarryBackThickness` sets it for an item; unmeasured: armour counts
 `Config.CarryVestThickness`, webbing and belts nothing); with a backpack, a weapon in a shoulder mode (`Config.CarryOverPack`)
 is moved sideways until it clears the pack's half width (`Config.CarryBesidePack = false`: pushed
-over the pack instead, by its thickness). When the launcher and the primary weapon are both on the back side and
+over the pack instead, by its thickness). Beside the pack, a weapon whose lower end would reach the ground
+or, crouched, sit in front of the hip hangs straight from the shoulder with its lower end swung back, behind
+the body (`Config.CarryGroundGap`, `Config.CarryBesideHipFront`, `Config.CarryBesideMaxSwing`); standing,
+nothing changes. When the launcher and the primary weapon are both on the back side and
 cross, one goes over the other. A playermodel without the bone a mode uses does not show that
 weapon. Models are removed on death, disconnect and Lua refresh.
 

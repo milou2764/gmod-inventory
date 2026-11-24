@@ -165,7 +165,10 @@ de `Config.CarryVestThickness` devant ; dans le dos selon ce que le modèle du g
 porte-plaques ou d'un gilet souple ; `ENT.CarryBackThickness` le fixe pour un objet ; sans mesure, un
 blindage compte `Config.CarryVestThickness`, brêlages et ceinturons rien) ; avec un sac, une arme portée à l'épaule (`Config.CarryOverPack`)
 est décalée sur le côté jusqu'à dégager la demi-largeur du sac (`Config.CarryBesidePack = false` :
-elle passe par-dessus, écartée de son épaisseur). Quand le lance-roquettes et l'arme principale sont tous deux côté dos et
+elle passe par-dessus, écartée de son épaisseur). À côté du sac, une arme dont le bas toucherait le sol ou,
+accroupi, passerait devant la hanche pend droit depuis l'épaule, son bas ramené en arrière, derrière le corps
+(`Config.CarryGroundGap`, `Config.CarryBesideHipFront`, `Config.CarryBesideMaxSwing`) ; debout, rien ne change.
+Quand le lance-roquettes et l'arme principale sont tous deux côté dos et
 se croisent, l'un passe sur l'autre. Un playermodel sans l'os d'un mode n'affiche pas cette arme.
 Les modèles sont supprimés à la mort, à la déconnexion et au rechargement du Lua.
 
