@@ -76,7 +76,9 @@ def vtf_image(texture):
     data = vpk_read(f"materials/{texture}.vtf")
     img = None
     if data:
-        src = WORK / "tex" / (texture.replace("/", "__") + ".vtf")
+        # file names of this process: several tools (or one tool's workers) converting the same texture
+        # at once would read each other's half-written .tga
+        src = WORK / "tex" / (texture.replace("/", "__") + f".{os.getpid()}.vtf")
         src.parent.mkdir(parents=True, exist_ok=True)
         src.write_bytes(data)
         dst = src.with_suffix(".tga")
@@ -84,6 +86,11 @@ def vtf_image(texture):
                        cwd=str(BIN), capture_output=True, timeout=60)
         if dst.exists():
             img = Image.open(dst).convert("RGBA")
+        for f in (src, dst):
+            try:
+                f.unlink()
+            except OSError:
+                pass
     _tex_cache[texture] = img
     return img
 
@@ -95,7 +102,7 @@ def vmt_info(text):
     return val("basetexture"), val("translucent") == "1", val("alphatest") == "1"
 
 
-def material(dirs, name):
+def material(dirs, name, image=True):
     for d in dirs:
         path = f"materials/{d}{name}.vmt".replace("\\", "/").replace("//", "/")
         data = vpk_read(path)
@@ -111,7 +118,7 @@ def material(dirs, name):
         if base:  # (the game also takes "...\NAME.vtf": backslashes, the extension given)
             base = base.replace("\\", "/").lower()
             base = base[:-4] if base.endswith(".vtf") else base
-        img = vtf_image(base) if base else None
+        img = vtf_image(base) if base and image else None  # (the image converted only when asked)
         return img, translucent, alphatest
     return None, False, False
 
@@ -137,7 +144,7 @@ def _bodygroups():
 BODYGROUPS = _bodygroups()
 
 
-def load_model(model):
+def load_model(model, textures=True):
     base = model[:-4].lower()
     groups = BODYGROUPS.get(base + ".mdl", {})
     mdl, vvd, vtx = vpk_read(base + ".mdl"), vpk_read(base + ".vvd"), vpk_read(base + ".dx90.vtx")
@@ -167,7 +174,9 @@ def load_model(model):
     dirs = [cstr(mdl, i(mdl, i(mdl, 216) + k * 4)).replace("\\", "/").lower() for k in range(i(mdl, 212))]
     nskinref, skinindex = i(mdl, 220), i(mdl, 228)
     skin0 = [struct.unpack_from("<h", mdl, skinindex + k * 2)[0] for k in range(nskinref)]
-    mats = [material(dirs, t) for t in tex_names]
+    # textures=False: the materials' flags without their images (geometry only: the fitting tools;
+    # converting the images is most of the time a model takes to load)
+    mats = [material(dirs, t, textures) for t in tex_names]
 
     # VTX : triangles du LOD 0, sous-modèle 0 de chaque bodypart (le bodygroup par défaut, comme en jeu ;
     # vide = rien : un bodygroup « blank » par défaut ne montre pas l'équipement des autres sous-modèles),

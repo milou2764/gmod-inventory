@@ -162,7 +162,7 @@ local function templateEntry(mode, path)
         pos = butt - R * Vector(mn.x, face, zmid)
     end
     local M = R * Q
-    e = { bone = t.bone, pos = pos, ang = M:GetAngles(), out = out, geom = g }
+    e = { bone = t.bone, pos = pos, ang = I.GeomToModelAngles(g, M:GetAngles()), out = out, geom = g }
     templateCache[key] = e
     return e
 end
@@ -257,6 +257,7 @@ function I.CarryBeside(ent, w, pos, ang, halfWidth)
     right.z = 0
     if right:LengthSqr() < 0.01 then return pos, ang end
     right:Normalize()
+    ang = I.ModelToGeomAngles(g, ang) -- (its barrel along its X: see I.WeaponGeometry)
     local back = -Vector(0, 0, 1):Cross(right) -- (forward = up x right)
     local center = (pl + pr) / 2
     local scale = ent:GetModelScale()
@@ -316,7 +317,8 @@ function I.CarryBeside(ent, w, pos, ang, halfWidth)
     local am = C.CarryBesideShoulder ~= false and arm and ent:GetBoneMatrix(arm)
     if am then shift = side * (am:GetTranslation() - center):Dot(right) - (inner + outer) / 2 end
     p2 = p2 + right * (side * shift) + back * (want - front)
-    return I.CarryBesideCrouch(ent, g, p2, a, right, back, am, cornersAt)
+    local p3, a3 = I.CarryBesideCrouch(ent, g, p2, a, right, back, am, cornersAt)
+    return p3, I.GeomToModelAngles(g, a3)
 end
 
 --[[

@@ -239,7 +239,7 @@ melee and grenades: sidearm; RPG: launcher; the rest: primary); `SWEP.AdvInvCate
 `SWEP.AdvInvMass` on a weapon override it. Physgun, toolgun, camera, hands and DarkRP's tools are
 blacklisted.
 
-## Other weapon bases (ARC9, TFA, CW 2.0, M9K...)
+## Other weapon bases (ARC9, TFA, CW 2.0, Sandstorm, M9K...)
 
 Weapons of any base become generic weapon items (see above). Their ammunition:
 
@@ -252,7 +252,7 @@ Weapons of any base become generic weapon items (see above). Their ammunition:
 
 Attachments: a weapon keeps its extra data through the inventory (taken off, stored, dropped,
 equipped again, saved). Built-in, not tested on every version of these bases: ARC9 (preset code),
-TFA (selected attachments), CW 2.0 (attachments). Any base: hooks (server)
+TFA (selected attachments), CW 2.0 (attachments), Sandstorm SWEPs (attachments and their skins). Any base: hooks (server)
 `AdvInv_WeaponData(wep)` -> a string, and `AdvInv_ApplyWeaponData(wep, data)` -> true
 when done. Weapons with different data don't stack.
 
@@ -266,6 +266,16 @@ when done. Weapons with different data don't stack.
 - `cw_dropweapon` on a weapon of the inventory drops it the inventory's way (out of its slot,
   attachments kept); CW 2.0's own dropped weapons are taken with Use into the inventory;
 - the ammo of CW 2.0's ammo kits and crates goes into generic ammo boxes of its calibre.
+
+**Sandstorm SWEPs** (the Workshop's "Sandstorm SWEP Base" and its packs: assault rifles, pistols,
+Ready or Not pistols; `lua/advinv/sv_sandswep.lua`):
+
+- attachments and their skins stay on the weapon, with the magazine that goes with them;
+- the base keeps spare magazines inside the weapon (full ones with every new weapon, the reserve
+  pulled into them). For a player's weapon they only show the munitions of the ammo boxes: a
+  reload takes its rounds from the boxes, a magazine taken out (another magazine attached, a reload
+  interrupted) puts its rounds back into them. No free magazines, nothing hidden in the weapon;
+- its 25 rifles have carry positions on every fitted playermodel (sling arms, back, front).
 
 ## Compatible Workshop addons
 
@@ -312,6 +322,7 @@ is fitted to these Workshop playermodels, when the server has them (nothing of t
 | [Civil War Soldiers [Playermodel + Ragdolls]](https://steamcommunity.com/sharedfiles/filedetails/?id=3614216336) | 8 soldiers (4 Union, 4 Confederate) |
 | [RS2: Forces of the East](https://steamcommunity.com/sharedfiles/filedetails/?id=2944903873) | 4 soldiers (2 PAVN, 2 Viet Minh) |
 | [PMC Pack Redux (Playermodels & NPCs)](https://steamcommunity.com/sharedfiles/filedetails/?id=1769231405) | 8 PMC soldiers |
+| [Dying Light Security forces playermodels and ragdolls](https://steamcommunity.com/sharedfiles/filedetails/?id=3551549411) | 11 security forces (GRE, police, soldiers, T.E.A.R.) |
 
 Any other playermodel uses each item's default fit (made on male_07). The list of fitted models is
 `tools/playermodels.txt` (Garry's Mod) and `tools/playermodels_workshop.txt`; DEVELOPERS.md says how

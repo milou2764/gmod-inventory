@@ -162,9 +162,10 @@ if CLIENT then
     end
 
     -- A mesh isn't lit by the engine like a model: lit here as the model is, from where it is (worn
-    -- gear and icons set their own lighting before; a ground item asks for it: light).
+    -- gear and icons set their own lighting before; a ground item asks for it: light). Ground items
+    -- light their model the same way (advinv_base_entity): until render.SuppressEngineLighting(false).
     local LIGHT_DIRS = { Vector(1, 0, 0), Vector(-1, 0, 0), Vector(0, 1, 0), Vector(0, -1, 0), Vector(0, 0, 1), Vector(0, 0, -1) }
-    local function lightAt(pos)
+    function I.LightGearAt(pos)
         render.SuppressEngineLighting(true)
         render.SetLightingOrigin(pos)
         render.ResetModelLighting(0, 0, 0)
@@ -179,7 +180,7 @@ if CLIENT then
     function I.DrawSharedParts(ent, t, worn, offset, light)
         local parts = I.SharedPartsMesh(ent, t, worn)
         if not parts then return end
-        if light then lightAt(ent:WorldSpaceCenter()) end
+        if light then I.LightGearAt(ent:WorldSpaceCenter()) end
         local mx = Matrix()
         mx:SetTranslation(ent:GetRenderOrigin() or ent:GetPos())
         mx:SetAngles(ent:GetRenderAngles() or ent:GetAngles())
@@ -289,7 +290,9 @@ function I.AddModelGearPack(pack)
     -- and their gear only while it is worn: the bodygroups the items use are locked to the pack's
     -- "no gear" values (else a player of such a model shows the model's own gear without the items:
     -- the Vietnam soldiers, NPC ragdolls when their pack was made, later ported as playermodels).
-    -- An entry of sh_modelgear.lua or of the server keeps its own lock.
+    -- An entry of sh_modelgear.lua or of the server keeps its own lock; locks made here by several
+    -- packs of the same model add up (the Dying Light soldier whose head gear is in one pack, his kit
+    -- in another).
     if pack.blank then
         local locks = {}
         for _, it in ipairs(pack.items or {}) do
@@ -303,7 +306,11 @@ function I.AddModelGearPack(pack)
         end
         for model, lock in pairs(locks) do
             local g = I.ModelGear[model]
-            if g and g.lock == nil and next(lock) then g.lock = lock end
+            if g and next(lock) and (g.lock == nil or g.lockFromPacks) then
+                g.lock = g.lock or {}
+                g.lockFromPacks = true
+                for bg, v in pairs(lock) do g.lock[bg] = v end
+            end
         end
     end
     I.MergePackFits(pack)

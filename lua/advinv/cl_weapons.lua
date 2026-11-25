@@ -65,7 +65,29 @@ local function coreBand(samples)
     return { lo = lo, hi = hi }
 end
 
-local function meshBounds(ent, path, hmin, hmax)
+-- A model whose barrel lies along Y at rest (the Sandstorm SWEPs: their idle animation turns the hand
+-- bone a quarter turn; all of them lie upside down too, sights towards -Z) is measured turned, barrel
+-- along X and top up like the others (as tools/fit_carry.py does): g.turn is set, and placements made
+-- in that frame are turned back into the model's angles with I.GeomToModelAngles (I.ModelToGeomAngles:
+-- the other way).
+local TURN_RATIO = 1.25
+local TURN = Matrix() -- that frame -> the model's
+TURN:SetAngles(Angle(0, 90, 180))
+local UNTURN = TURN:GetInverse()
+function I.GeomToModelAngles(g, ang)
+    if not (g and g.turn) then return ang end
+    local m = Matrix()
+    m:SetAngles(ang)
+    return (m * UNTURN):GetAngles()
+end
+function I.ModelToGeomAngles(g, ang)
+    if not (g and g.turn) then return ang end
+    local m = Matrix()
+    m:SetAngles(ang)
+    return (m * TURN):GetAngles()
+end
+
+local function meshBounds(ent, path, hmin, hmax, turn)
     local ok, meshes, bind = pcall(util.GetModelMeshes, path, 0, 0)
     if not ok or not istable(meshes) or not istable(bind) then return end
     local base = bind[0] and 0 or 1
@@ -89,12 +111,19 @@ local function meshBounds(ent, path, hmin, hmax)
         end
         local mn = Vector(math.huge, math.huge, math.huge)
         local mx = Vector(-math.huge, -math.huge, -math.huge)
+        local hmn = Vector(math.huge, math.huge, math.huge) -- (the model's own frame: checked against its hull)
+        local hmx = Vector(-math.huge, -math.huge, -math.huge)
         local ys, zs = {}, {}
         for _, m in ipairs(meshes) do
             local tri = m.triangles or {}
             for i = 1, #tri - 2, 3 do
                 local a, b, c = skin(tri[i]), skin(tri[i + 1]), skin(tri[i + 2])
                 if not (a and b and c) then return end
+                for _, p in ipairs({ a, b, c }) do
+                    hmn.x, hmn.y, hmn.z = math.min(hmn.x, p.x), math.min(hmn.y, p.y), math.min(hmn.z, p.z)
+                    hmx.x, hmx.y, hmx.z = math.max(hmx.x, p.x), math.max(hmx.y, p.y), math.max(hmx.z, p.z)
+                end
+                if turn then a, b, c = Vector(a.y, a.x, -a.z), Vector(b.y, b.x, -b.z), Vector(c.y, c.x, -c.z) end
                 for _, p in ipairs({ a, b, c }) do
                     mn.x, mn.y, mn.z = math.min(mn.x, p.x), math.min(mn.y, p.y), math.min(mn.z, p.z)
                     mx.x, mx.y, mx.z = math.max(mx.x, p.x), math.max(mx.y, p.y), math.max(mx.z, p.z)
@@ -106,7 +135,7 @@ local function meshBounds(ent, path, hmin, hmax)
         end
         if mn.x > mx.x then return end
         local tol = Vector(2, 2, 2)
-        if mn:WithinAABox(hmin - tol, hmax + tol) and mx:WithinAABox(hmin - tol, hmax + tol) then
+        if hmn:WithinAABox(hmin - tol, hmax + tol) and hmx:WithinAABox(hmin - tol, hmax + tol) then
             return mn, mx, { y = coreBand(ys), z = coreBand(zs) }
         end
     end
@@ -141,6 +170,7 @@ function I.WeaponGeometry(path)
     ent:InvalidateBoneCache()
     ent:SetupBones()
     local hmin, hmax = ent:GetModelBounds()
+    local hullMin, hullMax = hmin, hmax
     local mn, mx, core = meshBounds(ent, path, hmin, hmax)
     if not mn then
         -- the posed mesh is checked against the model's hull (skinned the right way). Some hulls
@@ -148,16 +178,26 @@ function I.WeaponGeometry(path)
         -- for a 32 x 5 x 9 rifle): the mesh was refused and that hull taken for the gun, carried
         -- as a bulky block. Then the hull or the render box, whichever reaches further
         local rmin, rmax = ent:GetRenderBounds()
-        mn, mx, core = meshBounds(ent, path,
-            Vector(math.min(hmin.x, rmin.x), math.min(hmin.y, rmin.y), math.min(hmin.z, rmin.z)),
-            Vector(math.max(hmax.x, rmax.x), math.max(hmax.y, rmax.y), math.max(hmax.z, rmax.z)))
+        hullMin = Vector(math.min(hmin.x, rmin.x), math.min(hmin.y, rmin.y), math.min(hmin.z, rmin.z))
+        hullMax = Vector(math.max(hmax.x, rmax.x), math.max(hmax.y, rmax.y), math.max(hmax.z, rmax.z))
+        mn, mx, core = meshBounds(ent, path, hullMin, hullMax)
     end
-    local g = { mins = mn or hmin, maxs = mx or hmax, exact = mn ~= nil }
+    -- barrel along Y (see TURN): measured again a quarter turn round
+    local bmn, bmx = mn or hmin, mx or hmax
+    local turn = (bmx.y - bmn.y) > TURN_RATIO * (bmx.x - bmn.x)
+    if turn then
+        if mn then
+            mn, mx, core = meshBounds(ent, path, hullMin, hullMax, true)
+        else
+            hmin, hmax = Vector(hmin.y, hmin.x, -hmax.z), Vector(hmax.y, hmax.x, -hmin.z)
+        end
+    end
+    local g = { mins = mn or hmin, maxs = mx or hmax, exact = mn ~= nil, turn = turn or nil }
     g.core = core or { y = { lo = g.mins.y, hi = g.maxs.y }, z = { lo = g.mins.z, hi = g.maxs.z } }
     -- some models point their muzzle to -X (HL2 pistol, AR2, shotgun, RPG): read it on the model
     local mz = ent:LookupAttachment("muzzle")
     local at = mz and mz > 0 and ent:GetAttachment(mz)
-    g.muzzleBack = at ~= nil and at ~= false and at.Pos.x < (g.mins.x + g.maxs.x) * 0.5
+    g.muzzleBack = at ~= nil and at ~= false and (turn and at.Pos.y or at.Pos.x) < (g.mins.x + g.maxs.x) * 0.5
     local b0 = ent:GetBoneMatrix(0) -- its root bone at rest: carries the model when it is bonemerged
     g.restBone0 = b0 and Matrix(b0) or nil
     ent:Remove()
@@ -182,8 +222,9 @@ function I.WeaponCorners(m)
     if not T then return end
     local out = {}
     for k = 0, 7 do
-        out[#out + 1] = T * Vector(bit.band(k, 1) > 0 and g.maxs.x or g.mins.x,
+        local c = Vector(bit.band(k, 1) > 0 and g.maxs.x or g.mins.x,
             bit.band(k, 2) > 0 and g.maxs.y or g.mins.y, bit.band(k, 4) > 0 and g.maxs.z or g.mins.z)
+        out[#out + 1] = T * (g.turn and TURN * c or c)
     end
     return out
 end
@@ -207,6 +248,7 @@ function ICON:SetWeaponModel(path, skin)
         self.Entity:SetCycle(0)
     end
     self.geom = I.WeaponGeometry(path)
+    if IsValid(self.Entity) then self.Entity:SetAngles(I.GeomToModelAngles(self.geom, angle_zero)) end
 end
 
 function ICON:LayoutEntity() end
@@ -415,7 +457,7 @@ local function drawMounted(ent, owner, store, w, back, primaryThickness)
     local scale = ent:GetModelScale()
     local localPos = (mount.pos + mount.out:GetNormalized() * (half + extra + C.WeaponMountGap) - center) * scale
     local pos, ang = LocalToWorld(localPos, wang, matrix:GetTranslation(), matrix:GetAngles())
-    drawAt(m, ent, pos, ang)
+    drawAt(m, ent, pos, I.GeomToModelAngles(g, ang))
     return 2 * half + C.WeaponMountGap
 end
 

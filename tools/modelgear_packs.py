@@ -19,6 +19,9 @@ VC = ["models/vietnam/humans/vc/gmod/vc_1.mdl", "models/vietnam/humans/vc/gmod/v
 PMC = [f"models/pmc/{m}.mdl" for m in ("pmc_1/pmc_pm", "pmc_2/acu_pm", "pmc_3/mpt_pm", "pmc_4/swat_pm", "pmc_5/sas_pm",
                                          "pmc_6/desert_pm", "pmc_7/super_pm", "pmc_8/snw_pm")]
 M = "advinv_milou_pmc_"
+DL = [f"models/dl/{m}_p.mdl" for m in ("gre1", "gre2", "gre3", "policeman1", "policeman2", "policeman3", "soldier1", "soldier2",
+                                         "tear_soldier1", "tear_soldier2", "tear_soldier3")]
+D = "advinv_milou_dlsec_"
 
 PACKS = {
     "ww1_french": {
@@ -217,6 +220,120 @@ PACKS = {
              "mass": 9, "load": 18, "show": [("belt_gear", "pmc_belt_pouches"), ("holster", "pmc_holster.smd"), ("leg_gear", "pmc_leg_gear")],
              "stored": [("belt_gear", "pmc_belt_pouches"), ("holster", "pmc_holster.smd"), ("leg_gear", "pmc_leg_gear")],
              "rigged": True},
+        ],
+    },
+    # Dying Light Security forces (3551549411): face, head and eye gear on all eleven; the first T.E.A.R.
+    # soldier's kit in a pack of its own (drawn with his model). The GRE and police "equipment" is a few
+    # things clipped on a vest that is part of their body: not an item.
+    "dl_security": {
+        "key": "dl_security",
+        "title": "Dying Light Security forces",
+        "wid": "3551549411",
+        "author": "milou2764 (gear of the Dying Light Security forces playermodels)",
+        "category": ("Inventory: Dying Light gear", "Inventaire : équipement Dying Light"),
+        "models": DL,
+        "items": [
+            {"class": D + "helmet", "slot": "Helmet", "name": ("Combat helmet", "Casque de combat"), "mass": 14, "armor": 60,
+             "show": [("headgear", "helmet")]},
+            {"class": D + "cap", "slot": "Helmet", "name": ("Black cap", "Casquette noire"), "mass": 1, "show": [("headgear", "cap")]},
+            {"class": D + "gasmask", "slot": "Gasmask", "name": ("Gas mask", "Masque à gaz"), "mass": 6, "show": [("face", "gasmask")]},
+            {"class": D + "respirator", "slot": "Gasmask", "name": ("Half-face respirator", "Demi-masque respiratoire"), "mass": 3,
+             "show": [("face", "respirator")]},
+            {"class": D + "mask", "slot": "Gasmask", "name": ("Cloth face mask and goggles", "Masque en tissu et lunettes"), "mass": 2,
+             "show": [("face", "mask.smd")]},
+            {"class": D + "mask_white", "slot": "Gasmask", "name": ("Metal half mask", "Demi-masque en métal"), "mass": 3, "show": [("face", "mask2")]},
+            {"class": D + "balaclava", "slot": "Gasmask", "name": ("Black balaclava", "Cagoule noire"), "mass": 1, "show": [("face", "balaclava.smd")]},
+            # (not "balaclava2": its mesh has a helmet over the balaclava, and on these soldiers it takes
+            # the face bodygroup the masks use)
+            {"class": D + "goggles", "slot": "NVGs", "name": ("Protective goggles", "Lunettes de protection"), "mass": 1, "show": [("goggles", "goggles")]},
+        ],
+    },
+    "dl_tear": {
+        "key": "dl_tear",
+        "title": "Dying Light T.E.A.R. soldier",
+        "wid": "3551549411",
+        "author": "milou2764 (gear of the Dying Light Security forces playermodels)",
+        "category": ("Inventory: Dying Light gear", "Inventaire : équipement Dying Light"),
+        "models": [DL[8]],
+        "items": [
+            {"class": D + "tear_rig", "slot": "Vest", "name": ("T.E.A.R. chest rig and belts", "Brêlage et ceinturons T.E.A.R."), "mass": 10, "load": 25,
+             "show": [("belt1", "belt1"), ("belt2", "belt2"), ("ammo1", "ammo1"), ("ammo2", "ammo2"), ("radio", "radio"), ("pouch1", "pouch1"),
+                      ("pouch2", "pouch2"), ("pouch3", "pouch3"), ("pouch4", "pouch4"), ("pouch5", "pouch5")]},
+            {"class": D + "tear_bag", "slot": "Rucksack", "name": ("T.E.A.R. shoulder bag", "Sacoche T.E.A.R."), "mass": 6, "load": 15,
+             "show": [("bag", "bag")]},
+        ],
+    },
+    # Escape From Tarkov PMC playermodels [Redux] (2568198284): six USEC and three BEAR operators, the same
+    # gear bodyparts on all nine. What all of them have in one pack (drawn with the USEC operator); each
+    # side's cap, and the BEAR-only PACA, in a pack of that side (a pack's items exist on all its models).
+    # The armour choices are armour and a chest rig in one mesh: one item each.
+    "eft_pmc": {
+        "key": "eft_pmc",
+        "title": "Escape From Tarkov PMC",
+        "wid": "2568198284",
+        "author": "milou2764 (gear of the Escape From Tarkov PMC playermodels)",
+        "category": ("Inventory: Escape From Tarkov PMC gear", "Inventaire : équipement PMC Escape From Tarkov"),
+        "models": [f"models/player/eft/pmc/eft_usec/models/eft_usec_pm_{k}.mdl" for k in ("redux", "beltstaff", "hoody", "nightpatrol", "tier2", "tier3")]
+                  + [f"models/player/eft/pmc/eft_bear/models/eft_bear_pm_{k}.mdl" for k in ("redux", "lynx", "summer")],
+        "items": [
+            {"class": "advinv_milou_eftpmc_mich", "slot": "Helmet", "name": ("MICH 2001 helmet (olive)", "Casque MICH 2001 (olive)"), "mass": 14, "armor": 70,
+             "show": [("Headgear", "eft_mich")]},
+            {"class": "advinv_milou_eftpmc_ulach", "slot": "Helmet", "name": ("ULACH IIIA helmet (olive)", "Casque ULACH IIIA (olive)"), "mass": 15, "armor": 80,
+             "show": [("Headgear", "eft_ulach")]},
+            {"class": "advinv_milou_eftpmc_fast_mt", "slot": "Helmet", "name": ("FAST MT helmet (black)", "Casque FAST MT (noir)"), "mass": 10, "armor": 70,
+             "show": [("Headgear", "eft_fastmt")]},
+            {"class": "advinv_milou_eftpmc_altyn", "slot": "Helmet", "name": ("Altyn helmet with face shield", "Casque Altyn à visière"), "mass": 30, "armor": 90,
+             "show": [("Headgear", "eft_altyn")]},
+            {"class": "advinv_milou_eftpmc_cold_fear", "slot": "Gasmask", "name": ("Cold Fear balaclava (grey)", "Cagoule Cold Fear (grise)"), "mass": 1,
+             "show": [("Face Cover", "eft_coldmask")]},
+            {"class": "advinv_milou_eftpmc_momex", "slot": "Gasmask", "name": ("Momex balaclava (black)", "Cagoule Momex (noire)"), "mass": 1,
+             "show": [("Face Cover", "eft_momex")]},
+            {"class": "advinv_milou_eftpmc_gp7", "slot": "Gasmask", "name": ("GP-7 gas mask", "Masque à gaz GP-7"), "mass": 6,
+             "show": [("Face Cover", "eft_gasmask")]},
+            {"class": "advinv_milou_eftpmc_comtac", "slot": "Radio", "name": ("ComTac 2 headset", "Casque audio ComTac 2"), "mass": 2,
+             "show": [("Headset", "eft_comtacs")]},
+            {"class": "advinv_milou_eftpmc_6b34", "slot": "NVGs", "name": ("6B34 anti-fragmentation glasses", "Lunettes anti-éclats 6B34"), "mass": 1,
+             "show": [("Eyewear", "eft_6b34goggles")]},
+            {"class": "advinv_milou_eftpmc_6b23", "slot": "Vest", "name": ("6B23-1 body armour and Triton chest harness", "Gilet pare-balles 6B23-1 et harnais Triton"),
+             "mass": 45, "armor": 70, "load": 20, "show": [("Armour", "eft_6b23")]},
+            {"class": "advinv_milou_eftpmc_m1", "slot": "Vest", "name": ("M1 armoured rig", "Gilet de combat blindé M1"), "mass": 40, "armor": 70, "load": 20,
+             "show": [("Armour", "eft_m1")]},
+            {"class": "advinv_milou_eftpmc_tactec", "slot": "Vest", "name": ("TacTec plate carrier", "Porte-plaques TacTec"), "mass": 45, "armor": 90, "load": 25,
+             "show": [("Armour", "eft_tactec")]},
+            {"class": "advinv_milou_eftpmc_hexgrid", "slot": "Vest", "name": ("Hexgrid plate carrier and Azimut chest harness", "Porte-plaques Hexgrid et harnais Azimut"),
+             "mass": 50, "armor": 90, "load": 20, "show": [("Armour", "eft_hexgrid")]},
+            {"class": "advinv_milou_eftpmc_slick", "slot": "Vest", "name": ("Slick plate carrier and BlackRock chest rig", "Porte-plaques Slick et porte-chargeurs BlackRock"),
+             "mass": 55, "armor": 100, "load": 25, "show": [("Armour", "eft_slick")]},
+            {"class": "advinv_milou_eftpmc_mbss", "slot": "Rucksack", "name": ("MBSS backpack", "Sac à dos MBSS"), "mass": 12, "load": 25,
+             "show": [("Backpack", "eft_mbss")]},
+            {"class": "advinv_milou_eftpmc_attack2", "slot": "Rucksack", "name": ("SSO Attack 2 raid backpack", "Sac de raid SSO Attack 2"), "mass": 30, "load": 60,
+             "show": [("Backpack", "eft_attack2")]},
+        ],
+    },
+    "eft_pmc_usec": {
+        "key": "eft_pmc_usec",
+        "title": "Escape From Tarkov PMC (USEC)",
+        "wid": "2568198284",
+        "author": "milou2764 (gear of the Escape From Tarkov PMC playermodels)",
+        "category": ("Inventory: Escape From Tarkov PMC gear", "Inventaire : équipement PMC Escape From Tarkov"),
+        "models": [f"models/player/eft/pmc/eft_usec/models/eft_usec_pm_{k}.mdl" for k in ("redux", "beltstaff", "hoody", "nightpatrol", "tier2", "tier3")],
+        "items": [
+            {"class": "advinv_milou_eftpmc_cap_usec", "slot": "Helmet", "name": ("USEC cap", "Casquette USEC"), "mass": 1,
+             "show": [("Headgear", "eft_capusec")]},
+        ],
+    },
+    "eft_pmc_bear": {
+        "key": "eft_pmc_bear",
+        "title": "Escape From Tarkov PMC (BEAR)",
+        "wid": "2568198284",
+        "author": "milou2764 (gear of the Escape From Tarkov PMC playermodels)",
+        "category": ("Inventory: Escape From Tarkov PMC gear", "Inventaire : équipement PMC Escape From Tarkov"),
+        "models": [f"models/player/eft/pmc/eft_bear/models/eft_bear_pm_{k}.mdl" for k in ("redux", "lynx", "summer")],
+        "items": [
+            {"class": "advinv_milou_eftpmc_cap_bear", "slot": "Helmet", "name": ("BEAR cap", "Casquette BEAR"), "mass": 1,
+             "show": [("Headgear", "eft_capbear")]},
+            {"class": "advinv_milou_eftpmc_paca", "slot": "Vest", "name": ("PACA soft armour and Bank Robber chest rig", "Gilet souple PACA et porte-chargeurs Bank Robber"),
+             "mass": 25, "armor": 50, "load": 15, "show": [("Armour", "eft_paca")]},
         ],
     },
 }

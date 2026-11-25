@@ -291,6 +291,17 @@ builtin("models/humans/civilwar/male_01.mdl", "Rucksack")
 builtin("models/humans/civilwar/male_02.mdl", "Rucksack")
 builtin("models/humans/civilwar/male_03.mdl", "Rucksack")
 builtin("models/humans/civilwar/male_04.mdl", "Rucksack")
+-- Dying Light Security forces (Workshop 3551549411): the GRE, police, military and third T.E.A.R. soldiers'
+-- vests are part of their body (their face, headgear, goggles and the first T.E.A.R. soldier's kit are bodygroups)
+builtin("models/dl/gre1_p.mdl", "Vest")
+builtin("models/dl/gre2_p.mdl", "Vest")
+builtin("models/dl/gre3_p.mdl", "Vest")
+builtin("models/dl/policeman1_p.mdl", "Vest")
+builtin("models/dl/policeman2_p.mdl", "Vest")
+builtin("models/dl/policeman3_p.mdl", "Vest")
+builtin("models/dl/soldier1_p.mdl", "Vest")
+builtin("models/dl/soldier2_p.mdl", "Vest")
+builtin("models/dl/tear_soldier3_p.mdl", "Vest")
 
 -- True when the entity's playermodel (and its bodygroups) already has gear of its own in that slot.
 function I.HasBuiltInGear(ent, slot)

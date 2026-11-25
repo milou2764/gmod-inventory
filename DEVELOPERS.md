@@ -293,7 +293,7 @@ addon is redistributed; without it the items aren't available (not spawnable, ne
 
 - On the pack's own playermodels the item is shown by the bodygroup itself (rigged for that body),
   and the bodygroups the pack's items use are locked to the pack's `blank` values there: their gear
-  shows only while the item is worn (an `AdvInv.ModelGear` entry with its own `lock` wins).
+  shows only while the item is worn (an `AdvInv.ModelGear` entry with its own `lock` wins; the locks of several packs of one model add up: the Dying Light soldier whose head gear is in one pack, his kit in another).
   Those bodygroups are locked (`ModelGear` `lock`): picking them in a menu does nothing, only the
   item worn shows them.
 - On any other playermodel a copy follows the head or the torso, with a fit per playermodel (the
@@ -334,7 +334,7 @@ Options of an item in `tools/compat_packs.py` (the extra dict), for gear the mea
 by their head's size), `full` (a helmet enclosing the whole head), `outer` (width ratio, top gap:
 helmets whose inside can't be measured), `min_ratio` (an open helmet at least that wide x the skull), `sizes` (min, max sizes),
 `lift` (helmet raised, units), `size` (a vest's size on male_07, other bodies by their chest girth),
-`tilt` (back item turned around the shoulders), `straps` (a pack modelled with its shoulder straps on: placed by its back panel, the straps wrap the shoulders). Orientations are read in the rest pose the tools use (`fit_items.rest_mesh`), which can be a quarter turn from the raw vertices. The review sheets (`tools/review_sheets.py`) show
+`tilt` (back item turned around the shoulders), `straps` (a pack modelled with its shoulder straps on: placed by its back panel, the straps wrap the shoulders). Orientations are read in the rest pose the tools use (`fit_items.rest_mesh`), which can be a quarter turn from the raw vertices. A playermodel without an "eyes" attachment (the Dying Light Security forces) gets the reference body's eyes frame, in the same place relative to its head bone, for fitting head gear. The review sheets (`tools/review_sheets.py`) show
 every item on every playermodel of a list.
 
 The fits are made offline by the tools, from the models' meshes (`tools/`, Python 3, numpy, PIL):
@@ -391,6 +391,14 @@ the long guns (held like one: ar2, smg, shotgun, crossbow, rpg hold types, or th
 weapon class; the game uses them instead of the mode's template (which stays for any weapon not
 listed).
 
+A world model is measured in its rest pose, the one its first animation gives (`anim0.py`, and the
+game draws it so). Most guns lie there with the barrel along X and the top up. A model clearly longer
+along Y than X (1.25 times) is taken as one whose animation turned it: the Sandstorm SWEPs, whose
+world models made for the hand bone lie barrel along Y and upside down. `fit_carry.Weapon` and the
+game's `AdvInv.WeaponGeometry` both turn such a model into that frame first (`g.turn`;
+`AdvInv.GeomToModelAngles` / `ModelToGeomAngles` convert placements), and the carry editor spins it
+around its longest axis.
+
 Start it with `tools/fit_editor/fit_editor.bat`, with `ADVINV_PYTHON` (Python with numpy and
 Pillow) and `MDL_EXTRA_DIRS` set in the environment or in `tools/fit_editor/local.bat` (not in
 git). It runs `tools/fit_editor_export.py`, which reads the models once into
@@ -408,7 +416,7 @@ review them with "Review Claude's approvals" and change them; the user's own app
 ## Other weapon bases
 
 - **Attachments** travel with the item in `x` (a string, at most 4096 characters). Built-in:
-  ARC9 (preset code), TFA (selected attachments), CW 2.0 (names; whoever equips the weapon is given
+  ARC9 (preset code), TFA (selected attachments), Sandstorm SWEPs (attachments and skins), CW 2.0 (names; whoever equips the weapon is given
   them). Any base (server hooks):
 
 ```lua
@@ -435,6 +443,10 @@ end
 ```
 
 - `lua/advinv/sv_cw2.lua` is a full example (its drop command, its dropped weapons, its ammo kits).
+- `lua/advinv/sv_sandswep.lua`: a base that keeps spare magazines inside the weapon. Its magazine
+  functions are wrapped as the base registers (`PreRegisterSWEP`): for a player's weapon the spare
+  magazines mirror the reserve (the boxes), and what the base takes from them or puts back goes
+  through the reserve (`RemoveAmmo`, `AdvInv.GiveRounds`).
 
 ## Storage entities
 

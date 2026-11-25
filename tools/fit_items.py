@@ -65,6 +65,12 @@ class Body:
         self.world = {b["name"]: b["world"] for b in self.bones}
         self.P, self.dom = refbody.skinned_vertices(model)
         self.eyes = self._attachment("eyes")
+        # a model without an "eyes" attachment (some ports have none: the Dying Light Security forces):
+        # the reference body's eyes frame, kept in the same place relative to the head bone
+        self.eyes_guessed = False
+        if self.eyes is None and HEAD in self.world and model.lower() != REF:
+            self.eyes = self.world[HEAD] @ ref_eyes_local()
+            self.eyes_guessed = True
 
     def _attachment(self, name):
         d = mr.vpk_read(self.model)
@@ -92,12 +98,22 @@ class Body:
         return np.linalg.inv(self.world[HEAD]) @ self.eyes
 
 
+_ref_eyes = []
+
+
+def ref_eyes_local():
+    """The reference body's (male_07) eyes frame in its head bone's frame."""
+    if not _ref_eyes:
+        _ref_eyes.append(Body(REF).eyes_local())
+    return _ref_eyes[0]
+
+
 _mesh = {}
 
 
 def rest_mesh(model):
     if model not in _mesh:
-        pos, nrm, uv, tris, mats = anim0.posed_mesh(model)
+        pos, nrm, uv, tris, mats = anim0.posed_mesh(model, textures=False)  # (geometry only)
         used = sorted({t[k] for t in tris for k in range(3)})
         _mesh[model] = (pos, tris, pos[used])
     return _mesh[model]

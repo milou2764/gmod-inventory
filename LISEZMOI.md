@@ -255,7 +255,7 @@ prise en main (pistolets, armes de mêlée et grenades : arme de poing ; RPG : l
 reste : arme principale) ; `SWEP.AdvInvCategory` et `SWEP.AdvInvMass` sur l'arme le remplacent. Le
 physgun, le toolgun, l'appareil photo, les mains et les outils de DarkRP sont exclus.
 
-## Autres bases d'armes (ARC9, TFA, CW 2.0, M9K...)
+## Autres bases d'armes (ARC9, TFA, CW 2.0, Sandstorm, M9K...)
 
 Les armes de n'importe quelle base deviennent des armes génériques (voir plus haut). Leurs
 munitions :
@@ -270,7 +270,8 @@ munitions :
 
 Accessoires : une arme garde ses données en plus à travers l'inventaire (retirée, rangée, déposée,
 rééquipée, enregistrée). Intégré, sans essai sur toutes les versions de ces bases : ARC9 (code de
-préréglage), TFA (accessoires choisis), CW 2.0 (accessoires). N'importe quelle base : hooks
+préréglage), TFA (accessoires choisis), CW 2.0 (accessoires), Sandstorm SWEPs (accessoires et leurs
+motifs). N'importe quelle base : hooks
 (serveur) `AdvInv_WeaponData(wep)` -> une chaîne, et `AdvInv_ApplyWeaponData(wep, data)`
 -> true une fois fait. Les armes aux données différentes ne s'empilent pas.
 
@@ -287,6 +288,17 @@ préréglage), TFA (accessoires choisis), CW 2.0 (accessoires). N'importe quelle
   l'inventaire ;
 - les munitions des trousses et caisses de munitions de CW 2.0 vont dans des boîtes de munitions
   génériques de leur calibre.
+
+**Sandstorm SWEPs** (« Sandstorm SWEP Base » du Workshop et ses packs : fusils d'assaut, pistolets,
+pistolets de Ready or Not ; `lua/advinv/sv_sandswep.lua`) :
+
+- les accessoires et leurs motifs restent sur l'arme, avec le chargeur qui va avec ;
+- la base garde des chargeurs de rechange dans l'arme (pleins à chaque nouvelle arme, la réserve
+  versée dedans). Pour l'arme d'un joueur, ils ne montrent que les munitions des boîtes : un
+  rechargement prend ses munitions dans les boîtes, un chargeur retiré (autre chargeur monté,
+  rechargement interrompu) y remet les siennes. Pas de chargeurs offerts, rien de caché dans l'arme ;
+- ses 25 fusils ont leurs positions de port sur chaque playermodel ajusté (à la bretelle, dans le
+  dos, devant).
 
 ## Addons du Workshop compatibles
 
@@ -335,6 +347,7 @@ n'est livré) :
 | [Civil War Soldiers [Playermodel + Ragdolls]](https://steamcommunity.com/sharedfiles/filedetails/?id=3614216336) | 8 soldats (4 de l'Union, 4 confédérés) |
 | [RS2: Forces of the East](https://steamcommunity.com/sharedfiles/filedetails/?id=2944903873) | 4 soldats (2 de l'APVN, 2 Viêt-minh) |
 | [PMC Pack Redux (Playermodels & NPCs)](https://steamcommunity.com/sharedfiles/filedetails/?id=1769231405) | 8 soldats de SMP |
+| [Dying Light Security forces playermodels and ragdolls](https://steamcommunity.com/sharedfiles/filedetails/?id=3551549411) | 11 membres des forces de sécurité (GRE, police, soldats, T.E.A.R.) |
 
 Tout autre playermodel utilise l'ajustement par défaut de chaque objet (fait sur male_07). La liste
 des modèles ajustés est `tools/playermodels.txt` (Garry's Mod) et `tools/playermodels_workshop.txt` ;

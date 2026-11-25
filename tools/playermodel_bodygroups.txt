@@ -95,3 +95,27 @@ models/pmc/pmc_5/sas_pm.mdl 3=0 4=0 5=0 6=0 10=0
 models/pmc/pmc_6/desert_pm.mdl 3=0 4=0 5=0 6=0 10=0
 models/pmc/pmc_7/super_pm.mdl 3=0 4=0 5=0 6=0 10=0
 models/pmc/pmc_8/snw_pm.mdl 3=0 4=0 5=0 6=0 10=0
+# Dying Light Security forces (Workshop 3551549411): face, headgear, goggles off; GRE/police equipment
+# off; the T.E.A.R. soldier's kit (belts, ammo, bag, radio, pouches) off; handcuffs and armband left on
+models/dl/gre1_p.mdl 1=0 2=0 3=0 5=1
+models/dl/gre2_p.mdl 1=0 2=0 3=0 5=1
+models/dl/gre3_p.mdl 1=0 2=0 3=0 5=1
+models/dl/policeman1_p.mdl 1=0 2=0 3=0 5=1
+models/dl/policeman2_p.mdl 1=0 2=0 3=0 5=1
+models/dl/policeman3_p.mdl 1=0 2=0 3=0 5=1
+models/dl/soldier1_p.mdl 1=0 2=0 3=0
+models/dl/soldier2_p.mdl 1=0 2=0 3=0
+models/dl/tear_soldier1_p.mdl 1=0 2=0 3=0 5=1 6=1 7=1 8=2 9=1 10=1 13=1 14=1 15=1 16=1 17=1
+models/dl/tear_soldier2_p.mdl 1=0 2=0 3=0
+models/dl/tear_soldier3_p.mdl 1=0 2=0 3=0
+# Escape From Tarkov PMC playermodels [Redux] (Workshop 2568198284): face cover, headgear, headset,
+# eyewear, armour and backpack off (their first choice, empty)
+models/player/eft/pmc/eft_usec/models/eft_usec_pm_redux.mdl 2=0 3=0 4=0 5=0 6=0 7=0
+models/player/eft/pmc/eft_usec/models/eft_usec_pm_beltstaff.mdl 2=0 3=0 4=0 5=0 6=0 7=0
+models/player/eft/pmc/eft_usec/models/eft_usec_pm_hoody.mdl 2=0 3=0 4=0 5=0 6=0 7=0
+models/player/eft/pmc/eft_usec/models/eft_usec_pm_nightpatrol.mdl 2=0 3=0 4=0 5=0 6=0 7=0
+models/player/eft/pmc/eft_usec/models/eft_usec_pm_tier2.mdl 2=0 3=0 4=0 5=0 6=0 7=0
+models/player/eft/pmc/eft_usec/models/eft_usec_pm_tier3.mdl 2=0 3=0 4=0 5=0 6=0 7=0
+models/player/eft/pmc/eft_bear/models/eft_bear_pm_redux.mdl 2=0 3=0 4=0 5=0 6=0 7=0
+models/player/eft/pmc/eft_bear/models/eft_bear_pm_lynx.mdl 2=0 3=0 4=0 5=0 6=0 7=0
+models/player/eft/pmc/eft_bear/models/eft_bear_pm_summer.mdl 2=0 3=0 4=0 5=0 6=0 7=0

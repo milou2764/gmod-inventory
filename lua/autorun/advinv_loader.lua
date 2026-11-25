@@ -30,6 +30,7 @@ local files = {
     "sv_death.lua",
     "sv_generic.lua",
     "sv_cw2.lua",
+    "sv_sandswep.lua",
     "sv_admin.lua",
     "sv_use.lua",
     "sv_grenades.lua",

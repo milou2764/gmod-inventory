@@ -11,7 +11,7 @@ An Arma 3-style inventory for Garry's Mod: what you wear is what you carry. Helm
 [*][b]Death and looting:[/b] bodies keep their gear; search them, or search other players (illegal items, confiscation).
 [*][b]Storage:[/b] permanent, shared or personal crates, locks with codes, banks, loot tables, vehicle trunks.
 [*][b]DarkRP ready:[/b] purchases go to the inventory, job and jail keep it, optional inventory per job.
-[*][b]Any weapon base[/b] (attachments kept for ARC9, TFA, CW 2.0), grenades as items, usable items, crafting (off by default).
+[*][b]Any weapon base[/b] (attachments kept for ARC9, TFA, CW 2.0, Sandstorm SWEPs), grenades as items, usable items, crafting (off by default).
 [*][b]Admin menu[/b] for inventories and every setting, CAMI privileges, logs. Server-authoritative and rate limited.
 [*]Five languages, three themes. Lua only: every model comes with Garry's Mod.
 [/list]

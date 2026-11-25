@@ -41,6 +41,7 @@ FIELD = {
     "ammo": r'SWEP\.Primary\.Ammo\s*=\s*"([^"]*)"',
     "base": r'SWEP\.Base\s*=\s*"([^"]*)"',
     "category": r'SWEP\.AdvInvCategory\s*=\s*"([^"]*)"',
+    "spawnable": r'SWEP\.Spawnable\s*=\s*(true|false)',
 }
 
 
@@ -139,7 +140,8 @@ def scan(roots):
     bases = {f.get("base") for f in info.values()}
     rows, skipped = [], []
     for cls in sorted(info):
-        if cls in BUILTIN or cls in bases or cls.endswith("_base"):
+        # a base is left out, unless it is a weapon too (spawnable: the Sandstorm Galil, base of the Galil SAR)
+        if cls in BUILTIN or cls.endswith("_base") or (cls in bases and info[cls].get("spawnable") != "true"):
             continue
         model = (get(cls, "model") or "").lower().replace("\\", "/")
         hold = (get(cls, "hold") or get(cls, "normal_hold") or "").lower()

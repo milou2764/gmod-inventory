@@ -130,10 +130,10 @@ def rest_bones(model):
     return world
 
 
-def posed_mesh(model):
+def posed_mesh(model, textures=True):
     """mdl_render.load_model, skinned into the rest pose (dominant bone of each vertex)."""
     import refbody  # noqa: E402  (bind matrices)
-    pos, nrm, uv, tris, mats = mr.load_model(model)
+    pos, nrm, uv, tris, mats = mr.load_model(model, textures)
     world = rest_bones(model)
     bind = [b["world"] for b in refbody.bones(model)]
     K = np.array([world[k] @ np.linalg.inv(bind[k]) for k in range(len(world))])

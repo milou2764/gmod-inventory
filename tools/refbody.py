@@ -36,7 +36,7 @@ def bones(model=REF):
 def skinned_vertices(model=REF):
     """Positions (model space) and dominant bone index of every LOD0 vertex used by triangles."""
     vvd = mr.vpk_read(model[:-4] + ".vvd")
-    pos, nrm, uv, tris, mats = mr.load_model(model)
+    pos, nrm, uv, tris, mats = mr.load_model(model, textures=False)  # (geometry only)
     nfix, fixstart, vstart = (struct.unpack_from("<i", vvd, o)[0] for o in (48, 52, 56))
     raw_bone = []
     for k in range(struct.unpack_from("<i", vvd, 16)[0]):

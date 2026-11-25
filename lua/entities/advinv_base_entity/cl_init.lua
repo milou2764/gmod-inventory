@@ -22,11 +22,17 @@ function ENT:Initialize()
 end
 
 function ENT:Draw(flags)
+    -- lit from the gear itself, as worn gear is: the engine lights the whole body from its own
+    -- illumination point, moved by ModelOrigin and turned with the item (black: a Dying Light helmet
+    -- lying upside down, its illumination point under the floor; a lighting origin alone isn't enough)
+    local lit = self.ModelOrigin and AdvInv.LightGearAt
+    if lit then AdvInv.LightGearAt(self:GetPos()) end
     if self.ModelPieces then -- stored look in pieces (pouches with nothing between them, pushed together)
         AdvInv.DrawModelPieces(self, self.ModelPieces, flags, -self.ModelOrigin)
     else
         self:DrawModel(flags)
     end
     -- parts on the hidden body's material, drawn apart (sh_modelgear_items.lua)
-    if self.ModelSharedLooks then AdvInv.DrawSharedParts(self, self, false, -self.ModelOrigin, true) end
+    if self.ModelSharedLooks then AdvInv.DrawSharedParts(self, self, false, -self.ModelOrigin, not lit) end
+    if lit then render.SuppressEngineLighting(false) end
 end

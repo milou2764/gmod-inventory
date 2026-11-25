@@ -491,8 +491,11 @@ static void adjusted(int p, const double *adj, double out[7])
     mv3(Rb, v, p0);
     for (int i = 0; i < 3; i++) p0[i] += tb[i];
     double Q[3][3], Qt[3][3], Qs[3][3], W0[3][3], len[3], ax0[3] = { 1, 0, 0 };
+    /* the item's own length: its model's longest axis (X for most guns; Y for the Sandstorm SWEPs,
+       posed by their idle animation) */
+    if (it->hi[1] - it->lo[1] > 1.25 * (it->hi[0] - it->lo[0])) { ax0[0] = 0; ax0[1] = 1; }
     mul3(Rb, M0, W0);
-    mv3(W0, ax0, len);   /* the item's own length (its model's X: a gun's muzzle) */
+    mv3(W0, ax0, len);
     double ln = sqrt(len[0] * len[0] + len[1] * len[1] + len[2] * len[2]);
     for (int i = 0; i < 3; i++) len[i] /= ln > 1e-9 ? ln : 1;
     axis_rot(Lf, -adj[4], Q);                     /* tilt: front up */

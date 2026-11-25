@@ -21,13 +21,17 @@ ALIAS_TOL units of its own fit.
 
     python fit_carry.py [models.txt]     (default: playermodels.txt, the base game's list)
     python fit_carry.py --current        (the playermodels cl_carry_data.lua already has)
+    --jobs N: processes fitting the playermodels (default: up to 8), at below normal priority.
 Tuned values (advinv_carry_tune, saved in garrysmod/data/advinv_carry_tuned.json) can be copied to
 tools/carry_overrides.json: they replace the computed offsets of their set / weapon / mode.
 """
 import json
 import math
+import os
 import sys
+from multiprocessing import Pool
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -43,6 +47,11 @@ REF = "models/player/group01/male_07.mdl"
 GAP = 0.3          # room between the weapon and the body
 CELL = 0.75        # contact grid (units)
 ALIAS_TOL = 1.0    # max difference (weapon corners, units) to share another model's set
+JOBS = min(8, os.cpu_count() or 1)  # processes fitting the playermodels (--jobs N)
+TURN_RATIO = 1.25  # a weapon model longer along Y than X by this: its barrel lies along Y
+# model -> barrel along X, top up (cl_weapons.lua: the same). Such models (the Sandstorm SWEPs, posed by
+# their idle animation) lie upside down too: all 27 of that pack were, their sights towards -Z
+TURN = np.array([[0, 1.0, 0], [1, 0, 0], [0, 0, -1]])
 ARMS = ("UpperArm", "Forearm", "Hand", "Finger", "Wrist", "Ulna", "Elbow", "Bicep")
 
 WEAPONS = {  # class: (model, modes)
@@ -79,11 +88,14 @@ class Weapon:
     AR2's disc) may sink into it; counting them would hold the whole gun off the body."""
 
     def __init__(self, model):
-        pos, _, _, tris, _ = anim0.posed_mesh(model)
+        pos, _, _, tris, _ = anim0.posed_mesh(model, textures=False)
         used = sorted({t[k] for t in tris for k in range(3)})
         P = pos[used]
         Q = np.eye(3)
-        if self._muzzle_back(model, P):
+        ext = P.max(0) - P.min(0)
+        if ext[1] > TURN_RATIO * ext[0]:  # barrel along Y at rest (the Sandstorm SWEPs: their idle animation
+            Q = TURN.copy()                # turns the hand bone): turned first (as the game's I.WeaponGeometry)
+        if self._muzzle_back(model, P, Q):
             Q = np.diag([-1.0, -1.0, 1.0]) @ Q
         Pq = P @ Q.T
         core = lambda ax: np.percentile(Pq[:, ax], 95) - np.percentile(Pq[:, ax], 5)
@@ -105,14 +117,16 @@ class Weapon:
         self.Pc = self.P[(self.P[:, 1] >= lo - 0.25) & (self.P[:, 1] <= hi + 0.25)]
 
     @staticmethod
-    def _muzzle_back(model, P):
+    def _muzzle_back(model, P, Q):
         import studio  # noqa: E402
         m = studio.Model(mr.vpk_read(model))
         W = anim0.rest_bones(model)
         for a in m.attachments:
             if a["name"].lower() == "muzzle":
                 L = np.vstack([a["local"], [0, 0, 0, 1]])
-                return (W[a["bone"]] @ L)[0, 3] < (P[:, 0].min() + P[:, 0].max()) / 2
+                x = Q @ (W[a["bone"]] @ L)[:3, 3]
+                Px = P @ Q[0]
+                return x[0] < (Px.min() + Px.max()) / 2
         return False
 
 
@@ -157,23 +171,30 @@ def place(body, w, d, n, top_hint, ref_point, target):
     a1 = unit(np.cross(n, d))
     def grid(points):
         return np.floor(np.c_[points @ d, points @ a1] / CELL).astype(int)
-    wc, bc = grid(W + t), grid(body.solid)
-    wn, bn = W @ n, body.solid @ n
-    inner = {}
-    for (i, j), v in zip(map(tuple, wc), wn):
-        if v < inner.get((i, j), np.inf):
-            inner[(i, j)] = v
-    outer = {}
-    for (i, j), v in zip(map(tuple, bc), bn):
-        if (i, j) in inner and v > outer.get((i, j), -np.inf):
-            outer[(i, j)] = v
-    if outer:
-        need = max(outer[c] - inner[c] for c in outer) + GAP
+    inner, outer = cell_extremes(grid(W + t), W @ n, grid(body.solid), body.solid @ n)
+    if len(outer):
+        need = (outer - inner).max() + GAP
     else:  # nothing under the weapon: put it at the target
         need = np.asarray(target, float) @ n - (R @ np.asarray(ref_point, float)) @ n
     t = t + n * (need - t @ n)
-    clear = min((t @ n + inner[c]) - outer[c] for c in outer) if outer else None
+    clear = ((t @ n + inner) - outer).min() if len(outer) else None
     return R, t, clear
+
+
+def cell_extremes(wc, wn, bc, bn):
+    """On the contact grid: for each cell holding both weapon and body points, the weapon's lowest
+    point (inner) and the body's highest (outer) along the resting side. wc, bc: (N, 2) cells of the
+    points, wn, bn: their heights. -> (inner, outer), same cells in the same order."""
+    lo, hi = wc.min(0), wc.max(0)
+    nj = hi[1] - lo[1] + 1
+    size = (hi[0] - lo[0] + 1) * nj
+    inner = np.full(size, np.inf)
+    np.minimum.at(inner, (wc[:, 0] - lo[0]) * nj + (wc[:, 1] - lo[1]), wn)
+    m = np.all((bc >= lo) & (bc <= hi), axis=1)  # body points within the weapon's footprint box
+    outer = np.full(size, -np.inf)
+    np.maximum.at(outer, (bc[m, 0] - lo[0]) * nj + (bc[m, 1] - lo[1]), bn[m])
+    both = np.isfinite(inner) & np.isfinite(outer)
+    return inner[both], outer[both]
 
 
 def modes_for(body, w):
@@ -217,8 +238,18 @@ def to_bone(body, bone, w, R, t, n):
 
 
 def corners(w):
-    mn, mx = w.P.min(0), w.P.max(0)
-    return np.array([[x, y, z] for x in (mn[0], mx[0]) for y in (mn[1], mx[1]) for z in (mn[2], mx[2])])
+    if getattr(w, "_corners", None) is None:  # (once per weapon: the set checks ask for them thousands of times)
+        mn, mx = w.P.min(0), w.P.max(0)
+        w._corners = np.array([[x, y, z] for x in (mn[0], mx[0]) for y in (mn[1], mx[1]) for z in (mn[2], mx[2])])
+    return w._corners
+
+
+def model_points(w):
+    """The weapon's canonical points and corners in its model space (once per weapon)."""
+    if getattr(w, "_model_points", None) is None:
+        Qi = np.linalg.inv(w.Q).T
+        w._model_points = (w.Pc @ Qi, corners(w) @ Qi)
+    return w._model_points
 
 
 # ---------------------------------------------------------------- run
@@ -245,7 +276,7 @@ def model_space(body, w, e):
     Bw = body.world[e["bone"]]
     Rm = Bw[:3, :3] @ mr.rot_matrix(*e["ang"])
     t = Bw[:3, :3] @ e["pos"] + Bw[:3, 3]
-    C = corners(w) @ np.linalg.inv(w.Q).T  # canonical corners -> weapon model space
+    C = model_points(w)[1]  # canonical corners -> weapon model space
     return C @ Rm.T + t, Rm, t
 
 
@@ -253,7 +284,7 @@ def placed_points(body, w, e):
     """Weapon vertices placed by bone-relative values e on body (model space)."""
     Bw = body.world[e["bone"]]
     Rm = Bw[:3, :3] @ mr.rot_matrix(*e["ang"])
-    return (w.Pc @ np.linalg.inv(w.Q).T) @ Rm.T + Bw[:3, :3] @ e["pos"] + Bw[:3, 3]
+    return model_points(w)[0] @ Rm.T + Bw[:3, :3] @ e["pos"] + Bw[:3, 3]
 
 
 def penetration(body, w, e, solid=None):
@@ -264,19 +295,13 @@ def penetration(body, w, e, solid=None):
     Bw = body.world[e["bone"]]
     Rm = Bw[:3, :3] @ mr.rot_matrix(*e["ang"])
     t = Bw[:3, :3] @ e["pos"] + Bw[:3, 3]
-    W = (w.Pc @ np.linalg.inv(w.Q).T) @ Rm.T + t
+    W = model_points(w)[0] @ Rm.T + t
     n = unit(Bw[:3, :3] @ e["out"])
     d = unit(Rm @ (w.Q.T @ np.array([1.0, 0, 0])))
     a1 = unit(np.cross(n, d))
-    g = lambda pts: map(tuple, np.floor(np.c_[pts @ d, pts @ a1] / CELL).astype(int))
-    inner = {}
-    for c, v in zip(g(W), W @ n):
-        inner[c] = min(inner.get(c, np.inf), v)
-    worst = -np.inf
-    for c, v in zip(g(solid), solid @ n):
-        if c in inner:
-            worst = max(worst, v - inner[c])
-    return worst
+    g = lambda pts: np.floor(np.c_[pts @ d, pts @ a1] / CELL).astype(int)
+    inner, outer = cell_extremes(g(W), W @ n, g(solid), solid @ n)
+    return (outer - inner).max() if len(outer) else -np.inf
 
 
 BACK_SIDE = {"sling_up", "sling_down"}
@@ -305,20 +330,86 @@ def stacking(body, weapons, res):
     return out
 
 
+_weapons = None
+
+
+def _worker_init():
+    global _weapons
+    _weapons = {cls: Weapon(path) for cls, (path, _) in WEAPONS.items()}
+
+
+def _fit_one(m):
+    """One playermodel, in a worker: (model, its placements, the body's parts used afterwards)."""
+    body, res = fit_model(m, _weapons)
+    if res is None:
+        return m, None, None
+    return m, res, SimpleNamespace(solid=body.solid, world=body.world)
+
+
+def _deepest(args):
+    """The deepest contact of these placements on body (a share of a set check)."""
+    body, entries = args
+    return max(penetration(body, _weapons[cls], e) for cls, e in entries)
+
+
+def _stack_one(args):
+    body, res = args
+    return stacking(body, _weapons, res)
+
+
+def _report_one(args):
+    """How far each weapon goes into the body m in its set's placements (the report)."""
+    m, body, entries = args
+    return [(penetration(body, _weapons[cls], e), m, cls, mode) for cls, mode, e in entries]
+
+
+class _Serial:
+    """Pool stand-in for --jobs 1."""
+    def __init__(self, weapons):
+        global _weapons
+        _weapons = weapons
+
+    def imap(self, f, items, chunksize=1):
+        return map(f, items)
+
+    def close(self):
+        pass
+
+    def join(self):
+        pass
+
+
 def main():
+    global JOBS
+    args = sys.argv[1:]
+    if "--jobs" in args:
+        k = args.index("--jobs")
+        JOBS = int(args[k + 1])
+        del args[k:k + 2]
+    sys.argv[1:] = args
+    if os.name == "nt":  # below normal priority, the workers too: the computer stays usable meanwhile
+        import ctypes
+        k32 = ctypes.windll.kernel32
+        k32.GetCurrentProcess.restype = ctypes.c_void_p
+        k32.SetPriorityClass.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        k32.SetPriorityClass(k32.GetCurrentProcess(), 0x4000)
     if sys.argv[1:2] == ["--current"]:  # the playermodels the game's carry data already has
         import carry_data
         models = sorted(carry_data.read()[1])
     else:
         lst = Path(sys.argv[1]) if len(sys.argv) > 1 else TOOLS / "playermodels.txt"
         models = [l.strip() for l in lst.read_text(encoding="utf-8").splitlines() if l.strip()]
-    weapons = {cls: Weapon(path) for cls, (path, _) in WEAPONS.items()}
     overrides = json.loads(OVERRIDES.read_text(encoding="utf-8")) if OVERRIDES.exists() else {}
     fitted, bodies, skipped = {}, {}, []
     todo = [REF] + [x for x in models if x.lower() != REF]
-    for k, m in enumerate(todo, 1):
+    jobs = max(1, min(JOBS, len(todo)))
+    # several processes (started first: they load the weapons while this one does too); the
+    # playermodels come back in order, so the sets below come out the same
+    pool = Pool(jobs, initializer=_worker_init) if jobs > 1 else None
+    weapons = {cls: Weapon(path) for cls, (path, _) in WEAPONS.items()}
+    pool = pool or _Serial(weapons)
+    for k, (m, res, body) in enumerate(pool.imap(_fit_one, todo), 1):
         print(f"  playermodel {k}/{len(todo)}  {m}", flush=True)
-        body, res = fit_model(m, weapons)
         if res is None:
             skipped.append(m)
             continue
@@ -328,22 +419,18 @@ def main():
     for m, res in fitted.items():
         body = bodies[m]
         chosen = None
+        pairs = [(weapons[cls], cls, mode, model_space(body, weapons[cls], own)[0])
+                 for cls, modes in res.items() for mode, own in modes.items()]
         for name, rep in sets.items():
-            ok = True
-            for cls, modes in res.items():
-                w = weapons[cls]
-                for mode, own in modes.items():
-                    e = rep["res"][cls][mode]
-                    a, _, _ = model_space(body, w, e)
-                    b, _, _ = model_space(body, w, own)
-                    if np.abs(a - b).max() > ALIAS_TOL or penetration(body, w, e) > 0.05:
-                        ok = False
-                        break
-                if not ok:
+            # the corners of every weapon and mode first (cheap), the contacts only if they all match
+            # (shared among the workers)
+            if all(not (np.abs(model_space(body, w, rep["res"][cls][mode])[0] - own).max() > ALIAS_TOL)
+                   for w, cls, mode, own in pairs):
+                entries = [(cls, rep["res"][cls][mode]) for _, cls, mode, _ in pairs]
+                parts = [(body, entries[k::jobs]) for k in range(jobs) if entries[k::jobs]]
+                if not (max(pool.imap(_deepest, parts)) > 0.05):
+                    chosen = name
                     break
-            if ok:
-                chosen = name
-                break
         if chosen is None:
             chosen = "default" if m == REF else Path(m).stem if Path(m).parent.name == "player" else \
                 f"{Path(m).parent.name}_{Path(m).stem}"
@@ -370,8 +457,9 @@ def main():
             e = name and sets.get(name, {}).get("res", {}).get(wm[0], {}).get(wm[1])
             if e:
                 e.update(pos=np.array(p), ang=tuple(a))
-    for name, s in sets.items():
-        s["stack"] = stacking(bodies[s["rep"]], weapons, s["res"])
+    # launcher and primary weapon crossing on the back, per set (in the workers)
+    for s, stack in zip(sets.values(), pool.imap(_stack_one, [(bodies[s["rep"]], s["res"]) for s in sets.values()])):
+        s["stack"] = stack
     # templates for weapons without offsets: the default body's rules (surface point, outward, angles)
     templates = {}
     ref = bodies[REF]
@@ -395,11 +483,12 @@ def main():
     write_lua(sets, aliases, templates, models)
     # report
     worst = []
-    for m, name in aliases.items():
-        body = bodies[m]
-        for cls, modes in sets[name]["res"].items():
-            for mode, e in modes.items():
-                worst.append((penetration(body, weapons[cls], e), m, cls, mode))
+    jobs_report = [(m, bodies[m], [(cls, mode, e) for cls, modes in sets[name]["res"].items() for mode, e in modes.items()])
+                   for m, name in aliases.items()]
+    for part in pool.imap(_report_one, jobs_report, chunksize=4):
+        worst += part
+    pool.close()
+    pool.join()
     worst.sort(reverse=True)
     print(f"{len(fitted)} playermodels, {len(sets)} offset sets, skipped: {skipped or 'none'}")
     print("deepest contacts (<= 0 = no clipping):")
