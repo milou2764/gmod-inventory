@@ -27,6 +27,8 @@ peut porter) :
 | [Civil War gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180762) | képis de l'Union et confédéré | Civil War Soldiers |
 | [PAVN and Vietcong gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180776) | casques coloniaux, porte-chargeurs AK, sac, chapeau de brousse, chapeau conique | RS2: Forces of the East |
 | [PMC gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180794) | casquettes, casques à lunettes ou visière, masques à gaz, vision nocturne, casque radio, sacs, ceinturons | PMC Pack Redux |
+| [Dying Light gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845686599) | casque de combat, casquette, masque à gaz, demi-masque respiratoire, masques, cagoule, lunettes, harnais et sacoche T.E.A.R. | Dying Light Security forces |
+| [Escape From Tarkov PMC gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845686657) | casques MICH, ULACH, FAST MT et Altyn, casquettes, cagoules, masque à gaz GP-7, casque radio ComTac, lunettes, six gilets, deux sacs | EFT PMC playermodels [Redux] |
 
 (English documentation: `README.md`.)
 
@@ -255,7 +257,7 @@ prise en main (pistolets, armes de mêlée et grenades : arme de poing ; RPG : l
 reste : arme principale) ; `SWEP.AdvInvCategory` et `SWEP.AdvInvMass` sur l'arme le remplacent. Le
 physgun, le toolgun, l'appareil photo, les mains et les outils de DarkRP sont exclus.
 
-## Autres bases d'armes (ARC9, TFA, CW 2.0, Sandstorm, M9K...)
+## Autres bases d'armes (ARC9, ArcCW, TFA, CW 2.0, Sandstorm, M9K...)
 
 Les armes de n'importe quelle base deviennent des armes génériques (voir plus haut). Leurs
 munitions :
@@ -271,7 +273,7 @@ munitions :
 Accessoires : une arme garde ses données en plus à travers l'inventaire (retirée, rangée, déposée,
 rééquipée, enregistrée). Intégré, sans essai sur toutes les versions de ces bases : ARC9 (code de
 préréglage), TFA (accessoires choisis), CW 2.0 (accessoires), Sandstorm SWEPs (accessoires et leurs
-motifs). N'importe quelle base : hooks
+motifs), ArcCW (accessoires montés). N'importe quelle base : hooks
 (serveur) `AdvInv_WeaponData(wep)` -> une chaîne, et `AdvInv_ApplyWeaponData(wep, data)`
 -> true une fois fait. Les armes aux données différentes ne s'empilent pas.
 
@@ -299,6 +301,18 @@ pistolets de Ready or Not ; `lua/advinv/sv_sandswep.lua`) :
   rechargement interrompu) y remet les siennes. Pas de chargeurs offerts, rien de caché dans l'arme ;
 - ses 25 fusils ont leurs positions de port sur chaque playermodel ajusté (à la bretelle, dans le
   dos, devant).
+
+**ArcCW** (Arctic's Customizable Weapons ; essayé avec sa base et le pack Counter-Strike+ ;
+`lua/advinv/sv_arccw.lua`, `sh_arccw.lua`) :
+
+- les accessoires montés restent sur l'arme. Celui qui l'équipe les reçoit et la pose d'ArcCW les
+  reprend : son inventaire d'accessoires (`arccw_attinv_free 0`) ne gagne ni ne perd rien. Le
+  préréglage enregistré du client n'est pas appliqué par-dessus ;
+- les munitions qu'ArcCW rend à la réserve (déchargement, chargeur plus petit, lance-grenades retiré)
+  vont dans des boîtes de munitions ; le `/drop` de DarkRP ne donne pas de copies des accessoires ;
+- ses boîtes de munitions se prennent avec Utiliser (pas en marchant dessus) ; ses grenades sont des
+  objets grenades (un type de munitions chacune, le réglage par défaut d'ArcCW) ;
+- les 28 armes longues de Counter-Strike+ ont leurs positions de port sur chaque playermodel ajusté.
 
 ## Addons du Workshop compatibles
 
@@ -348,6 +362,7 @@ n'est livré) :
 | [RS2: Forces of the East](https://steamcommunity.com/sharedfiles/filedetails/?id=2944903873) | 4 soldats (2 de l'APVN, 2 Viêt-minh) |
 | [PMC Pack Redux (Playermodels & NPCs)](https://steamcommunity.com/sharedfiles/filedetails/?id=1769231405) | 8 soldats de SMP |
 | [Dying Light Security forces playermodels and ragdolls](https://steamcommunity.com/sharedfiles/filedetails/?id=3551549411) | 11 membres des forces de sécurité (GRE, police, soldats, T.E.A.R.) |
+| [ESCAPE FROM TARKOV - PMC PLAYERMODELS [REDUX]](https://steamcommunity.com/sharedfiles/filedetails/?id=2568198284) | 9 opérateurs (6 USEC, 3 BEAR) |
 
 Tout autre playermodel utilise l'ajustement par défaut de chaque objet (fait sur male_07). La liste
 des modèles ajustés est `tools/playermodels.txt` (Garry's Mod) et `tools/playermodels_workshop.txt` ;
@@ -369,8 +384,11 @@ français de 14-18) et *Advanced Inventory System: Vietnam US gear* (les casques
 brousse, les sacs, la radio PRC-25 et les brêlages des ragdolls Vietnam era US Soldiers, Workshop
 146299217 ou sa version corrigée 3627113533), *Russian Army gear* (casque 6B47, gilet porte-plaques),
 *Civil War gear* (képis de l'Union et confédéré), *PAVN and Vietcong gear* (casques coloniaux,
-porte-chargeurs AK, sac, chapeau de brousse, chapeau conique) et *PMC gear* (casquettes, casques à
-lunettes ou visière, masques à gaz, vision nocturne, casque audio, sacs, ceinturons). Chacune ne
+porte-chargeurs AK, sac, chapeau de brousse, chapeau conique), *PMC gear* (casquettes, casques à
+lunettes ou visière, masques à gaz, vision nocturne, casque audio, sacs, ceinturons), *Dying Light gear*
+(casque de combat, casquette, masque à gaz, demi-masque, masques, cagoule, lunettes, harnais et sacoche
+T.E.A.R.) et *Escape From Tarkov PMC gear* (casques, casquettes, cagoules, masque à gaz, casque radio,
+lunettes, six gilets, deux sacs). Chacune ne
 contient que du Lua et demande cet addon, sur le serveur et chez les joueurs. Sur ses propres playermodels l'objet est montré par leur bodygroup ; sur tout autre,
 une copie ajustée à ce corps ; par terre, l'équipement seul.
 

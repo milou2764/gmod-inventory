@@ -1,37 +1,17 @@
 [h1]Advanced Inventory System[/h1]
-An Arma 3-style inventory for Garry's Mod: what you wear is what you carry. Helmet, vest, backpack, uniform pockets and weapons all have their place on your character, and every item takes room according to its size, not a slot.
+An Arma 3-style inventory for Garry's Mod: what you wear is what you carry. Helmet, vest, backpack, pockets and weapons all have their place on your character, and items take room by their size, not a slot.
 
-[b]Full feature list, settings, developer guide and issues: [url=https://github.com/milou2764/gmod-inventory]github.com/milou2764/gmod-inventory[/url][/b]
-
-[h2]Features[/h2]
 [list]
-[*][b]Capacity, not slots:[/b] uniform, vest and backpack each hold so many points; drag and drop, stacks, ammo boxes as your reserve.
-[*][b]Gear on the body:[/b] helmets, vests, backpacks, gas masks, night vision and radios worn on the player, fitted to the 87 default playermodels and 94 popular Workshop ones.
-[*][b]Weapons on the body:[/b] long guns slung, on the back or in front; armour by body part.
-[*][b]Death and looting:[/b] bodies keep their gear; search them, or search other players (illegal items, confiscation).
-[*][b]Storage:[/b] permanent, shared or personal crates, locks with codes, banks, loot tables, vehicle trunks.
-[*][b]DarkRP ready:[/b] purchases go to the inventory, job and jail keep it, optional inventory per job.
-[*][b]Any weapon base[/b] (attachments kept for ARC9, TFA, CW 2.0, Sandstorm SWEPs), grenades as items, usable items, crafting (off by default).
-[*][b]Admin menu[/b] for inventories and every setting, CAMI privileges, logs. Server-authoritative and rate limited.
-[*]Five languages, three themes. Lua only: every model comes with Garry's Mod.
+[*][b]Capacity, not slots:[/b] uniform, vest and backpack hold so many points; drag and drop, ammo boxes as your reserve.
+[*][b]Gear and weapons on the body,[/b] fitted to the 87 default playermodels and 114 Workshop ones.
+[*][b]Looting and searching:[/b] bodies keep their gear; crates, banks, vehicle trunks.
+[*][b]DarkRP ready, any weapon base[/b] (attachments kept for ARC9, ArcCW, TFA, CW 2.0, Sandstorm SWEPs), grenades as items.
+[*][b]Admin menu,[/b] CAMI privileges, server-authoritative. Five languages, Lua only.
 [/list]
 
-[h2]Compatible gear[/h2]
-When a server has them, these addons' models become inventory items fitted to every playermodel (nothing of them is shipped): Escape From Tarkov armour, helmets and backpacks, Fallout 76 and Fallout 3 backpacks, Star Wars helmets, TF2 Helmets of Victory, tank crew helmets, the Amnesia Adrian helmet, DayZ police vest, Petruz PMC vests, H.E.V tactical vest.
+[b]Supported addons[/b] (gear extensions, compatible gear, weapon bases): [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845634999]the collection[/url].
+[b]Features, settings, developer guide:[/b] [url=https://github.com/milou2764/gmod-inventory]GitHub[/url].
 
-[h2]Gear extensions[/h2]
-The gear of playermodel addons as items, worn on any playermodel (each needs its playermodel addon):
-[list]
-[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180717]WW1 French gear[/url]
-[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180730]Vietnam US gear[/url]
-[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180748]Russian Army gear[/url]
-[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180762]Civil War gear[/url]
-[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180776]PAVN and Vietcong gear[/url]
-[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180794]PMC gear[/url]
-[/list]
+Open the inventory with I or !inv; admin menu: advinv_admin.
 
-[h2]Getting started[/h2]
-Subscribe (server and players), open the inventory with I or !inv, admin menu with advinv_admin.
-
-[h2]Credits[/h2]
-Screenshots: Workshop playermodels by their authors (not included): Rusty's National Guard Redux, Vault Dwellers, Star Wars Imperial Officers, [NGRP] Rebel Pilot Variant, Rogue One Imperial crew, [IC] WW1 French army 1916 with {PM0V3} Shared Materials. Map: rp_southside_day.
+[i]Screenshots: Workshop playermodels by their authors (not included): Rusty's National Guard Redux, Vault Dwellers, Star Wars Imperial Officers, [NGRP] Rebel Pilot Variant, Rogue One Imperial crew, [IC] WW1 French army 1916 with {PM0V3} Shared Materials. Map: rp_southside_day.[/i]

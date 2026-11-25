@@ -416,7 +416,7 @@ review them with "Review Claude's approvals" and change them; the user's own app
 ## Other weapon bases
 
 - **Attachments** travel with the item in `x` (a string, at most 4096 characters). Built-in:
-  ARC9 (preset code), TFA (selected attachments), Sandstorm SWEPs (attachments and skins), CW 2.0 (names; whoever equips the weapon is given
+  ARC9 (preset code), TFA (selected attachments), Sandstorm SWEPs (attachments and skins), ArcCW (installed attachments), CW 2.0 (names; whoever equips the weapon is given
   them). Any base (server hooks):
 
 ```lua

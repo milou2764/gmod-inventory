@@ -25,6 +25,8 @@ playermodel addon; the gear of that addon becomes items any playermodel can wear
 | [Civil War gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180762) | Union and Confederate kepis | Civil War Soldiers |
 | [PAVN and Vietcong gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180776) | pith helmets, AK chest rigs, backpack, bush hat, conical hat | RS2: Forces of the East |
 | [PMC gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845180794) | caps, helmets with goggles or visor, gas masks, night vision, headset, packs, belt kits | PMC Pack Redux |
+| [Dying Light gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845686599) | combat helmet, cap, gas mask, respirator, masks, balaclava, goggles, T.E.A.R. rig and bag | Dying Light Security forces |
+| [Escape From Tarkov PMC gear](https://steamcommunity.com/sharedfiles/filedetails/?id=3845686657) | MICH, ULACH, FAST MT and Altyn helmets, caps, balaclavas, GP-7 gas mask, ComTac headset, glasses, six vests, two packs | EFT PMC playermodels [Redux] |
 
 ## Language
 
@@ -239,7 +241,7 @@ melee and grenades: sidearm; RPG: launcher; the rest: primary); `SWEP.AdvInvCate
 `SWEP.AdvInvMass` on a weapon override it. Physgun, toolgun, camera, hands and DarkRP's tools are
 blacklisted.
 
-## Other weapon bases (ARC9, TFA, CW 2.0, Sandstorm, M9K...)
+## Other weapon bases (ARC9, ArcCW, TFA, CW 2.0, Sandstorm, M9K...)
 
 Weapons of any base become generic weapon items (see above). Their ammunition:
 
@@ -252,7 +254,8 @@ Weapons of any base become generic weapon items (see above). Their ammunition:
 
 Attachments: a weapon keeps its extra data through the inventory (taken off, stored, dropped,
 equipped again, saved). Built-in, not tested on every version of these bases: ARC9 (preset code),
-TFA (selected attachments), CW 2.0 (attachments), Sandstorm SWEPs (attachments and their skins). Any base: hooks (server)
+TFA (selected attachments), CW 2.0 (attachments), Sandstorm SWEPs (attachments and their skins), ArcCW (installed
+attachments). Any base: hooks (server)
 `AdvInv_WeaponData(wep)` -> a string, and `AdvInv_ApplyWeaponData(wep, data)` -> true
 when done. Weapons with different data don't stack.
 
@@ -276,6 +279,18 @@ Ready or Not pistols; `lua/advinv/sv_sandswep.lua`):
   reload takes its rounds from the boxes, a magazine taken out (another magazine attached, a reload
   interrupted) puts its rounds back into them. No free magazines, nothing hidden in the weapon;
 - its 25 rifles have carry positions on every fitted playermodel (sling arms, back, front).
+
+**ArcCW** (Arctic's Customizable Weapons; tested with its base and the Counter-Strike+ pack;
+`lua/advinv/sv_arccw.lua`, `sh_arccw.lua`):
+
+- installed attachments stay on the weapon. Whoever equips it is given them and ArcCW's attach takes
+  them back: its attachment inventory (`arccw_attinv_free 0`) gains or loses nothing. The client's
+  autosaved loadout is not applied over them;
+- rounds ArcCW gives back to the reserve (unloading, a smaller magazine, an underbarrel launcher
+  taken off) go into ammo boxes; DarkRP's `/drop` doesn't hand the player copies of the attachments;
+- its ammo boxes are taken with Use into the inventory (not by walking over them); its throwables are
+  grenade items (one ammunition type each, ArcCW's default);
+- the 28 long guns of Counter-Strike+ have carry positions on every fitted playermodel.
 
 ## Compatible Workshop addons
 
@@ -323,6 +338,7 @@ is fitted to these Workshop playermodels, when the server has them (nothing of t
 | [RS2: Forces of the East](https://steamcommunity.com/sharedfiles/filedetails/?id=2944903873) | 4 soldiers (2 PAVN, 2 Viet Minh) |
 | [PMC Pack Redux (Playermodels & NPCs)](https://steamcommunity.com/sharedfiles/filedetails/?id=1769231405) | 8 PMC soldiers |
 | [Dying Light Security forces playermodels and ragdolls](https://steamcommunity.com/sharedfiles/filedetails/?id=3551549411) | 11 security forces (GRE, police, soldiers, T.E.A.R.) |
+| [ESCAPE FROM TARKOV - PMC PLAYERMODELS [REDUX]](https://steamcommunity.com/sharedfiles/filedetails/?id=2568198284) | 9 operators (6 USEC, 3 BEAR) |
 
 Any other playermodel uses each item's default fit (made on male_07). The list of fitted models is
 `tools/playermodels.txt` (Garry's Mod) and `tools/playermodels_workshop.txt`; DEVELOPERS.md says how
@@ -342,8 +358,11 @@ beanie, backpack, blanket roll and webbing of the WW1 French soldiers) and *Adva
 System: Vietnam US gear* (the M1 helmets, boonie hat, rucksacks, PRC-25 radio and web gear of the
 Vietnam era US Soldiers ragdolls, Workshop 146299217 or its fixed re-upload 3627113533), *Russian
 Army gear* (6B47 helmet, plate carrier), *Civil War gear* (Union and Confederate kepis), *PAVN and
-Vietcong gear* (pith helmets, AK chest rigs, backpack, bush hat, conical hat) and *PMC gear* (caps,
-helmets with goggles or visor, gas masks, night vision, headset, packs, belt kits). Each ships Lua
+Vietcong gear* (pith helmets, AK chest rigs, backpack, bush hat, conical hat), *PMC gear* (caps,
+helmets with goggles or visor, gas masks, night vision, headset, packs, belt kits), *Dying Light gear*
+(combat helmet, cap, gas mask, respirator, masks, balaclava, goggles, T.E.A.R. rig and bag) and
+*Escape From Tarkov PMC gear* (helmets, caps, balaclavas, gas mask, headset, glasses, six vests, two
+packs). Each ships Lua
 only and needs that addon, on the server and for the players. On its own playermodels the item is shown by their bodygroup; on any
 other one a copy fitted to that body; on the ground the gear alone.
 
