@@ -1,0 +1,12 @@
+Everything the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845180672]Advanced Inventory System[/url] supports, in one place.
+
+[h2]The inventory and its gear extensions[/h2]
+Advanced Inventory System, and the extensions that turn playermodels' own gear into inventory items: WW1 French, Vietnam US, Russian Army, Civil War, PAVN and Vietcong, PMC.
+
+[h2]Playermodels the extensions need[/h2]
+WW1 French army 1916, Vietnam era US Soldiers, Russian Army RF Soldier, Civil War Soldiers, RS2: Forces of the East, PMC Pack Redux. (For playable Vietnam soldiers, their playermodel version [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3188829345][PM]&[NPC] Vietnam era US Soldiers[/url] works too: its author advises installing only one of the two.)
+
+[h2]Compatible gear addons[/h2]
+When the server has them, their models become inventory items fitted to every playermodel: Escape From Tarkov armour, helmets and backpacks, Fallout 76 and Fallout 3 backpacks, Star Wars helmets, TF2 Helmet of Victory, tank crew helmets, the Amnesia Adrian helmet, DayZ police vest, Petruz PMC vests, H.E.V tactical vest.
+
+Nothing of these addons is shipped with the inventory: install the ones you want on your server. Details: [url=https://github.com/milou2764/gmod-inventory]GitHub[/url].

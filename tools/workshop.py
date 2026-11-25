@@ -8,6 +8,9 @@ acts as the user: only on their own items).
                                    [--visibility public|friends|private|unlisted] [--note TEXT]
     python workshop.py previews <id>                     its screenshots: index, original file name
     python workshop.py depend <id> <required id> ...     the item's "Required items"
+    python workshop.py collection --title TEXT --description FILE [--preview FILE]
+                                  [--visibility public|friends|private|unlisted] <item id> ...
+                                                         a new collection of those items (prints its id)
 
 The preview (icon) must be under 1 MB; it may be a GIF. Descriptions: Steam BBCode, 8000 characters.
 """
@@ -21,6 +24,7 @@ APP = 4000
 DLL = Path(os.environ.get("GMOD_DIR", r"C:/Program Files (x86)/Steam/steamapps/common/GarrysMod")) / "bin/win64/steam_api64.dll"
 VIS = {"public": 0, "friends": 1, "private": 2, "unlisted": 3}
 SUBMIT_RESULT, DEPENDENCY_RESULT, QUERY_RESULT = 3404, 3412, 3401  # k_iSteamUGCCallbacks + 4, + 12, + 1
+CREATE_RESULT, COLLECTION = 3403, 2  # CreateItemResult_t; k_EWorkshopFileTypeCollection
 
 os.environ["SteamAppId"] = os.environ["SteamGameId"] = str(APP)
 api = C.CDLL(str(DLL))
@@ -39,6 +43,8 @@ RunCallbacks = fn("SteamAPI_RunCallbacks", None)
 UGC = fn("SteamAPI_SteamUGC_v021", P)
 Utils = fn("SteamAPI_SteamUtils_v010", P)
 StartItemUpdate = fn("SteamAPI_ISteamUGC_StartItemUpdate", U64, P, C.c_uint32, U64)
+CreateItem = fn("SteamAPI_ISteamUGC_CreateItem", U64, P, C.c_uint32, C.c_int)
+SetItemTitle = fn("SteamAPI_ISteamUGC_SetItemTitle", B, P, U64, S)
 SetItemPreview = fn("SteamAPI_ISteamUGC_SetItemPreview", B, P, U64, S)
 SetItemDescription = fn("SteamAPI_ISteamUGC_SetItemDescription", B, P, U64, S)
 SetItemVisibility = fn("SteamAPI_ISteamUGC_SetItemVisibility", B, P, U64, C.c_int)
@@ -73,7 +79,7 @@ def wait(utils, call, cb_id, size, timeout=600):
 
 
 def main(argv):
-    if not argv or argv[0] not in ("update", "depend", "previews"):
+    if not argv or argv[0] not in ("update", "depend", "previews", "collection"):
         print(__doc__)
         return 1
     err = C.create_string_buffer(1024)
@@ -81,6 +87,33 @@ def main(argv):
         raise SystemExit(f"SteamAPI_InitFlat failed ({err.value.decode(errors='replace')}): is Steam running and logged in?")
     try:
         ugc, utils = UGC(), Utils()
+        if argv[0] == "collection":
+            # a collection is an item of its own; AddDependency on it adds an item to it
+            opts, children, k = {}, [], 1
+            while k < len(argv):
+                if argv[k].startswith("--"):
+                    opts[argv[k]] = argv[k + 1]
+                    k += 2
+                else:
+                    children.append(int(argv[k]))
+                    k += 1
+            r = wait(utils, CreateItem(ugc, APP, COLLECTION), CREATE_RESULT, 24)  # CreateItemResult_t
+            res, item, legal = int.from_bytes(r[:4], "little"), int.from_bytes(r[8:16], "little"), r[16]
+            if res != 1:
+                raise SystemExit(f"creating the collection failed: result {res}")
+            print(f"collection {item} created{', the Workshop legal agreement must be accepted' if legal else ''}")
+            h = StartItemUpdate(ugc, APP, item)
+            assert SetItemTitle(ugc, h, opts["--title"].encode("utf-8"))
+            assert SetItemDescription(ugc, h, Path(opts["--description"]).read_text(encoding="utf-8").encode("utf-8"))
+            if "--preview" in opts:
+                assert SetItemPreview(ugc, h, str(Path(opts["--preview"]).resolve()).encode())
+            assert SetItemVisibility(ugc, h, VIS[opts.get("--visibility", "private")])
+            r = wait(utils, SubmitItemUpdate(ugc, h, None), SUBMIT_RESULT, 16)
+            print(f"collection {item}: details result {int.from_bytes(r[:4], 'little')} (1 = OK)")
+            for child in children:
+                r = wait(utils, AddDependency(ugc, item, child), DEPENDENCY_RESULT, 24)
+                print(f"  {child}: result {int.from_bytes(r[:4], 'little')} (1 = OK)")
+            return 0
         item = int(argv[1])
         if argv[0] == "previews":
             ids = (U64 * 1)(item)
