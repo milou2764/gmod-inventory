@@ -266,7 +266,7 @@ def fit_vest(body, ring, size=1.0, ref_girth=None):
     return fi.model_to_bone(body, SPINE4, ring.R, Ce - s * ring.C, s)
 
 
-def fit_pack(body, model, R):
+def fit_pack(body, model, R, straps=False):
     _, _, P = fi.rest_mesh(model)
     Pm = P @ R.T
     neck = body.world["ValveBiped.Bip01_Neck1"][:3, 3]
@@ -285,7 +285,20 @@ def fit_pack(body, model, R):
             if ((band[:, 2] >= z) & (band[:, 2] < z + 1)).sum() >= 3]
     back = float(np.median(rows)) if rows else (band[:, 1].max() if len(band) else torso[:, 1].max())
     # contact: the side against the body, small protrusions (a buckle, a strap) may sink in
-    contact = np.percentile(surface_points(model) @ R.T * s, 3, axis=0)[1]
+    S = surface_points(model) @ R.T * s
+    contact = np.percentile(S, 3, axis=0)[1]
+    if straps:
+        # a pack modelled with its shoulder straps on (Escape From Tarkov's): they reach forward
+        # around the shoulders and would hold it off the back. The back panel instead: over the
+        # middle of its height, per 1-unit height, the furthest point forward within the middle
+        # quarter of its width, their median
+        cx = (S[:, 0].min() + S[:, 0].max()) / 2
+        mid = S[np.abs(S[:, 0] - cx) < 0.125 * (S[:, 0].max() - S[:, 0].min())]
+        lo, hi = np.percentile(S[:, 2], 20), np.percentile(S[:, 2], 80)
+        rows = [mid[(mid[:, 2] >= z) & (mid[:, 2] < z + 1), 1].min() for z in np.arange(lo, hi, 1.0)
+                if ((mid[:, 2] >= z) & (mid[:, 2] < z + 1)).sum() >= 3]
+        if rows:
+            contact = float(np.median(rows))
     t = np.array([-(Ps[:, 0].min() + Ps[:, 0].max()) / 2, back + GAP - contact, z_top - Ps[:, 2].max()])
     return fi.model_to_bone(body, fi.SPINE, R, t, s)
 
@@ -378,7 +391,7 @@ def main():
                     else:
                         if not body.has(fi.SPINE, "ValveBiped.Bip01_Neck1", "ValveBiped.Bip01_Pelvis"):
                             continue
-                        per[m] = fit_pack(body, model, R)
+                        per[m] = fit_pack(body, model, R, extra.get("straps", False))
                 except Exception as e:  # noqa: BLE001
                     print(f"  {cls} on {m}: {e}")
             default = per.get(fi.REF)
@@ -387,7 +400,7 @@ def main():
                             else fit_helmet(ref, ring, full, extra.get("min_ratio"), outer_w, extra.get("sizes"), extra.get("lift", 0.0),
                                       extra.get("ref"), ref))
                            if kind == "helmet" else fit_vest(ref, ring, extra.get("size", 1.0), ref_girth) if kind == "vest"
-                           else fit_pack(ref, model, R))
+                           else fit_pack(ref, model, R, extra.get("straps", False)))
             bone = fi.HEAD if kind == "helmet" else SPINE4 if kind == "vest" else fi.SPINE
             fits[cls] = per
             scales = sorted(v[2] for v in per.values())

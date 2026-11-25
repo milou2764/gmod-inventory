@@ -334,7 +334,7 @@ Options of an item in `tools/compat_packs.py` (the extra dict), for gear the mea
 by their head's size), `full` (a helmet enclosing the whole head), `outer` (width ratio, top gap:
 helmets whose inside can't be measured), `min_ratio` (an open helmet at least that wide x the skull), `sizes` (min, max sizes),
 `lift` (helmet raised, units), `size` (a vest's size on male_07, other bodies by their chest girth),
-`tilt` (back item turned around the shoulders). The review sheets (`tools/review_sheets.py`) show
+`tilt` (back item turned around the shoulders), `straps` (a pack modelled with its shoulder straps on: placed by its back panel, the straps wrap the shoulders). Orientations are read in the rest pose the tools use (`fit_items.rest_mesh`), which can be a quarter turn from the raw vertices. The review sheets (`tools/review_sheets.py`) show
 every item on every playermodel of a list.
 
 The fits are made offline by the tools, from the models' meshes (`tools/`, Python 3, numpy, PIL):

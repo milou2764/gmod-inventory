@@ -17,7 +17,7 @@ An Arma 3-style inventory for Garry's Mod: what you wear is what you carry. Helm
 [/list]
 
 [h2]Compatible gear[/h2]
-When a server has them, these addons' models become inventory items fitted to every playermodel (nothing of them is shipped): Fallout 76 and Fallout 3 backpacks, Star Wars helmets, TF2 Helmets of Victory, tank crew helmets, the Amnesia Adrian helmet, DayZ police vest, Petruz PMC vests, H.E.V tactical vest.
+When a server has them, these addons' models become inventory items fitted to every playermodel (nothing of them is shipped): Escape From Tarkov armour, helmets and backpacks, Fallout 76 and Fallout 3 backpacks, Star Wars helmets, TF2 Helmets of Victory, tank crew helmets, the Amnesia Adrian helmet, DayZ police vest, Petruz PMC vests, H.E.V tactical vest.
 
 [h2]Gear extensions[/h2]
 The gear of playermodel addons as items, worn on any playermodel (each needs its playermodel addon):

@@ -277,6 +277,7 @@ Items of an addon that isn't installed don't show anywhere.
 
 | Workshop addon | Items | Spawn menu |
 |---|---|---|
+| [Escape From Tarkov - Equipment Megapack (Props)](https://steamcommunity.com/sharedfiles/filedetails/?id=1883492750) | 16 body armours, 14 helmets, 6 backpacks | Inventory: Escape From Tarkov |
 | [Fallout 76 - Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=3234192542) | 54 backpacks | Inventory: Fallout 76 |
 | [Fallout 3 Custom Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=891790188) | 6 backpacks | Inventory: Fallout 3 |
 | [FO3 Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=315810701) | camping frame pack | Inventory: Fallout 3 |

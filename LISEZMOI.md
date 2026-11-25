@@ -298,6 +298,7 @@ collection du Workshop) ; le serveur fait télécharger à ses joueurs ceux qu'i
 
 | Addon du Workshop | Objets | Menu de spawn |
 |---|---|---|
+| [Escape From Tarkov - Equipment Megapack (Props)](https://steamcommunity.com/sharedfiles/filedetails/?id=1883492750) | 16 gilets pare-balles, 14 casques, 6 sacs à dos | Inventaire : Escape From Tarkov |
 | [Fallout 76 - Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=3234192542) | 54 sacs à dos | Inventaire : Fallout 76 |
 | [Fallout 3 Custom Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=891790188) | 6 sacs à dos | Inventaire : Fallout 3 |
 | [FO3 Backpacks](https://steamcommunity.com/sharedfiles/filedetails/?id=315810701) | sac à armature | Inventaire : Fallout 3 |

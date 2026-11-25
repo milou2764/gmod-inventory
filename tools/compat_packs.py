@@ -20,6 +20,8 @@ Item: (id, model, kind, orientation, english name, french name, extra stats)
         wide (outside): a helmet whose shape lets it perch small on the skull (the Adrian: 1.4,
         measured on the Adrian helmet modelled on the WW1 French playermodels, Workshop 3433822040)
   extra "tilt": back items turned around the shoulder axis before fitting (degrees)
+  extra "straps": back items modelled with their shoulder straps on (they reach forward around the
+        shoulders): placed by their back panel (the middle of the pack), not by the straps
   extra "lift": helmets raised by that many units after fitting (a shell deeper than the head, made to
         cover the eyes like the TF2 Soldier's)
   extra "sizes": (min, max) helmet sizes for this item (TF2 helmets are made for TF2's big heads)
@@ -168,6 +170,58 @@ PACKS.append({
     "category": ("Inventory: Fallout 76", "Inventaire : Fallout 76"),
     "items": [(1060 + k, f"models/vex/fallout76/backpacks/{f}.mdl", "back", "x_out", f"{n} backpack", f"Sac à dos {n}", FO76_EXTRA.get(f, {}))
               for k, (f, n) in enumerate(FO76)],
+})
+
+# Escape From Tarkov - Equipment Megapack (Props), 1883492750: plain props (one bone), every one
+# facing +X in the rest pose the tools use (-Y in the raw vertices, a quarter turn apart; armour:
+# the low front neckline, the Zhuk-3's "PRESS"; helmets: the face opening; backpacks: the straps,
+# the side against the body). Armour from the items' protection class in the game (class 2: 50, 3: 70,
+# 4: 90, 5: 110, 6: 130), load for the ones with pouches. Not items (IDs kept free): the sling bags
+# (MOLLE sling bag, sports bag, tactical shoulder bag: a strap across the body, 1147-1149), the
+# face shields alone (Maska, Maska Killa, ShPM, ZSh visors: made to sit on their helmet, 1164-1167)
+# and the Beta 2 backpack (1141: it ships no .dx90.vtx, the game draws nothing).
+EFT = "models/player/"
+PACKS.append({
+    "key": "eft", "wid": 1883492750, "title": "Escape From Tarkov - Equipment Megapack (Props)",
+    "category": ("Inventory: Escape From Tarkov", "Inventaire : Escape From Tarkov"),
+    "items": [
+        (1120, EFT + "armor_6b13_digital/6b13.mdl", "vest", "x_front", "6B13 assault armour (digital)", "Gilet d'assaut 6B13 (numérique)", {"armor": 90}),
+        (1121, EFT + "armor_6b13_flora/6b13_flora.mdl", "vest", "x_front", "6B13 assault armour (Flora)", "Gilet d'assaut 6B13 (Flora)", {"armor": 90}),
+        (1122, EFT + "armor_6b13_killa/6b13_killa.mdl", "vest", "x_front", "6B13 M assault armour (Killa)", "Gilet d'assaut 6B13 M (Killa)", {"armor": 110}),
+        (1123, EFT + "armor_6b23_digital/6b23.mdl", "vest", "x_front", "6B23-1 body armour", "Gilet pare-balles 6B23-1", {"armor": 70}),
+        (1124, EFT + "armor_6b23_mflora/6b23_mflora.mdl", "vest", "x_front", "6B23-2 body armour", "Gilet pare-balles 6B23-2", {"armor": 90}),
+        (1125, EFT + "armor_6b34/6b34.mdl", "vest", "x_front", "6B43 6A Zabralo-Sh body armour", "Gilet pare-balles 6B43 6A Zabralo-Sh", {"armor": 130, "load": 20}),
+        (1126, EFT + "armor_6b5_flora/6b5.mdl", "vest", "x_front", "6B5-16 Uley armoured rig", "Gilet de combat blindé 6B5-16 Uley", {"armor": 110, "load": 40}),
+        (1127, EFT + "armor_gjel/gjel.mdl", "vest", "x_front", "Gzhel-K body armour", "Gilet pare-balles Gzhel-K", {"armor": 110, "load": 20}),
+        (1128, EFT + "armor_iotv/iotv.mdl", "vest", "x_front", "IOTV Gen4 full protection armour", "Gilet IOTV Gen4 protection intégrale", {"armor": 110, "load": 20}),
+        (1129, EFT + "armor_kirasa/kirasa.mdl", "vest", "x_front", "Kirasa-N body armour", "Gilet pare-balles Kirasa-N", {"armor": 70}),
+        (1130, EFT + "armor_module3m/module3m.mdl", "vest", "x_front", "Module-3M body armour", "Gilet pare-balles Module-3M", {"armor": 50}),
+        (1131, EFT + "armor_paca/paca.mdl", "vest", "x_front", "PACA soft armour", "Gilet souple PACA", {"armor": 50}),
+        (1132, EFT + "armor_trooper/trooper.mdl", "vest", "x_front", "USEC Trooper armour", "Gilet USEC Trooper", {"armor": 90, "load": 20}),
+        (1133, EFT + "armor_un/un.mdl", "vest", "x_front", "UNTAR body armour", "Gilet pare-balles UNTAR", {"armor": 70}),
+        (1134, EFT + "armor_zhuk3/beetle3.mdl", "vest", "x_front", "Zhuk-3 Press armour", "Gilet Zhuk-3 Presse", {"armor": 70}),
+        (1135, EFT + "armor_zhuk6a/beetle6a.mdl", "vest", "x_front", "Zhuk-6a heavy armour", "Gilet lourd Zhuk-6a", {"armor": 110}),
+        (1140, EFT + "backpack_baselardwild/scavbp.mdl", "back", "x_front", "Scav backpack", "Sac de scav", {"straps": True}),
+        (1142, EFT + "backpack_blackjack/blackjack.mdl", "back", "x_front", "Blackjack 50 backpack", "Sac Blackjack 50", {"straps": True}),
+        (1143, EFT + "backpack_paratus_3_day/paratus.mdl", "back", "x_front", "Paratus 3-Day backpack", "Sac Paratus 3 jours", {"straps": True}),
+        (1144, EFT + "backpack_pilgrim/pilgrim.mdl", "back", "x_front", "Pilgrim tourist backpack", "Sac de randonnée Pilgrim", {"straps": True}),
+        (1145, EFT + "backpack_trizip/trizip.mdl", "back", "x_front", "Trizip backpack", "Sac Trizip", {"straps": True}),
+        (1146, EFT + "backpack_vkbo/vkbo.mdl", "back", "x_front", "VKBO army bag", "Sac d'armée VKBO", {"straps": True}),
+        (1150, EFT + "helmet_6b47/6b47.mdl", "helmet", "x_front", "6B47 Ratnik-BSh helmet", "Casque 6B47 Ratnik-BSh", {"armor": 70}),
+        (1151, EFT + "helmet_6b47_camo/6b47_camo.mdl", "helmet", "x_front", "6B47 helmet (Flora cover)", "Casque 6B47 (couvre-casque Flora)", {"armor": 70}),
+        (1152, EFT + "helmet_acchc_green/achhc.mdl", "helmet", "x_front", "ACHHC helmet (olive)", "Casque ACHHC (olive)", {"armor": 90}),
+        (1153, EFT + "helmet_achhc_black/achhc_black.mdl", "helmet", "x_front", "ACHHC helmet (black)", "Casque ACHHC (noir)", {"armor": 90}),
+        (1154, EFT + "helmet_kiverm/kiverm.mdl", "helmet", "x_front", "Kiver-M helmet", "Casque Kiver-M", {"armor": 70}),
+        (1155, EFT + "helmet_lshz/lshz.mdl", "helmet", "x_front", "LShZ light helmet", "Casque léger LShZ", {"armor": 50}),
+        (1156, EFT + "helmet_maska_1sh/maska.mdl", "helmet", "x_front", "Maska-1SCh helmet", "Casque Maska-1SCh", {"armor": 90, "full": True}),
+        (1157, EFT + "helmet_maska_1sh_killa/maska_killa.mdl", "helmet", "x_front", "Maska-1SCh helmet (Killa)", "Casque Maska-1SCh (Killa)", {"armor": 90, "full": True}),
+        (1158, EFT + "helmet_psh97_jeta/jeta.mdl", "helmet", "x_front", "PSh-97 Djeta helmet", "Casque PSh-97 Djeta", {"armor": 50, "full": True}),
+        (1159, EFT + "helmet_shpm/shpm.mdl", "helmet", "x_front", "ShPM firefighter helmet", "Casque de pompier ShPM", {"armor": 30}),
+        (1160, EFT + "helmet_ulach_black/ulach.mdl", "helmet", "x_front", "ULACH IIIA helmet", "Casque ULACH IIIA", {"armor": 90}),
+        (1161, EFT + "helmet_un/un_helmet.mdl", "helmet", "x_front", "UNTAR helmet", "Casque UNTAR", {"armor": 70}),
+        (1162, EFT + "helmet_zsh_1var/zsh1-2m.mdl", "helmet", "x_front", "ZSh-1-2M helmet", "Casque ZSh-1-2M", {"armor": 90}),
+        (1163, EFT + "helmet_zsh_2var/zsh1-2m_v2.mdl", "helmet", "x_front", "ZSh-1-2M helmet (v2)", "Casque ZSh-1-2M (v2)", {"armor": 90}),
+    ],
 })
 
 
