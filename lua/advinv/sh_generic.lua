@@ -94,8 +94,9 @@ local WEAPON_MASS = { PrimaryWep = 80, SecondaryWep = 20, RocketLauncher = 100 }
 local function guessCategory(class, swep)
     if I.WeaponCategory[class] then return I.WeaponCategory[class] end
     if swep and swep.AdvInvCategory then return swep.AdvInvCategory end
-    -- (some bases, CW 2.0, set their hold type only when deployed: NormalHoldType)
-    local hold = swep and string.lower(swep.HoldType or swep.NormalHoldType or "") or ""
+    -- (some bases, CW 2.0, set their hold type only when deployed: NormalHoldType; ArcCW names it
+    -- HoldtypeActive)
+    local hold = swep and string.lower(swep.HoldType or swep.NormalHoldType or swep.HoldtypeActive or "") or ""
     local ammo = swep and swep.Primary and string.lower(tostring(swep.Primary.Ammo or "")) or ""
     if hold == "rpg" or ammo == "rpg_round" then return "RocketLauncher" end
     -- (not SWEP.Slot: many weapons set it on the client only, the server would guess another slot)
