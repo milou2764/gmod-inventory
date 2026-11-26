@@ -149,7 +149,9 @@ def load_model(model, textures=True):
     groups = BODYGROUPS.get(base + ".mdl", {})
     mdl, vvd, vtx = vpk_read(base + ".mdl"), vpk_read(base + ".vvd"), vpk_read(base + ".dx90.vtx")
     if not (mdl and vvd and vtx):
-        raise SystemExit(f"fichiers du modèle introuvables : {model}")
+        # (an exception, not SystemExit: the tools skip a model they can't read; a SystemExit in a
+        # Pool worker never returns its result and the run waits forever)
+        raise FileNotFoundError(f"fichiers du modèle introuvables : {model}")
     i = lambda d, o: struct.unpack_from("<i", d, o)[0]
 
     # VVD : sommets du LOD 0 (avec la table de correction éventuelle)
@@ -233,7 +235,7 @@ def load_model(model, textures=True):
             continue
         if tris and max(max(t[:3]) for t in tris) < len(pos):
             return pos, nrm, uv, tris, mats
-    raise SystemExit(f"triangles illisibles (.vtx) : {model}")
+    raise ValueError(f"triangles illisibles (.vtx) : {model}")
 
 
 # ---------------------------------------------------------------- rendering

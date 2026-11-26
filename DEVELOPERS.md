@@ -34,6 +34,8 @@ French); this guide only covers code.
   start with `advinv_`; hooks with `AdvInv_`.
 - **The server decides everything.** Clients send requests (one network message, `advinv_act`);
   the server checks distance, capacity, ownership and rights, then sends the new contents back.
+  A request names an item by its place in a container and what it is (`AdvInv.ItemCheck(item)`,
+  32 bits): if the list moved meanwhile, the server acts on that item where it is now, or refuses.
   Never change a player's inventory from the client, and on the server use the functions below
   rather than setting networked variables yourself.
 - **An item** is a small table: `{ id = 42, r = 30, a = 100, m = 1, c = "class", x = "data" }`
@@ -247,6 +249,18 @@ then the ground.
   `AdvInv.AmmoBoxSize[type]`, `AdvInv.AmmoBoxMass[type]`, `AdvInv.AmmoBoxModel[type]`.
 - An ammo entity of another addon is taken with Use when it says its type and amount:
   `ENT.AmmoType = "5.56x45MM"` and `ENT.AmmoCount` (or `AmmoAmount`, `Amount`).
+- Code that has to give reserve the game's way (an entity's own Use or Touch calling `GiveAmmo`):
+  call `AdvInv.AllowAmmoGain(ply, ammoType)` just before; the gains of that type in the next two
+  ticks become boxes. Any other reserve gain of a type the inventory manages is taken back at the
+  next count. Code that turns its own gains into boxes itself (`AdvInv.GiveRounds` after comparing
+  the reserve, like the ArcCW and CW 2.0 adapters) wraps the call in
+  `AdvInv.BeginGainConversion(ply)` / `AdvInv.EndGainConversion(ply, { [ammoType] = true })`, so the
+  same rounds are not made boxes twice.
+- A weapon's ammunition and magazine size as a weapon table declares them: `AdvInv.SwepAmmo(swep)`,
+  `AdvInv.SwepClipSize(swep)` (shared; `SWEP.Primary`, or ARC9's `SWEP.Ammo` / `SWEP.ClipSize`).
+- Rounds in an underbarrel launcher (`Clip2`, ArcCW UBGL, CW 2.0's M203) are not kept in the
+  item: they go into boxes when the weapon leaves its slot (`AdvInv.UnloadUnderbarrel(ply, wep)`),
+  and a weapon the inventory gives starts with an empty launcher.
 
 ## Things that are not items: generic items
 
@@ -271,6 +285,9 @@ A grenade is not a slot weapon: it is one round of its ammunition type (a generi
 size 1). Register other grenade weapons (shared): `AdvInv.Grenades["my_grenade"] = "My Grenades"`
 (its `Primary.Ammo`). The inventory keeps the items equal to the grenades (reserve + loaded): a
 throw takes one away, ammo given by other code adds some, and Use puts the weapon in the hands.
+Grenades a DarkRP job's loadout gives are job items (taken at death and at a job change, not
+saved), and grenade items follow their weapon's DarkRP drop rules (`dropspawnedweapons`,
+`DisallowDrop`, `restrictdrop`, `AdvInv_CanWeaponLeave`).
 
 ## Compatible Workshop addons (their models as items)
 
@@ -530,13 +547,15 @@ All on the server unless noted. `holder` is a player, a body or a storage entity
 | `AdvInv.Set(holder, cont, items)` | replaces it (sends it) |
 | `AdvInv.MarkDirty(holder, cont)` | sends a changed container (once per tick) |
 | `AdvInv.Store(holder, item)` | puts an item where it fits (uniform, vest, backpack / storage); `true` or `false` |
-| `AdvInv.CanFit(holder, cont, id, c)`, `Used`, `Free`, `MaxLoad` | capacity checks (points) |
+| `AdvInv.CanFit(holder, cont, id, c)`, `Used`, `Free`, `MaxLoad` | capacity checks (points; 255 items at most per container, `AdvInv.MAX_ITEMS`) |
 | `AdvInv.Equip(ply, item, contents)` | equips an item (slot must be free); `true` or `false, reason` |
 | `AdvInv.TakeOff(ply, slot)` | empties a slot; returns the item (and a vest/backpack's contents) |
 | `AdvInv.SpawnItem(item, pos, contents, count)` | puts an item in the world; returns the entity |
 | `AdvInv.DropStack(item, n, pos)` | n identical items as one stack on the ground |
 | `AdvInv.DropPos(ply)` | where a player drops things |
 | `AdvInv.GiveRounds(ply, ammo, rounds)` | ammo into boxes (see Ammunition) |
+| `AdvInv.MayLeaveItem(ply, item)` | may this item of his leave him (drop, crate, body)? -> true, or false and the reason (DarkRP drop rules, job items) |
+| `AdvInv.ContentsMayLeave(ply, cat)` | the same for everything in his vest or backpack (`cat` "Vest" / "Rucksack") |
 | `AdvInv.Use(ply, ent)` | takes an entity from the world as if the player pressed Use |
 | `AdvInv.ItemFromEntity(ent)` | the item an entity would become, or nil |
 | `AdvInv.ItemForWeaponClass(class, rounds)` | the item for a weapon class (registered or generic) |

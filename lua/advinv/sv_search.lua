@@ -19,7 +19,7 @@ local function clear(searcher)
     if not IsValid(searcher) then return end
     local target = searcher.AdvInvSearchView or searcher:GetNWEntity("AdvInvSearchTarget")
     if IsValid(target) then
-        if target.AdvInvViewers then target.AdvInvViewers[searcher] = nil end
+        if target.AdvInvViewers and target.AdvInvViewers[searcher] then I.EndView(target, searcher) end
         if target:GetNWEntity("AdvInvSearchedBy") == searcher then target:SetNWEntity("AdvInvSearchedBy", NULL) end
     end
     searcher.AdvInvSearchView = nil
@@ -68,6 +68,43 @@ local function finish(searcher, target)
     hook.Run("AdvInv_Searched", searcher, target, found)
 end
 
+-- What a searcher may take from target: not what DarkRP's own weapon checker leaves (the target's job
+-- weapons and the default ones with weaponCheckerHideDefault, noStripWeapons), else the job would
+-- give them again at the next loadout. -> true, or false and a reason
+function I.SearchMayTake(target, id, c)
+    local info = I.Info(id, c)
+    -- (a grenade item: its grenade weapon's rule)
+    local grenadeClass = info.isBox and I.GrenadeOfAmmo and I.GrenadeOfAmmo(info.ammo)
+    if not info.isWeapon and not grenadeClass then return true end
+    local class = grenadeClass or (id == I.GENERIC_WEAPON and c) or info.weaponClass
+    local cfg = DarkRP and GAMEMODE and GAMEMODE.Config
+    if not (cfg and isstring(class)) then return true end
+    -- DarkRP's weapon checker rule (GetStrippableWeapons), with the class as written and lowercased
+    local lc = string.lower(class)
+    local function listed(list)
+        if not istable(list) then return false end
+        for _, v in pairs(list) do
+            if isstring(v) and string.lower(v) == lc then return true end
+        end
+        return false
+    end
+    local function keyed(map) return istable(map) and (map[class] or map[lc]) and true or false end
+    local job = target.getJobTable and target:getJobTable()
+    local legal = keyed(cfg.noStripWeapons) or (cfg.weaponCheckerHideNoLicense and keyed(GAMEMODE.NoLicense))
+    if not legal and cfg.weaponCheckerHideDefault then
+        legal = listed(cfg.DefaultWeapons) or (job and listed(job.weapons))
+        if not legal and listed(cfg.AdminWeapons) then
+            local access = target:IsAdmin()
+            if CAMI and CAMI.PlayerHasAccess then
+                CAMI.PlayerHasAccess(target, "DarkRP_GetAdminWeapons", function(ok) access = ok end)
+            end
+            legal = access and true or false
+        end
+    end
+    if legal then return false, I.L("search_cannot_take", info.name or class) end
+    return true
+end
+
 handlers[I.ACT.SEARCH] = function(ply)
     local sub = net.ReadUInt(2)
     if sub == SUB.STOP then
@@ -106,8 +143,15 @@ handlers[I.ACT.SEARCH] = function(ply)
         local cat = AdvInv.IDCategory[net.ReadUInt(4)]
         if not (cat and table.HasValue(AdvInv.WeaponCat, cat)) then return end -- equipped weapons only
         if not (I.SearchTake:GetBool() and I.IsSearching(ply, target)) then return false end
+        local may, mayWhy = I.SearchMayTake(target, I.SlotRef(target, cat))
+        if not may then return false, mayWhy end
+        -- (a job's weapon in its slot: refused like a job's item in his containers)
+        if target.AdvInvJobSlot and target.AdvInvJobSlot[cat] then
+            return false, I.L("search_cannot_take", I.SlotInfo(target, cat).name or "?")
+        end
         local item = I.TakeOff(target, cat)
         if not item then return end
+        item.j = nil -- (a job's weapon leaving its player is an ordinary one: else lost at the taker's death)
         if not I.Store(ply, item) then I.SpawnItem(item, I.DropPos(ply)) end
         hook.Run("AdvInv_Confiscated", ply, target, item)
         return true

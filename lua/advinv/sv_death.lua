@@ -136,6 +136,10 @@ local function transfer(ply, body, mode)
             append(all, I.Get(ply, cont))
             I.Set(ply, cont, {})
         end
+        -- past I.MAX_ITEMS the client wouldn't see them (nor could they be taken): on the ground
+        for k = #all, I.MAX_ITEMS + 1, -1 do
+            I.SpawnItem(table.remove(all, k), body:GetPos() + Vector(math.Rand(-20, 20), math.Rand(-20, 20), 20))
+        end
         I.Set(body, "Uniform", all)
     end
     if mode >= 2 then
@@ -192,7 +196,24 @@ end
 
 -- ply's body with his things. -> the body, or nil (nothing left on it: no body of ours).
 function I.MakeBody(ply, dmginfo)
+    -- a grenade thrown just before: counted now, before the body takes the items (else, this hook
+    -- running before the grenades' one, the thrown grenade stayed an item on the body)
+    if I.ReconcileGrenades and ply.AdvInvGrenades then I.ReconcileGrenades(ply, true) end
     if I.RemoveJobItems then I.RemoveJobItems(ply) end -- they belong to the job, not to the body
+    -- the killing hit's wear on a helmet or a vest (sv_gear.lua writes it after the damage, when the
+    -- gear is already on the body): applied now, so the body's gear has it
+    local wear = ply.AdvInvArmorWear
+    if wear and wear.tick == engine.TickCount() then
+        for cat, armor in pairs(wear.cats or {}) do ply:SetNWInt(cat .. "Armor", armor) end
+        ply.AdvInvArmorWear = nil
+    end
+    -- underbarrel launchers' rounds into boxes first: they go to the body with the rest, or stay
+    -- his when there is no body (the weapons are given again empty at the respawn)
+    for _, cat in ipairs(AdvInv.WeaponCat) do
+        local info = I.SlotInfo(ply, cat)
+        local wep = info.weaponClass and ply:GetWeapon(info.weaponClass)
+        if IsValid(wep) and I.UnloadUnderbarrel then I.UnloadUnderbarrel(ply, wep) end
+    end
     local mode = dropMode:GetInt()
     -- what stays on the player is his at the next spawn: only an emptied player is reset
     -- (sv_inventory.lua)
@@ -202,15 +223,18 @@ function I.MakeBody(ply, dmginfo)
     body:SetNWBool("AdvInvBody", true)
     body:SetNWString("AdvInvBodyName", showName:GetBool() and ply:Nick() or "")
     body.AdvInvBorn = CurTime()
+    ply.AdvInvLastBody = body -- (a grenade another addon drops at the same death: sv_grenades.lua)
     if lootTime:GetFloat() > 0 then body.AdvInvExpire = CurTime() + lootTime:GetFloat() end
     transfer(ply, body, mode)
     if mode >= 3 then ply.AdvInvResetNextSpawn = true end
+    -- the database must not keep a copy of what left him (on the body, or the weapon that fell from
+    -- his hands: saved even when the body is left empty)
+    local cid = I.GetOwnerID(ply)
+    if cid then I.Save(ply, cid) end
     if I.BodyEmpty(body) then -- nothing on it: the gamemode's ragdoll as usual
         body:Remove()
         return
     end
-    local cid = I.GetOwnerID(ply)
-    if cid then I.Save(ply, cid) end -- the database must not keep a copy
     I.Bodies[body] = true
     body:CallOnRemove("AdvInv_Body", function() I.Bodies[body] = nil end)
     removeOldest()

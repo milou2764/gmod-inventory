@@ -34,6 +34,15 @@ import anim0  # noqa: E402
 import mdl_render as mr  # noqa: E402
 import refbody  # noqa: E402
 
+# A negative zero ("-0.00", "-0.0") written without its sign; only a number that is all zeros
+# ("-0.004" keeps its sign: a plain .replace("-0.00", "0.00") turned it into 0.004).
+_NEG_ZERO = re.compile(r"(?<![\w.])-(0\.0+)(?![0-9])")  # (not "1-0.00")
+
+
+def _nz(text):
+    return _NEG_ZERO.sub(lambda m: m.group(1), text)
+
+
 TOOLS = Path(__file__).resolve().parent
 OUT = TOOLS.parent / "lua" / "advinv" / "cl_fits_data.lua"
 REF = "models/player/group01/male_07.mdl"
@@ -384,11 +393,12 @@ def lua(models_fits):
             lines.append(f"        {cat} = {{ {v(p)}, {vo(o)}, {a(ang)} }},")
         lines.append("    },")
     lines.append("}")
-    return "\n".join(lines).replace("-0.00", "0.00").replace("-0.0,", "0.0,").replace("-0.0)", "0.0)") + "\n"
+    return _nz("\n".join(lines)) + "\n"
 
 
 def main():
-    lst = Path(sys.argv[1]) if len(sys.argv) > 1 else TOOLS / "playermodels.txt"
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    lst = Path(args[0]) if args else TOOLS / "playermodels.txt"
     models = [l.strip() for l in lst.read_text(encoding="utf-8").splitlines() if l.strip()]
     ref = Body(REF)
     hats = {"advinv_top_hat": Hat("models/player/items/humans/top_hat.mdl", ref, crown=(6.5, 11.0), base_z=3.8),
@@ -400,6 +410,7 @@ def main():
     import builtin_gear  # noqa: E402
     locks = fit_locks.load()
     blocked, slots = builtin_gear.builtin(), builtin_gear.item_slots()
+    unread = []
     for m in models:
         try:
             items, weapons = fit_body(m, hats)
@@ -411,6 +422,7 @@ def main():
                     items[cls] = lk
         except Exception as e:  # noqa: BLE001
             print(f"{m}: skipped ({e})")
+            unread.append(m)
             continue
         if items or weapons:
             fits[m] = (items, weapons)
@@ -418,6 +430,14 @@ def main():
             print(f"{m:46} {len(items)} items, {len(weapons)} weapon mounts  {hs}")
         else:
             print(f"{m}: nothing to fit (no usable ValveBiped head / spine)")
+    # playermodels of the shipped file that can't be read now (MDL_EXTRA_DIRS not set: run from
+    # fit_editor\local.bat's settings) would be dropped from it with their approved fits
+    shipped = OUT.read_text(encoding="utf-8").lower() if OUT.exists() else ""
+    lost = [m for m in unread if f'"{m.lower()}"' in shipped]
+    if lost and "--allow-drop" not in sys.argv:
+        print(f"{len(lost)} playermodels of {OUT.name} can't be read now (e.g. {lost[0]}): nothing written."
+              " Set MDL_EXTRA_DIRS (fit_editor\\local.bat), or --allow-drop to drop them.")
+        return
     OUT.write_text(lua(fits), encoding="utf-8", newline="\n")
     print(f"{len(fits)} playermodels -> {OUT}")
 

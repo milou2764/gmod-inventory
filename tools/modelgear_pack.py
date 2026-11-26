@@ -31,6 +31,8 @@ import builtin_gear  # noqa: E402
 import fit_compat as fc  # noqa: E402
 import fit_items as fi  # noqa: E402
 import fit_locks  # noqa: E402
+
+_nz = fit_locks._nz  # (a negative zero without its sign; "-0.004" keeps it)
 import mdl_render as mr  # noqa: E402
 import refbody  # noqa: E402
 from modelgear_packs import PACKS  # noqa: E402
@@ -192,7 +194,7 @@ def transfer_torso(src, src_bones, bone, target, src_girth, t=None, drop=0.0):
 
 
 def lua_vec(v, n=2):
-    return "Vector(" + ", ".join(f"{x:.{n}f}" for x in v).replace("-0.00", "0.00") + ")"
+    return "Vector(" + _nz(", ".join(f"{x:.{n}f}" for x in v)) + ")"
 
 
 def lua_str(s):
@@ -434,7 +436,7 @@ def write_lua(pack, draw, base, hidden, items, own, targets, fits, out):
                 parts.append("")
                 continue
             p, ang, s = f
-            parts.append(" ".join([f"{x:.2f}" for x in p] + [f"{x:.1f}" for x in ang] + [f"{s:g}"]).replace("-0.00", "0.00"))
+            parts.append(_nz(" ".join([f"{x:.2f}" for x in p] + [f"{x:.1f}" for x in ang] + [f"{s:g}"])))
         L.append(f"            [{lua_str(it['class'])}] = \"{'|'.join(parts)}\",")
     L.append("        },")
     L.append("    },")

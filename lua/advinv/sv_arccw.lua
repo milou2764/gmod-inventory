@@ -110,19 +110,22 @@ local function gainsToBoxes(f)
         if not (IsValid(o) and o:IsPlayer()) or self.AdvInvAmmoWatch then return f(self, ...) end
         self.AdvInvAmmoWatch = true -- (the outer call only: Detach calls AdjustAtts)
         local before = reserves(o)
+        I.BeginGainConversion(o)
         local r = { pcall(f, self, ...) }
         self.AdvInvAmmoWatch = nil
+        local types = {}
         if IsValid(o) then
             local gained = false
             for name, n in pairs(reserves(o)) do
                 local diff = n - (before[name] or 0)
                 if diff > 0 then
-                    I.GiveRounds(o, name, diff)
-                    gained = true
+                    I.GiveRounds(o, name, diff, I.IsBoundJobWeapon and I.IsBoundJobWeapon(o, self))
+                    gained, types[name] = true, true
                 end
             end
             if gained then I.SyncAmmo(o) end
         end
+        I.EndGainConversion(o, types)
         if not r[1] then error(r[2], 0) end
         return unpack(r, 2)
     end
@@ -133,6 +136,19 @@ hook.Add("PreRegisterSWEP", "AdvInv_ArcCW", function(swep, class)
     for _, name in ipairs({ "Unload", "Detach", "AdjustAtts", "FinishHolster" }) do
         local f = rawget(swep, name)
         if isfunction(f) then swep[name] = gainsToBoxes(f) end
+    end
+    -- a dying player's cooked grenade falls without its ammunition being taken (ArcCW_GrenadeDrop):
+    -- one grenade item less, or the body would keep it too
+    local drop = rawget(swep, "GrenadeDrop")
+    if isfunction(drop) then
+        swep.GrenadeDrop = function(self, doammo, ...)
+            local owner = self:GetOwner()
+            local r = { drop(self, doammo, ...) }
+            if not doammo and IsValid(owner) and owner:IsPlayer() and not owner:Alive() and I.GrenadeDroppedAtDeath then
+                I.GrenadeDroppedAtDeath(owner, self.Primary and self.Primary.Ammo)
+            end
+            return unpack(r)
+        end
     end
     swep.AdvInvArcCWPatched = true
 end)
@@ -150,6 +166,8 @@ local function setup()
                 t.AdvInvTouch = touch
                 t.Touch = function(self, ent, ...)
                     if IsValid(ent) and ent:IsPlayer() and pick and pick:GetBool() then return end
+                    -- picked up the game's way (advinv_pickup_entities 0): its rounds become boxes
+                    if IsValid(ent) and ent:IsPlayer() then I.AllowAmmoGain(ent, self.AmmoType) end
                     return touch(self, ent, ...)
                 end
             end

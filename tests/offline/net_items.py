@@ -9,6 +9,7 @@ L.execute("""
 math.Clamp = function(v, a, b) return math.min(math.max(v, a), b) end
 istable = function(v) return type(v) == "table" end
 isnumber = function(v) return type(v) == "number" end
+isstring = function(v) return type(v) == "string" end
 I = {}
 function I.IsGeneric(id) return id == 100 or id == 103 or id == 125 end
 BUF, POS = {}, 0
@@ -32,3 +33,18 @@ res = L.eval("""function()
   return table.concat(out, " ; "), I.StackKey(back[2]) ~= I.StackKey({ id = 100, r = 30, c = "weapon_crowbar", m = 1 })
 end""")()
 print(res)
+
+# a huge storage of weapons with long attachment data: the message stays under the engine's 64 KB
+# (its first items are sent, the count matches what follows)
+big = L.eval("""function()
+  BUF, POS = {}, 0
+  local items = {}
+  for k = 1, 255 do items[k] = { id = 100, r = 1, c = "weapon_ak47", x = string.rep("a", 1000) } end
+  I.WriteItems(items)
+  local bytes = 0
+  for _, v in ipairs(BUF) do bytes = bytes + (type(v) == "string" and #v + 1 or 2) end
+  local back = I.ReadItems()
+  return #back, bytes
+end""")()
+print("huge storage:", big[0], "items,", big[1], "bytes")
+assert 0 < big[0] < 255 and big[1] < 64000, big

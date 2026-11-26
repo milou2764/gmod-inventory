@@ -63,7 +63,7 @@ timer.Simple(1, function()
             out.afterSack = { looterSack = summary(I.Get(l, "Rucksack")), body = body:GetNW2Int("Rucksack"), bodySack = #I.Get(body, "Rucksack") }
             out.takePistol = call(I.ActHandlers[I.ACT.LOOT], l, { body, AdvInv.CategoryID.SecondaryWep })
             out.afterPistol = { looter = l:GetNWInt("SecondaryWep") == idOf.advinv_hl2_pistol, body = body:GetNWInt("SecondaryWep") }
-            out.movePockets = call(I.ActHandlers[I.ACT.MOVE], l, { body, I.ContID.Uniform, 1, l, I.ContID.Uniform, 1 })
+            out.movePockets = call(I.ActHandlers[I.ACT.MOVE], l, { body, I.ContID.Uniform, 1, AdvInv.ItemCheck(I.Get(body, "Uniform")[1] or {}), l, I.ContID.Uniform, 1 })
             out.afterMove = { looter = summary(I.Get(l, "Uniform")), body = #I.Get(body, "Uniform") }
             out.uniformWithPockets = "n/a"
             l:SetPos(body:GetPos() + Vector(600, 0, 0))

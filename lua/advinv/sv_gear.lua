@@ -62,11 +62,20 @@ hook.Add("ScalePlayerDamage", "AdvInv_Gear_SPD", function(ply, hitgroup, dmginfo
         local base = t and t.Armor
         if base and base > 0 then
             local zones = t.ArmorHitgroups or AdvInv.ArmorZones[cat]
-            local left = ply:GetNWInt(cat .. "Armor")
+            -- the pellets of one shot come one by one before the damage is taken: each one wears
+            -- what the previous ones left (else all read the unworn armor and only the last one's
+            -- wear was kept: a shotgun barely hurt through armor and barely wore it)
+            local now = engine.TickCount()
+            local wear = ply.AdvInvArmorWear
+            if not (wear and wear.tick == now and wear.cats) then
+                wear = { tick = now, cats = {} }
+                ply.AdvInvArmorWear = wear
+            end
+            local left = wear.cats[cat] or ply:GetNWInt(cat .. "Armor")
             if zones and left > 0 and table.HasValue(zones, hitgroup) then
                 local newArmor = math.Clamp(math.floor(left - dmginfo:GetDamage()), 0, base)
                 -- worn once the damage is really taken (not blocked later: god mode, safe zone...)
-                ply.AdvInvArmorWear = { cat = cat, armor = newArmor, tick = engine.TickCount() }
+                wear.cats[cat] = newArmor
                 dmginfo:ScaleDamage(1 - newArmor / base)
                 return
             end
@@ -78,7 +87,9 @@ hook.Add("PostEntityTakeDamage", "AdvInv_Gear_Wear", function(ent, _, took)
     local w = ent.AdvInvArmorWear
     if not w then return end
     ent.AdvInvArmorWear = nil
-    if took and w.tick == engine.TickCount() and ent:IsPlayer() then ent:SetNWInt(w.cat .. "Armor", w.armor) end
+    if took and w.tick == engine.TickCount() and ent:IsPlayer() then
+        for cat, armor in pairs(w.cats or {}) do ent:SetNWInt(cat .. "Armor", armor) end
+    end
 end)
 
 

@@ -65,9 +65,12 @@ sub[A.UNVIEW] = function(admin)
 end
 
 sub[A.DELETE] = function(admin)
-    local holder, cont, index = net.ReadEntity(), I.ReadCont(), net.ReadUInt(8)
+    local holder, cont = net.ReadEntity(), I.ReadCont()
+    local index, check = I.ReadItemRef()
     local count = math.max(net.ReadUInt(8), 1)
     if not (cont and I.CanAccess(admin, holder)) then return end
+    index = I.ResolveItemRef(holder, cont, index, check)
+    if not index then return false end
     local items = I.Get(holder, cont)
     local item = items[index]
     if not item then return end
@@ -124,9 +127,22 @@ sub[A.GIVE] = function(admin)
     return true
 end
 
+-- An equipped item an admin takes or deletes: what it holds must not go with it (a vest's contents),
+-- nor be left without room (the pockets without the uniform).
+local function slotLeavable(target, cat)
+    if (cat == "Vest" or cat == "Rucksack") and #I.Get(target, cat) > 0 then return false, I.L("msg_empty_it_first") end
+    if cat == "Uniform" then
+        local ok, why = I.CanTakeOff(target, cat)
+        if not ok then return false, why end
+    end
+    return true
+end
+
 sub[A.SLOT_DELETE] = function(admin)
     local target, cat = net.ReadEntity(), AdvInv.IDCategory[net.ReadUInt(4)]
     if not (IsValid(target) and target:IsPlayer() and cat and I.CanAccess(admin, target)) then return end
+    local ok, why = slotLeavable(target, cat)
+    if not ok then return false, why end
     local item = I.TakeOff(target, cat)
     log(admin, "deleted the equipped " .. itemText(item) .. " of", target)
     return true
@@ -135,11 +151,11 @@ end
 sub[A.SLOT_TAKE] = function(admin)
     local target, cat = net.ReadEntity(), AdvInv.IDCategory[net.ReadUInt(4)]
     if not (IsValid(target) and target:IsPlayer() and target ~= admin and cat and I.CanAccess(admin, target)) then return end
-    if (cat == "Vest" or cat == "Rucksack") and #I.Get(target, cat) > 0 then
-        return false, I.L("msg_empty_it_first")
-    end
+    local ok, why = slotLeavable(target, cat)
+    if not ok then return false, why end
     local item = I.TakeOff(target, cat)
     if not item then return end
+    item.j = nil -- (a job's weapon leaving its player is an ordinary one: else lost at the taker's death)
     if not I.Store(admin, item) then I.SpawnItem(item, I.DropPos(admin)) end
     log(admin, "took the equipped " .. itemText(item) .. " of", target)
     return true

@@ -28,6 +28,7 @@ tools/carry_overrides.json: they replace the computed offsets of their set / wea
 import json
 import math
 import os
+import re
 import sys
 from multiprocessing import Pool
 from pathlib import Path
@@ -64,6 +65,14 @@ WEAPONS = {  # class: (model, modes)
 # other addons' long guns, set offline in the fit editor like these (tools/carry_weapons.txt, made by
 # carry_weapons.py scan): the game uses their offsets by weapon class instead of the mode's template
 import carry_weapons  # noqa: E402
+
+# A negative zero ("-0.00", "-0.0") written without its sign; only a number that is all zeros
+# ("-0.004" keeps its sign: a plain .replace("-0.00", "0.00") turned it into 0.004).
+_NEG_ZERO = re.compile(r"(?<![\w.])-(0\.0+)(?![0-9])")  # (not "1-0.00")
+
+
+def _nz(text):
+    return _NEG_ZERO.sub(lambda m: m.group(1), text)
 for _cls, _slot, _model, _name in carry_weapons.load():
     WEAPONS.setdefault(_cls, (_model, ("sling_up",) if _slot == "RocketLauncher" else None))
 MODES = ("sling_up", "sling_down", "front_hang")  # (back_carry, cross_body: removed, 23/11; sling_down is the back carry)
@@ -395,7 +404,10 @@ def main():
         k32.SetPriorityClass(k32.GetCurrentProcess(), 0x4000)
     if sys.argv[1:2] == ["--current"]:  # the playermodels the game's carry data already has
         import carry_data
-        models = sorted(carry_data.read()[1])
+        # in the file's order (the order of the run that wrote it): sets are made in processing
+        # order, sorted names would regroup them and rename them (overrides and locks are keyed by
+        # set name)
+        models = list(carry_data.read()[1])
     else:
         lst = Path(sys.argv[1]) if len(sys.argv) > 1 else TOOLS / "playermodels.txt"
         models = [l.strip() for l in lst.read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -540,7 +552,7 @@ def write_lua(sets, aliases, templates, models):
     for m in models:
         L.append(f'    "{m}",')
     L.append("}")
-    text = "\n".join(L).replace("-0.00", "0.00").replace("-0.0,", "0.0,").replace("-0.0)", "0.0)") + "\n"
+    text = _nz("\n".join(L)) + "\n"
     OUT.write_text(text, encoding="utf-8", newline="\n")
     print("written", OUT)
 

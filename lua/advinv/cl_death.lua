@@ -46,6 +46,11 @@ timer.Create("AdvInv_BodiesGear", 0.5, 0, function()
     for body in pairs(bodies) do
         if not IsValid(body) then bodies[body] = nil end
     end
+    -- gear models made for a body (cl_gear.lua's callbacks) that went before this timer saw it: its
+    -- CallOnRemove never came, the models would stay (players' entries are keyed by UserID)
+    for key in pairs(AdvInv.mountedGear or {}) do
+        if not isnumber(key) and not IsValid(key) then cleanup(key) end
+    end
 end)
 
 -- weapons carried on bodies (cl_weapons.lua / cl_carry.lua place them like on players)

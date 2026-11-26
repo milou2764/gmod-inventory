@@ -3,6 +3,7 @@ local I = AdvInv
 local idOf = {}
 for id, c in pairs(AdvInv.IDClass) do idOf[c] = id end
 for _, b in ipairs(player.GetBots()) do b:Kick("reset") end
+for b in pairs(I.Bodies or {}) do if IsValid(b) then b:Remove() end end -- (another test's body here blocks the sight)
 for _, cls in ipairs({ "advinv_crate", "advinv_bank", "advinv_loot_spawn" }) do
     for _, e in ipairs(ents.FindByClass(cls)) do I.RemovePermanent(e) e:Remove() end
 end
@@ -29,6 +30,11 @@ local function call(fn, ply, q)
     if not ok then return "ERROR " .. tostring(a) end
     return { a, b }
 end
+-- the check that follows every item index in an action (I.ItemCheck: the item the client saw)
+local function ck(holder, cid, index)
+    local it = AdvInv.Get(holder, AdvInv.IDCont[cid])[index]
+    return it and AdvInv.ItemCheck(it) or 0
+end
 local H, ACT = I.ActHandlers, I.ACT
 local setR, codeR = net.Receivers["advinv_storage_set"], net.Receivers["advinv_storage_code"]
 local function spawn(class, pos)
@@ -47,21 +53,23 @@ timer.Simple(1, function()
     call(function(p) setR(0, p) end, boss, { c1, "sync", "depot" })
     call(function(p) setR(0, p) end, boss, { c2, "sync", "depot" })
     give(a)
-    out.moveIntoShared = call(H[ACT.MOVE], a, { a, I.ContID.Uniform, 1, c1, I.ContID.Storage, 1 })
+    out.moveIntoShared = call(H[ACT.MOVE], a, { a, I.ContID.Uniform, 1, ck(a, I.ContID.Uniform, 1), c1, I.ContID.Storage, 1 })
     out.sharedSeenInOther = summary(I.Get(c2, "Storage"))
     -- non-admin can't change settings
     call(function(p) setR(0, p) end, a, { c1, "sync", "hack" })
     out.nonAdminSync = c1.AdvInvSyncName
     -- personal crate
-    local pc = spawn("advinv_crate", base + Vector(-60, 0, 0))
+    local pc = spawn("advinv_crate", base + Vector(130, 0, 0)) -- (west of the bots is a wall on gm_construct)
     call(function(p) setR(0, p) end, boss, { pc, "personal", "1" })
     give(a)
-    out.movePersonal = call(H[ACT.MOVE], a, { a, I.ContID.Uniform, 1, pc, I.ContID.Storage, 1 })
+    a:SetPos(base + Vector(100, 40, -20))
+    out.movePersonal = call(H[ACT.MOVE], a, { a, I.ContID.Uniform, 1, ck(a, I.ContID.Uniform, 1), pc, I.ContID.Storage, 1 })
+    a:SetPos(base + Vector(0, 40, -20))
     out.personal = { alice = summary(I.Get(pc, "Storage", a)), bob = summary(I.Get(pc, "Storage", b)) }
     -- bank: two lockers, same store for the same player
     local b1, b2 = spawn("advinv_bank", base + Vector(0, -80, 0)), spawn("advinv_bank", base + Vector(0, -160, 0))
     give(b)
-    out.bankMove = call(H[ACT.MOVE], b, { b, I.ContID.Uniform, 1, b1, I.ContID.Storage, 1 })
+    out.bankMove = call(H[ACT.MOVE], b, { b, I.ContID.Uniform, 1, ck(b, I.ContID.Uniform, 1), b1, I.ContID.Storage, 1 })
     out.bank = { bobInOther = summary(I.Get(b2, "Storage", b)), aliceInOther = summary(I.Get(b2, "Storage", a)), cap = I.MaxLoad(b2, "Storage") }
     -- lock + code (Alice owns the crate)
     local lc = spawn("advinv_crate", base + Vector(60, -80, 0))
@@ -99,6 +107,15 @@ timer.Simple(1, function()
         out.lootSpawn = IsValid(ls.AdvInvSpawned) and ls.AdvInvSpawned:GetClass() or "none"
         timer.Simple(4, function()
             out.storesSaved = tonumber(sql.QueryValue("SELECT COUNT(*) FROM advinv_stores"))
+            -- leave the map as it was: the loot spawn would keep dropping weapons, the permanent
+            -- crates and bank would come back at every map load
+            for _, cls in ipairs({ "advinv_crate", "advinv_bank", "advinv_loot_spawn" }) do
+                for _, e in ipairs(ents.FindByClass(cls)) do I.RemovePermanent(e) e:Remove() end
+            end
+            for _, e in ipairs(ents.GetAll()) do
+                if I.ItemFromEntity(e) and not e:IsPlayer() and not IsValid(e:GetOwner()) and e:GetPos():Distance(base) < 600 then e:Remove() end
+            end
+            for _, b in ipairs({ a, b, boss }) do if IsValid(b) then b:Kick("done") end end
             done(out)
         end)
     end)

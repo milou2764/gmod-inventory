@@ -21,6 +21,11 @@ local function call(fn, ply, q)
     if not ok then return "ERROR " .. tostring(a) end
     return { a, b }
 end
+-- the check that follows every item index in an action (I.ItemCheck: the item the client saw)
+local function ck(holder, cid, index)
+    local it = AdvInv.Get(holder, AdvInv.IDCont[cid])[index]
+    return it and AdvInv.ItemCheck(it) or 0
+end
 local H, A, ACT = I.ActHandlers, I.ADMIN, I.ACT
 player.CreateNextBot("Admin") player.CreateNextBot("Target") player.CreateNextBot("Nobody")
 timer.Simple(1, function()
@@ -37,9 +42,9 @@ timer.Simple(1, function()
     out.view = call(H[ACT.ADMIN], adm, { A.VIEW, tgt })
     out.adminCanAccessFar = I.CanAccess(adm, tgt)
     -- move one ammo box from the target's uniform into the admin's uniform (MOVE action)
-    out.move = call(H[ACT.MOVE], adm, { tgt, I.ContID.Uniform, 1, adm, I.ContID.Uniform, 1 })
+    out.move = call(H[ACT.MOVE], adm, { tgt, I.ContID.Uniform, 1, ck(tgt, I.ContID.Uniform, 1), adm, I.ContID.Uniform, 1 })
     out.afterMove = { target = summary(I.Get(tgt, "Uniform")), admin = summary(I.Get(adm, "Uniform")) }
-    out.delete = call(H[ACT.ADMIN], adm, { A.DELETE, tgt, I.ContID.Uniform, 1, 5 })
+    out.delete = call(H[ACT.ADMIN], adm, { A.DELETE, tgt, I.ContID.Uniform, 1, ck(tgt, I.ContID.Uniform, 1), 5 })
     out.afterDelete = summary(I.Get(tgt, "Uniform"))
     out.give = call(H[ACT.ADMIN], adm, { A.GIVE, tgt, idOf.advinv_ammo_pistol, "", 2 })
     out.giveWeapon = call(H[ACT.ADMIN], adm, { A.GIVE, tgt, I.GENERIC_WEAPON, "weapon_crowbar", 1 })

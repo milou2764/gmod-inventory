@@ -236,11 +236,15 @@ I.NET_ARMOR_BITS = 8    -- blindage d'un objet (0 à 255)
 I.NET_COUNT_BITS = 8    -- objets par contenant (255 au maximum)
 
 function I.WriteItems(items)
-    -- (an entry without a valid id, put there by other code, is left out: it would break the message)
-    local valid = {}
+    -- (an entry without a valid id, put there by other code, is left out: it would break the message;
+    -- and the message must stay under the engine's 64 KB: a storage an admin made huge, full of
+    -- weapons with long attachment data, shows its first items rather than none)
+    local valid, bytes = {}, 0
     for k = 1, #items do
         local it = items[k]
         if istable(it) and isnumber(it.id) and it.id > 1 and it.id < 2 ^ I.NET_ID_BITS then
+            bytes = bytes + 7 + (isstring(it.c) and #it.c + 1 or 0) + (isstring(it.x) and #it.x + 1 or 0)
+            if bytes > 60000 then break end
             valid[#valid + 1] = it
             if #valid == 255 then break end
         end
@@ -254,8 +258,8 @@ function I.WriteItems(items)
         net.WriteUInt(math.Clamp(math.floor(it.a or 0), 0, 255), I.NET_ARMOR_BITS)
         net.WriteUInt(math.Clamp(math.floor(it.m or 0), 0, 7), 3) -- carry mode of a long gun (0: none)
         if I.IsGeneric(it.id) then net.WriteString(it.c or "") end -- class of a generic item
-        net.WriteBool(it.x ~= nil) -- extra weapon data (attachments)
-        if it.x ~= nil then net.WriteString(it.x) end
+        net.WriteBool(isstring(it.x)) -- extra weapon data (attachments; anything else other code put there is not sent)
+        if isstring(it.x) then net.WriteString(it.x) end
     end
 end
 
@@ -278,6 +282,11 @@ I.ACT = { MOVE = 1, DROP = 2, EQUIP = 3, UNEQUIP = 4, OPEN = 5, CLOSE = 6, CARRY
 -- Identical items (same object, same ammo, same armor) are shown as one stack.
 function I.StackKey(item)
     return item.id .. ":" .. (item.r or 0) .. ":" .. (item.a or 0) .. ":" .. (item.m or 0) .. ":" .. (item.c or "") .. ":" .. (item.x or "")
+end
+
+-- What an item is, in 32 bits (sent with its place in a list: sv_containers.lua I.ResolveItemRef).
+function I.ItemCheck(item)
+    return (tonumber(util.CRC(I.StackKey(item))) or 0) % 4294967296
 end
 
 ---------------------------------------------------------------- contenu vu par le client

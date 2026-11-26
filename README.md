@@ -46,7 +46,8 @@ texts are in `lua/advinv/sh_lang.lua`; to add a language, add a table to
 Like Arma 3's "mass", it is a number of points with no unit:
 
 - every item declares `ENT.Mass`, every container `ENT.MaxLoad` (capacity);
-- a container accepts an item as long as the sum of the masses stays within its capacity;
+- a container accepts an item as long as the sum of the masses stays within its capacity, and
+  holds 255 items at most (what the client is sent);
 - player containers: the **uniform** (pockets), the **vest** (if it has pockets) and the
   **backpack**; crates and vehicle trunks have a "Storage" container.
 
@@ -287,7 +288,9 @@ Ready or Not pistols; `lua/advinv/sv_sandswep.lua`):
   them back: its attachment inventory (`arccw_attinv_free 0`) gains or loses nothing. The client's
   autosaved loadout is not applied over them;
 - rounds ArcCW gives back to the reserve (unloading, a smaller magazine, an underbarrel launcher
-  taken off) go into ammo boxes; DarkRP's `/drop` doesn't hand the player copies of the attachments;
+  taken off) go into ammo boxes, and so does the round left in an underbarrel launcher when the
+  weapon leaves its slot (any base: ArcCW UBGL, CW 2.0's M203); DarkRP's `/drop` doesn't hand the
+  player copies of the attachments;
 - its ammo boxes are taken with Use into the inventory (not by walking over them); its throwables are
   grenade items (one ammunition type each, ArcCW's default);
 - the 28 long guns of Counter-Strike+ have carry positions on every fitted playermodel.
@@ -507,9 +510,11 @@ allow), `AdvInv_Searched(searcher, target, illegalNames)` and
 - `/drop` on an inventory weapon: DarkRP drops it as usual, then its slot is freed; the dropped
   weapon keeps its magazine and attachments but carries no reserve (the ammo boxes stay in the
   inventory). DarkRP's drop on death never drops an inventory weapon (it stays on the body).
-- The weapon checker's confiscation takes the inventory weapons out of their slots (DarkRP gives
-  them back later as ordinary weapons). Arrest, job change and admin strips take nothing else:
-  the ammo boxes stay, and the slot weapons come back at the next loadout (not while arrested).
+- The weapon checker's confiscation takes the inventory weapons out of their slots; when DarkRP
+  gives them back they return to their slots (stored if the slot was filled meanwhile) with their
+  magazine, attachments and carry mode. Arrest, job change and admin strips take nothing else:
+  the ammo boxes stay, and the slot weapons come back at the next loadout (not while arrested),
+  with their own magazine even if the job's loadout gives the same weapon.
 - `gm_giveswep` (spawn menu) follows DarkRP's rules (admin weapons, arrested); a weapon it gives
   goes into the inventory.
 - The inventory shows the wallet, with **Drop money** (DarkRP's own `/dropmoney`: its limit of
@@ -529,13 +534,22 @@ allow), `AdvInv_Searched(searcher, target, illegalNames)` and
   forget). With a character system that saves inventories, leave it off.
 - A weapon DarkRP's `/drop` refuses (job weapons with `dropspawnedweapons` off, `DisallowDrop`,
   `restrictdrop`) can't leave its player through the inventory either: not dropped, nor put into a
-  crate or a body. Other code can decide with the hook `AdvInv_CanWeaponLeave(ply, class)`.
+  crate or a body, nor swapped for a weapon picked up with Use (that one is stored instead). Other
+  code can decide with the hook `AdvInv_CanWeaponLeave(ply, class)`. A search can't take what
+  DarkRP's weapon checker never takes (with `weaponCheckerHideDefault`: the target's job weapons,
+  the default weapons, an admin's admin weapons; with `weaponCheckerHideNoLicense`: the weapons that
+  need no license; always: `noStripWeapons`).
 - Entities with a DarkRP limit (`max` in their F4 entry) stay entities: taking them into the
   inventory would free a place in the limit and let the buyer buy more.
 - `advinv_darkrp_loadout_to_inventory 1` (off by default): the job's own weapons (its F4 list)
   that fit a free slot become inventory weapons (shown on the body, carry modes). They still belong
   to the job: they go when the player changes job or dies (never left on his body, never saved),
-  and the next loadout gives them again.
+  and the next loadout gives them again. A searcher can't take them (nor unload them), and while
+  they may not be dropped (`dropspawnedweapons` off) their owner can't unload them either: their
+  rounds stay in them (else each loadout's full magazine became ammo boxes to give away; what a
+  magazine attachment takes out becomes job boxes, which only the job's weapon loads). When
+  DarkRP lets job weapons be dropped (`dropspawnedweapons`), one that leaves the player (dropped,
+  stored, inside a dropped vest or backpack) becomes an ordinary weapon, as DarkRP does.
 
 ## Protections
 

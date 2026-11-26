@@ -118,9 +118,14 @@ def write_mesh(path, mesh, cache, face=0.0, bones=None, eyes=None, arm=None):
     mats_m.append(mat(bones[3]))
     V = np.c_[pos, nrm, uv].astype(np.float32)
     head = b"AFEM" + struct.pack("<IIIIfI", VERSION, len(V), len(T), len(used), float(face), flags)
-    tmp = path.with_suffix(".tmp")
+    # (a temp name per process: a playermodel listed under two spellings is exported by two workers
+    # into the same file at once, and one shared temp file would mix their bytes)
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     tmp.write_bytes(head + b"".join(m.tobytes() for m in mats_m) + V.tobytes() + T.tobytes() + b"".join(mats_out))
-    os.replace(tmp, path)
+    try:
+        os.replace(tmp, path)
+    except OSError:  # the same mesh written meanwhile by another worker (Windows: file in use)
+        tmp.unlink(missing_ok=True)
 
 
 def bodygroups(pm):

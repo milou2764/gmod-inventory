@@ -102,7 +102,7 @@ timer.Simple(1.5, function()
         { "split", function()
             I.Set(a, "Uniform", { { id = I.GENERIC_AMMO, c = "SniperRound", r = 20 } })
             local saved = { net.ReadEntity, net.ReadUInt }
-            local reads = { 1, 1, 8 } -- cont id (Uniform), index, rounds
+            local reads = { 1, 1, I.ItemCheck(I.Get(a, "Uniform")[1]), 8 } -- cont id (Uniform), index, its check, rounds
             local k = 0
             net.ReadEntity = function() return a end
             net.ReadUInt = function() k = k + 1 return reads[k] end

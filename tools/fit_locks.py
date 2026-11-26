@@ -16,6 +16,15 @@ from pathlib import Path
 
 import numpy as np
 
+# A negative zero ("-0.00", "-0.0") written without its sign; only a number that is all zeros
+# ("-0.004" keeps its sign: a plain .replace("-0.00", "0.00") turned it into 0.004).
+_NEG_ZERO = re.compile(r"(?<![\w.])-(0\.0+)(?![0-9])")  # (not "1-0.00")
+
+
+def _nz(text):
+    return _NEG_ZERO.sub(lambda m: m.group(1), text)
+
+
 TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS))  # builtin_gear.py (run with python -I, the script's folder isn't on the path)
 PATH = TOOLS / "fit_locks.txt"
@@ -47,16 +56,16 @@ def get(locks, cls, pm):
 # (the same formats as fit_compat.py write_fits / write_data and fit_items.py lua)
 
 def _compat_entry(p, a, s):
-    return " ".join([f"{x:.2f}" for x in p] + [f"{x:.1f}" for x in a] + [f"{s:g}"]).replace("-0.00", "0.00")
+    return _nz(" ".join([f"{x:.2f}" for x in p] + [f"{x:.1f}" for x in a] + [f"{s:g}"]))
 
 
 def _vec(p, n=2):
-    return ", ".join(f"{x:.{n}f}" for x in p).replace("-0.00", "0.00").replace("-0.0,", "0.0,")
+    return _nz(", ".join(f"{x:.{n}f}" for x in p))
 
 
 def _data_line(cls, p, a, s):
     t = (f"        {cls} = {{ V({p[0]:.2f}, {p[1]:.2f}, {p[2]:.2f}), A({a[0]:.1f}, {a[1]:.1f}, {a[2]:.1f}), {s:g} }},")
-    return t.replace("-0.00", "0.00").replace("-0.0,", "0.0,").replace("-0.0)", "0.0)")
+    return _nz(t)
 
 
 def extensions():

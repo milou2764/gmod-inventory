@@ -71,8 +71,7 @@ function I.WeaponAmmo(id, c)
     local t = I.DefTable(id, c)
     local ammo = t and t.Ammo
     if (not ammo or ammo == "") and info.weaponClass then
-        local swep = weapons.Get(info.weaponClass)
-        ammo = swep and swep.Primary and swep.Primary.Ammo
+        ammo = I.SwepAmmo(weapons.Get(info.weaponClass))
     end
     if ammo == "" then return end
     return ammo

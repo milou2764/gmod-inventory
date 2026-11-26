@@ -71,3 +71,8 @@ storages).
 | `modelgear.lua` | playermodels with gear of their own: headgear off under a helmet, the model's own Adrian, backpack, restored on take off (needs the National Guard and WW1 playermodels and the compat addons; skips without them) |
 | `jobchange.lua` | DarkRP job changes in its three ways (inventory kept), job weapons in the inventory |
 | `security.lua` | ammo pickups, gm_giveswep, arrest spawns, empty bodies, line of sight, drop rules, limits |
+
+## Fuzzers
+
+`fuzz/`: random real actions with every item counted before and after (duplication, loss, rules
+bypassed); see `fuzz/README.md`.

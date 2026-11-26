@@ -577,7 +577,13 @@ peut fouiller. Objets illégaux : `ENT.Illegal = true` sur un objet enregistré,
 - `advinv_darkrp_loadout_to_inventory 1` (désactivé par défaut) : les armes propres au métier (sa
   liste F4) qui ont un emplacement libre deviennent des armes de l'inventaire (visibles sur le corps,
   modes de port). Elles restent au métier : elles partent quand le joueur change de métier ou meurt
-  (jamais laissées sur son corps, jamais enregistrées), et le prochain équipement les redonne.
+  (jamais laissées sur son corps, jamais enregistrées), et le prochain équipement les redonne. Une
+  fouille ne peut ni les prendre ni les décharger, et tant qu'elles ne peuvent pas être lâchées
+  (`dropspawnedweapons` désactivé) leur propriétaire ne peut pas les décharger non plus : leurs
+  munitions restent dedans (ce qu'un accessoire de chargeur en fait sortir devient des boîtes du
+  métier, que seule l'arme du métier charge). Quand DarkRP laisse lâcher les armes du métier (`dropspawnedweapons`), celle qui quitte
+  le joueur (lâchée, rangée, dans un gilet ou un sac lâché) devient une arme ordinaire, comme dans
+  DarkRP.
 
 ## Protections
 

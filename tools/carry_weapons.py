@@ -158,11 +158,29 @@ def scan(roots):
             continue
         name = (get(cls, "name") or cls).replace("\t", " ")
         rows.append((cls, cat, model, name, src[cls][1]))
+    # the rows already in the list that this scan didn't find (another folder, a model not readable with
+    # this computer's MDL_EXTRA_DIRS, a line added by hand) stay: a scan adds and updates, never removes
+    # (removing a weapon is done by hand). Else a run with fewer folders would drop them, and the next
+    # fit_carry run their carry positions.
+    found = {r[0] for r in rows}
+    kept = []
+    if LIST.exists():
+        for line in LIST.read_text(encoding="utf-8").splitlines():
+            f = line.split("\t")
+            if line.strip() and not line.startswith("#") and len(f) >= 3 and f[0] not in found:
+                if len(f) < 4:
+                    f.append(f[0])  # (a name)
+                if len(f) < 5:
+                    f.append("")  # (where it was found)
+                kept.append(tuple(f[:5]))
+                found.add(f[0])
+    rows += kept
+    rows.sort(key=lambda r: r[0])
     lines = ["# Long guns of other addons: carry positions computed by fit_carry.py, set in the fit editor.",
              "# class\tslot\tworld model\tname\twhere it was found  (a line starting with # is left out)"]
     lines += ["\t".join(r) for r in rows]
     LIST.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
-    print(f"{len(rows)} long guns -> {LIST}")
+    print(f"{len(rows)} long guns -> {LIST}" + (f" ({len(kept)} kept from the list, not found by this scan)" if kept else ""))
     for r in rows:
         print(f"  {r[0]:28} {r[1]:15} {r[3]}  ({r[2]}, {r[4]})")
     if skipped:

@@ -49,7 +49,7 @@ timer.Simple(1.5, function()
             local before = #I.Get(b, "Uniform")
             local H = I.ActHandlers
             local real = { net.ReadUInt, net.ReadEntity }
-            local q, k = { I.ACT.USE, b, I.ContID.Uniform, 2 }, 0
+            local q, k = { I.ACT.USE, b, I.ContID.Uniform, 2, I.ItemCheck(I.Get(b, "Uniform")[2] or {}) }, 0
             local function nxt() k = k + 1 return q[k] end
             net.ReadUInt, net.ReadEntity = nxt, nxt
             pcall(net.Receivers["advinv_act"], 0, b)

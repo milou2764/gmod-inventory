@@ -89,6 +89,21 @@ end
 
 local WEAPON_MASS = { PrimaryWep = 80, SecondaryWep = 20, RocketLauncher = 100 }
 
+-- Ammunition and magazine size a weapon table declares. Most bases fill SWEP.Primary; ARC9 declares
+-- SWEP.Ammo and SWEP.ClipSize, its Primary.Ammo staying the base's "" (and Primary.ClipSize
+-- weapon_base's 8).
+function I.SwepAmmo(swep)
+    if not swep then return end
+    if swep.ARC9 and isstring(swep.Ammo) and swep.Ammo ~= "" then return swep.Ammo end
+    return swep.Primary and swep.Primary.Ammo
+end
+
+function I.SwepClipSize(swep)
+    if not swep then return end
+    if swep.ARC9 and isnumber(swep.ClipSize) then return swep.ClipSize end
+    return swep.Primary and swep.Primary.ClipSize
+end
+
 -- Slot of a weapon that has no registered item: its own AdvInvCategory, I.WeaponCategory, else a guess
 -- from its menu slot and hold type.
 local function guessCategory(class, swep)
@@ -97,7 +112,7 @@ local function guessCategory(class, swep)
     -- (some bases, CW 2.0, set their hold type only when deployed: NormalHoldType; ArcCW names it
     -- HoldtypeActive)
     local hold = swep and string.lower(swep.HoldType or swep.NormalHoldType or swep.HoldtypeActive or "") or ""
-    local ammo = swep and swep.Primary and string.lower(tostring(swep.Primary.Ammo or "")) or ""
+    local ammo = string.lower(tostring(I.SwepAmmo(swep) or ""))
     if hold == "rpg" or ammo == "rpg_round" then return "RocketLauncher" end
     -- (not SWEP.Slot: many weapons set it on the client only, the server would guess another slot)
     if hold == "pistol" or hold == "revolver" or hold == "melee" or hold == "knife"
@@ -134,8 +149,8 @@ function I.DefTable(id, c)
                 PrintName = phrase(swep and swep.PrintName) or (hl2 and (fr and hl2[2] or hl2[1])) or c,
                 Model = (swep and swep.WorldModel ~= "" and swep.WorldModel) or (hl2 and hl2[3]) or "models/weapons/w_pistol.mdl",
                 AdvInvCategory = (hl2 and not I.WeaponCategory[c]) and hl2[4] or guessCategory(c, swep),
-                ClipSize = swep and swep.Primary and swep.Primary.ClipSize or (hl2 and hl2[5]) or -1,
-                Ammo = swep and swep.Primary and swep.Primary.Ammo or (hl2 and hl2[6]) or "",
+                ClipSize = I.SwepClipSize(swep) or (hl2 and hl2[5]) or -1,
+                Ammo = I.SwepAmmo(swep) or (hl2 and hl2[6]) or "",
             }
             d.Mass = (swep and swep.AdvInvMass) or WEAPON_MASS[d.AdvInvCategory] or 20
         end

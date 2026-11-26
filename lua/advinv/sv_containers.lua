@@ -72,6 +72,20 @@ function I.CanFit(holder, cont, id, c)
     return I.HasContainer(holder, cont) and #I.Get(holder, cont) < I.MAX_ITEMS and I.ItemMass(id, c) <= I.Free(holder, cont)
 end
 
+-- Last resort for what must stay with a player (a job's item, one his drop rules keep): his pockets
+-- over their load, but never past the 255 items a container shows (else unseen, never taken out);
+-- past that, a job's item is gone (the next loadout gives it again), anything else falls at his feet.
+function I.ForceStore(ply, item)
+    local pockets = I.Get(ply, "Uniform")
+    if #pockets < I.MAX_ITEMS then
+        pockets[#pockets + 1] = item
+        I.MarkDirty(ply, "Uniform")
+        return true
+    end
+    if not item.j then I.SpawnItem(item, I.DropPos(ply)) end
+    return false
+end
+
 -- Contenants d'un porteur, dans l'ordre où l'on range (comme Arma : tenue, gilet, sac).
 function I.ContainersOf(holder)
     if holder:IsPlayer() or I.IsBody(holder) then return I.PLAYER_CONTAINERS end
@@ -121,7 +135,12 @@ local function recipients(holder)
     if holder:IsPlayer() then rf:AddPlayer(holder) end
     local viewers = holder.AdvInvViewers
     for ply in pairs(viewers or {}) do
-        if IsValid(ply) and stillViewing(ply, holder) then rf:AddPlayer(ply) else viewers[ply] = nil end
+        if IsValid(ply) and stillViewing(ply, holder) then rf:AddPlayer(ply)
+        else
+            viewers[ply] = nil
+            -- (told, else his window stayed open: the search's own end found him already gone)
+            if IsValid(ply) and I.EndView then I.EndView(holder, ply) end
+        end
     end
     return rf
 end
@@ -186,22 +205,63 @@ local function guarded(ply) return (guardTick[ply] or 0) >= engine.TickCount() e
 
 local function sameAmmo(a, b) return a and b and string.lower(a) == string.lower(b) end
 
+-- Ammo picked up the game's way (advinv_pickup_entities 0, or an ammo entity given straight to the
+-- player): its rounds go into the reserve, and the reserve is the boxes: they become boxes, else the
+-- next sync would erase them. Only gains of that ammo type, in the next ticks (sv_generic.lua).
+local gainAllowed = {}
+function I.AllowAmmoGain(ply, ammo)
+    if isstring(ammo) and ammo ~= "" then gainAllowed[ply] = { tick = engine.TickCount() + 2, ammo = ammo } end
+end
+
+-- Weapon code wrapped to make its own reserve gains boxes (sv_arccw.lua, sv_cw2.lua): while it runs,
+-- the gain branch below leaves those gains to it, and afterwards a window opened for the same type
+-- (a touched ammo entity) is closed, or the same rounds would become boxes twice.
+local converting = {}
+function I.BeginGainConversion(ply) converting[ply] = (converting[ply] or 0) + 1 end
+function I.EndGainConversion(ply, types)
+    converting[ply] = (converting[ply] or 1) > 1 and converting[ply] - 1 or nil
+    local g = gainAllowed[ply]
+    if g and types then
+        for ammo in pairs(types) do
+            if sameAmmo(g.ammo, ammo) then gainAllowed[ply] = nil break end
+        end
+    end
+end
+
 -- Réserve du joueur = total des boîtes rangées dans ses contenants.
+-- The weapon in hand for the ammo rules: during a switch's tick, the one being switched to (its
+-- Deploy runs in that tick, before the active weapon is read again: an ArcCW auto reload or a
+-- Sandstorm launcher takes from the reserve right there)
+local function held(ply)
+    local s = ply.AdvInvSwitchTo
+    if s and s.tick == engine.TickCount() and IsValid(s.wep) then return s.wep end
+    return ply:GetActiveWeapon()
+end
+I.HeldWeapon = held
+
 function I.SyncAmmo(ply)
     if not ply:Alive() then return end
     if I.ReconcileGrenades then I.ReconcileGrenades(ply) end -- throws first (sv_grenades.lua)
     local totals = {}
+    local grenadeOf = I.GrenadeOfAmmo
+    -- the job's boxes of rounds, while job items are bound: in the reserve only with the job's weapon
+    -- in hand (else a personal weapon of the same calibre loaded them, and its rounds could leave as
+    -- ordinary ones); grenades are items of their own (sv_grenades.lua)
+    local jobRounds = not (I.JobItemsBound and I.JobItemsBound()) or (I.IsBoundJobWeapon and I.IsBoundJobWeapon(ply, held(ply)))
     for _, cont in ipairs(I.PLAYER_CONTAINERS) do
         for _, it in ipairs(I.Get(ply, cont)) do
             local info = I.Info(it.id, it.c)
             if info.isBox and info.ammo then
                 local key = string.lower(info.ammo)
-                totals[key] = (totals[key] or 0) + (it.r or 0)
+                local counted = jobRounds or not it.j or (grenadeOf and grenadeOf(info.ammo))
+                totals[key] = (totals[key] or 0) + (counted and (it.r or 0) or 0)
                 ply.AdvInvAmmoTypes = ply.AdvInvAmmoTypes or {}
                 ply.AdvInvAmmoTypes[key] = info.ammo
             end
         end
     end
+    -- (types he never held a box of are left alone: a gamemode's loadout reserve, Sandbox's spawn
+    -- ammo, a DarkRP job's SetAmmo stay usable as without the inventory)
     local grenades = I.GrenadeTypes and I.GrenadeTypes() or {}
     if next(grenades) then
         ply.AdvInvAmmoTypes = ply.AdvInvAmmoTypes or {}
@@ -229,21 +289,53 @@ function I.SyncAmmo(ply)
     if I.GrenadesSynced then I.GrenadesSynced(ply, emptyGrenades) end
 end
 
+-- Another weapon in hand: the reserve is built again for it at once (the job's boxes count only with
+-- the job's weapon, I.SyncAmmo), before its Deploy, and again a tick later (a switch another addon
+-- blocked, or delayed by a holster animation).
+hook.Add("PlayerSwitchWeapon", "AdvInv_JobRounds", function(ply, _, newWep)
+    if not (ply.AdvInvJobSlot and next(ply.AdvInvJobSlot) and I.JobItemsBound and I.JobItemsBound()) then return end
+    ply.AdvInvSwitchTo = { wep = newWep, tick = engine.TickCount() }
+    I.SyncAmmo(ply)
+    timer.Simple(0, function() if IsValid(ply) then I.SyncAmmo(ply) end end)
+end)
+
 -- Recharger (ou tout ce qui baisse la réserve) vide les boîtes, les moins pleines d'abord.
 hook.Add("PlayerAmmoChanged", "AdvInv_Ammo", function(ply, ammoID, oldCount, newCount)
-    if settingAmmo[ply] or guarded(ply) or newCount >= oldCount or not ply:Alive() then return end
+    if settingAmmo[ply] or guarded(ply) or newCount == oldCount or not ply:Alive() then return end
     local ammo = game.GetAmmoName(ammoID)
     if I.GrenadeOfAmmo and I.GrenadeOfAmmo(ammo) then return end -- grenades: sv_grenades.lua
+    if newCount > oldCount then
+        if converting[ply] then return end -- (the wrapper makes it boxes)
+        local g = gainAllowed[ply]
+        if g and g.tick >= engine.TickCount() and sameAmmo(g.ammo, ammo) then
+            I.GiveRounds(ply, ammo, newCount - oldCount)
+        else
+            -- rounds from nowhere (another addon's GiveAmmo, a weapon's default reserve): the next
+            -- sync takes them back now, not at some later inventory change (they could be fired or
+            -- loaded meanwhile); only for types the boxes rule (else an addon topping a reserve up
+            -- every tick would resend his containers every tick, for nothing)
+            if ply.AdvInvAmmoTypes and ply.AdvInvAmmoTypes[string.lower(ammo)] then I.MarkDirty(ply, "Uniform") end
+        end
+        return
+    end
     local need = oldCount - newCount
     local boxes = {}
+    local preferJob = I.IsBoundJobWeapon and I.IsBoundJobWeapon(ply, held(ply)) or false
+    local bound = I.JobItemsBound and I.JobItemsBound()
     for _, cont in ipairs(I.PLAYER_CONTAINERS) do
         for _, it in ipairs(I.Get(ply, cont)) do
-            if I.Info(it.id, it.c).isBox and sameAmmo(I.Info(it.id, it.c).ammo, ammo) then
+            -- (the job's boxes aren't in the reserve without the job's weapon in hand: I.SyncAmmo)
+            if I.Info(it.id, it.c).isBox and sameAmmo(I.Info(it.id, it.c).ammo, ammo) and not (it.j and bound and not preferJob) then
                 boxes[#boxes + 1] = { cont = cont, it = it }
             end
         end
     end
-    table.sort(boxes, function(a, b) return (a.it.r or 0) < (b.it.r or 0) end)
+    -- the job's weapon takes the job's boxes first
+    table.sort(boxes, function(a, b)
+        local ja, jb = (a.it.j and true or false) == preferJob, (b.it.j and true or false) == preferJob
+        if ja ~= jb then return ja end
+        return (a.it.r or 0) < (b.it.r or 0)
+    end)
     for _, b in ipairs(boxes) do
         if need <= 0 then break end
         local take = math.min(need, b.it.r or 0)
@@ -298,6 +390,7 @@ function I.ItemFromEntity(ent)
     local item = { id = id, r = 0, a = 0 }
     if info.isBox or info.isWeapon then item.r = math.max(math.floor(ent.Rounds or 0), 0) end
     if info.isWeapon and ent.CarryMode then item.m = ent.CarryMode end -- its carry mode goes with it
+    if info.isWeapon then item.x = ent.AdvInvExtra end -- and its attachments
     if info.armor then item.a = math.max(math.floor(ent.Armor or info.armor), 0) end
     return item
 end
@@ -333,7 +426,7 @@ function I.SpawnItem(item, pos, contents, count)
         if not IsValid(ent) then return end
         local info = I.Info(item.id)
         if info.isBox or info.isWeapon then ent.Rounds = item.r or 0 end
-        if info.isWeapon then ent.CarryMode = item.m end
+        if info.isWeapon then ent.CarryMode, ent.AdvInvExtra = item.m, item.x end
         if info.armor then ent.Armor = item.a or 0 end
         if contents and #contents > 0 then ent.AdvInvContents = contents end
         ent:SetPos(pos)
@@ -425,8 +518,13 @@ function I.Equip(ply, item, contents)
             -- arme sans chargeur (lance-roquettes HL2) : aucune munition offerte
             wep = ply:Give(info.weaponClass, true) -- no ammo: the magazine is set below, the reserve is the boxes
         end
+        -- also a copy he already held (a job's loadout): the slot was empty, so its launcher round is
+        -- not the item's, and taking it off later would make it a box
+        if I.EmptyUnderbarrel then I.EmptyUnderbarrel(wep) end
         if IsValid(wep) and wep:GetMaxClip1() > 0 then wep:SetClip1(item.r or 0) end
         if IsValid(wep) and I.ApplyWeaponExtra then I.ApplyWeaponExtra(wep, item.x) end
+        ply.AdvInvSlotWep = ply.AdvInvSlotWep or {}
+        ply.AdvInvSlotWep[cat] = IsValid(wep) and wep or nil -- the slot's own weapon (I.GiveWeapons)
         ply.AdvInvSlotExtra = ply.AdvInvSlotExtra or {}
         ply.AdvInvSlotExtra[cat] = item.x
         ply.AdvInvJobSlot = ply.AdvInvJobSlot or {}
@@ -481,6 +579,7 @@ function I.TakeOff(ply, cat)
             item.j = true
             ply.AdvInvJobSlot[cat] = nil
         end
+        if IsValid(wep) and I.UnloadUnderbarrel then I.UnloadUnderbarrel(ply, wep) end -- (into boxes)
         if IsValid(wep) then ply:StripWeapon(info.weaponClass) end
         if I.CarryConfig(id, c) then item.m = ply:GetNWInt(cat .. "Carry", 0) end -- saved with the item
         ply:SetNWInt(cat .. "Carry", I.CARRY_INDEX.stowed)
@@ -539,7 +638,7 @@ function I.PickupRounds(ply, ent, item, info)
     for _, cont in ipairs(I.PLAYER_CONTAINERS) do
         for _, it in ipairs(I.Get(ply, cont)) do
             if left <= 0 then break end
-            if it.id == item.id and it.c == item.c and (it.r or 0) < size then
+            if it.id == item.id and it.c == item.c and not it.j and (it.r or 0) < size then -- (never into a job's box)
                 local add = math.min(size - (it.r or 0), left)
                 it.r = (it.r or 0) + add
                 left = left - add
@@ -604,11 +703,23 @@ function I.Use(ply, ent)
             tell(ply, carryWhy)
             return
         end
+        local old
         if slotID(ply, info.cat) > 1 then
-            local old = I.TakeOff(ply, info.cat)
-            if old then I.SpawnItem(old, ent:GetPos() + Vector(0, 0, 10)) end
+            -- the old one goes down where the new one lay, if it may leave the player (DarkRP's drop
+            -- rules: job weapons, DisallowDrop, restrictdrop...); else the new one is stored
+            if not I.MayLeaveSlot(ply, info.cat) then return I.PickupEntity(ply, ent) end
+            old = I.TakeOff(ply, info.cat)
         end
-        if I.Equip(ply, item) then I.TakeFromGround(ent, 1) end
+        local pos = ent:GetPos() + Vector(0, 0, 10)
+        -- (on the ground it leaves him: an ordinary one, as DarkRP lets it be dropped; back in its
+        -- slot it stays what it was)
+        if I.Equip(ply, item) then
+            I.TakeFromGround(ent, 1)
+            if old then old.j = nil I.SpawnItem(old, pos) end
+        elseif old and not I.Equip(ply, old) then
+            old.j = nil
+            I.SpawnItem(old, pos)
+        end
         return
     end
     if info.cat and AdvInv.GearCat[info.cat] and slotID(ply, info.cat) <= 1 then
@@ -692,16 +803,27 @@ function I.CanPutInto(ply, holder)
     return holder:IsPlayer() and ply.AdvInvAdminView == holder and I.IsAdmin(ply) or false
 end
 
+-- A searcher taking from another player: only what DarkRP's weapon checker would take (sv_search.lua).
+local function searchMayTake(ply, holder, item)
+    if holder == ply or not holder:IsPlayer() or not item or (ply.AdvInvAdminView == holder and I.IsAdmin(ply)) then return true end
+    if item.j then return false, I.L("search_cannot_take", I.Info(item.id, item.c).name or "?") end -- (a job's item)
+    if not I.SearchMayTake then return true end
+    return I.SearchMayTake(holder, item.id, item.c)
+end
+I.SearchMayTakeItem = searchMayTake -- (every path taking from a searched player: unload too)
+
 function I.Move(ply, from, fromCont, index, to, toCont)
     local items = I.Get(from, fromCont)
     local item = items[index]
     if not item then return false end
     if from == to and fromCont == toCont then return true end
     if not I.HasContainer(to, toCont) then return false, I.L("msg_container_unavailable") end
-    if I.ItemMass(item.id, item.c) > I.Free(to, toCont) then
+    -- (I.MAX_ITEMS: the client sees and names the first 255 only)
+    if I.ItemMass(item.id, item.c) > I.Free(to, toCont) or #I.Get(to, toCont) >= I.MAX_ITEMS then
         return false, I.L("msg_no_room_in", I.ContainerNames[toCont] or toCont)
     end
     table.remove(items, index)
+    if to ~= from then item.j = nil end -- a job's weapon leaving its player is an ordinary one (sv_darkrp.lua)
     table.insert(I.Get(to, toCont), item)
     I.MarkDirty(from, fromCont)
     I.MarkDirty(to, toCont)
@@ -711,14 +833,49 @@ end
 local function readCont() return I.IDCont[net.ReadUInt(3)] end
 I.ReadCont = readCont
 
+-- An item named by the client: its place in the list and a check of what it is (CRC of its stack key,
+-- sh_containers.lua). The list may have moved since the client saw it (another player took an item,
+-- a reload emptied a box): the item meant is the one at that place if it is still that one, else the
+-- last one of its kind in the container, else none (refused, the client is shown the real state).
+function I.ReadItemRef()
+    return net.ReadUInt(8), net.ReadUInt(32)
+end
+
+function I.ResolveItemRef(holder, cont, index, check)
+    local items = I.Get(holder, cont)
+    if items[index] and I.ItemCheck(items[index]) == check then return index end
+    for k = #items, 1, -1 do
+        if I.ItemCheck(items[k]) == check then return k end
+    end
+end
+
 local handlers = {}
 I.ActHandlers = handlers -- other files add their actions (sv_admin.lua...)
 
+-- The client shows a job's item and looted ones of the same kind as one tile (it doesn't know the
+-- job flag) and names the tile's first item: for an item leaving, another of the tile without the
+-- flag is taken instead (else the whole tile was refused: a looted grenade could never leave).
+-- ply: who acts. A searcher may never take a job's item: for him always; for the owner only while job
+-- items may not leave (else the job one may go as well, and keeping it would lose the looted one at
+-- the next death or job change).
+local function leavableInstead(holder, cont, index, ply)
+    local items = I.Get(holder, cont)
+    local it = items[index]
+    if not (it and it.j and (holder ~= ply or (I.JobItemsBound and I.JobItemsBound()))) then return index end
+    local key = I.StackKey(it)
+    for k = #items, 1, -1 do
+        if not items[k].j and I.StackKey(items[k]) == key then return k end
+    end
+    return index
+end
+
 -- Index of another item of the same stack as key in a container (from the end), or nil.
-local function findSame(holder, cont, key)
+local function findSame(holder, cont, key, job)
     local items = I.Get(holder, cont)
     for k = #items, 1, -1 do
-        if I.StackKey(items[k]) == key then return k end
+        -- (the job flag too: the rules were checked on the first item only, and a job's grenade
+        -- looks like a looted one; it would leave with it and become ordinary)
+        if I.StackKey(items[k]) == key and (items[k].j and true or false) == job then return k end
     end
 end
 
@@ -727,11 +884,11 @@ function I.MoveSame(ply, from, fromCont, index, to, toCont, count)
     local item = I.Get(from, fromCont)[index]
     if not item then return false end
     if from == to and fromCont == toCont then return true end
-    local key = I.StackKey(item)
+    local key, job = I.StackKey(item), item.j and true or false
     local ok, why = I.Move(ply, from, fromCont, index, to, toCont)
     for _ = 2, count do
         if not ok then break end
-        local k = findSame(from, fromCont, key)
+        local k = findSame(from, fromCont, key, job)
         if not k then break end
         ok, why = I.Move(ply, from, fromCont, k, to, toCont)
     end
@@ -740,38 +897,53 @@ function I.MoveSame(ply, from, fromCont, index, to, toCont, count)
 end
 
 handlers[I.ACT.MOVE] = function(ply)
-    local from, fromCont, index = net.ReadEntity(), readCont(), net.ReadUInt(8)
+    local from, fromCont = net.ReadEntity(), readCont()
+    local index, check = I.ReadItemRef()
     local to, toCont = net.ReadEntity(), readCont()
     local count = math.max(net.ReadUInt(8), 1)
     if not (fromCont and toCont and I.CanAccess(ply, from) and I.CanAccess(ply, to)) then return end
     if not (I.CanTakeFrom(ply, from) and I.CanPutInto(ply, to)) then return false end
+    index = I.ResolveItemRef(from, fromCont, index, check)
+    if not index then return false end
+    if to ~= from then
+        index = leavableInstead(from, fromCont, index, ply)
+        local may, mayWhy = searchMayTake(ply, from, I.Get(from, fromCont)[index])
+        if not may then return false, mayWhy end
+    end
     if from == ply and to ~= ply then
         local it = I.Get(from, fromCont)[index]
         local may, mayWhy = true, nil
-        if it then may, mayWhy = I.MayLeave(ply, it.id, it.c) end
+        if it then may, mayWhy = I.MayLeaveItem(ply, it) end
         if not may then return false, mayWhy end
     end
     return I.MoveSame(ply, from, fromCont, index, to, toCont, count)
 end
 
 handlers[I.ACT.DROP] = function(ply)
-    local holder, cont, index = net.ReadEntity(), readCont(), net.ReadUInt(8)
+    local holder, cont = net.ReadEntity(), readCont()
+    local index, check = I.ReadItemRef()
     local count = math.max(net.ReadUInt(8), 1)
     if not (cont and I.CanAccess(ply, holder)) then return end
     if not I.CanTakeFrom(ply, holder) then return false end
+    index = I.ResolveItemRef(holder, cont, index, check)
+    if not index then return false end
+    index = leavableInstead(holder, cont, index, ply)
     local items = I.Get(holder, cont)
     local item = items[index]
     if not item then return end
+    local taken, takenWhy = searchMayTake(ply, holder, item)
+    if not taken then return false, takenWhy end
     if holder == ply then
-        local may, mayWhy = I.MayLeave(ply, item.id, item.c)
+        local may, mayWhy = I.MayLeaveItem(ply, item)
         if not may then return false, mayWhy end
     end
     if item.id == I.GENERIC_WEAPON then count = math.min(count, 5) end -- one real weapon each
     local key, first, n = I.StackKey(item), item, 0
+    local job = item.j and true or false
     for _ = 1, count do
         table.remove(items, index)
         n = n + 1
-        index = findSame(holder, cont, key)
+        index = findSame(holder, cont, key, job)
         item = index and items[index]
         if not item then break end
     end
@@ -781,18 +953,28 @@ handlers[I.ACT.DROP] = function(ply)
 end
 
 handlers[I.ACT.EQUIP] = function(ply)
-    local holder, cont, index = net.ReadEntity(), readCont(), net.ReadUInt(8)
+    local holder, cont = net.ReadEntity(), readCont()
+    local index, check = I.ReadItemRef()
     if not (cont and I.CanAccess(ply, holder)) then return end
     if not I.CanTakeFrom(ply, holder) then return false end
+    index = I.ResolveItemRef(holder, cont, index, check)
+    if not index then return false end
+    if holder ~= ply then index = leavableInstead(holder, cont, index, ply) end
     local items = I.Get(holder, cont)
     local item = items[index]
     if not item then return end
+    local taken, takenWhy = searchMayTake(ply, holder, item)
+    if not taken then return false, takenWhy end
     local cat = I.Info(item.id, item.c).cat
-    -- un sac ou un gilet ne s'équipe pas depuis son propre contenant
-    if holder == ply and cont == cat then return end
+    -- un sac ou un gilet ne s'équipe pas depuis son propre contenant (a uniform does: the pockets are
+    -- there without one, and a uniform picked up or looted lands in them)
+    if holder == ply and cont == cat and cat ~= "Uniform" then return end
     table.remove(items, index)
+    local wasJob = item.j
+    if holder ~= ply then item.j = nil end -- (taken from someone else: no longer his job's, as I.Move)
     local ok, why = I.Equip(ply, item)
     if not ok then
+        item.j = wasJob
         table.insert(items, index, item)
         return false, why
     end
@@ -810,12 +992,20 @@ handlers[I.ACT.UNEQUIP] = function(ply)
     if not ok then return false, why end
     local id, c = I.SlotRef(ply, cat)
     if toDrop or (IsValid(to) and to ~= ply) then
-        local may, mayWhy = I.MayLeave(ply, id, c)
+        local may, mayWhy = I.MayLeaveSlot(ply, cat) -- (its job flag too)
+        if not may then return false, mayWhy end
+        may, mayWhy = I.ContentsMayLeave(ply, cat) -- (dropped with what it holds)
         if not may then return false, mayWhy end
     end
     if toDrop then
         local item, contents = I.TakeOff(ply, cat)
-        if item then I.SpawnItem(item, I.DropPos(ply), contents) end
+        if item then
+            -- (its contents leave him with it: a job's item among them is an ordinary one now, as
+            -- with I.Move; else the next wearer lost it at his death and never saved it)
+            item.j = nil
+            for _, it in ipairs(contents or {}) do it.j = nil end
+            I.SpawnItem(item, I.DropPos(ply), contents)
+        end
         return true
     end
     if not (toCont and I.CanAccess(ply, to)) then return end
@@ -829,22 +1019,35 @@ handlers[I.ACT.UNEQUIP] = function(ply)
     end
     local item = I.TakeOff(ply, cat)
     if item then
-        table.insert(I.Get(to, toCont), item)
-        I.MarkDirty(to, toCont)
+        if to ~= ply then item.j = nil end -- a job's weapon leaving its player is an ordinary one
+        -- taking it off may have filled the room it was to go to (its launcher's rounds became a box):
+        -- then another of his containers, else the ground (a job's weapon never: it stays, over capacity)
+        if I.CanFit(to, toCont, item.id, item.c) then
+            table.insert(I.Get(to, toCont), item)
+            I.MarkDirty(to, toCont)
+        elseif not I.Store(ply, item) then
+            -- (the ground only for what may leave him: else the pockets, over their load)
+            if not item.j and I.MayLeaveItem(ply, item) then I.SpawnItem(item, I.DropPos(ply))
+            else I.ForceStore(ply, item) end
+        end
     end
     return true
 end
 
 -- Splits rounds off an ammo box into a new box in the same container.
 handlers[I.ACT.SPLIT] = function(ply)
-    local holder, cont, index, rounds = net.ReadEntity(), readCont(), net.ReadUInt(8), net.ReadUInt(I.NET_ROUNDS_BITS)
+    local holder, cont = net.ReadEntity(), readCont()
+    local index, check = I.ReadItemRef()
+    local rounds = net.ReadUInt(I.NET_ROUNDS_BITS)
     if not (cont and I.CanAccess(ply, holder) and I.CanTakeFrom(ply, holder) and I.CanPutInto(ply, holder)) then return end
+    index = I.ResolveItemRef(holder, cont, index, check)
+    if not index then return false end
     local item = I.Get(holder, cont)[index]
     if not item or not I.Info(item.id, item.c).isBox then return end
     if rounds < 1 or rounds >= (item.r or 0) then return false end
     if not I.CanFit(holder, cont, item.id, item.c) then return false, I.L("msg_no_room_in", I.ContainerNames[cont] or cont) end
     item.r = item.r - rounds
-    table.insert(I.Get(holder, cont), { id = item.id, c = item.c, r = rounds, a = 0 })
+    table.insert(I.Get(holder, cont), { id = item.id, c = item.c, r = rounds, a = 0, j = item.j }) -- (a job's box: both halves)
     I.MarkDirty(holder, cont)
     return true
 end
@@ -878,8 +1081,10 @@ local ARRESTED_OK = { [I.ACT.OPEN] = true, [I.ACT.CLOSE] = true, [I.ACT.CARRY] =
 function I.MayLeave(ply, id, c)
     if not id or id <= 1 then return true end
     local info = I.Info(id, c)
-    if not info.isWeapon then return true end
-    local class = (id == I.GENERIC_WEAPON and c) or info.weaponClass
+    -- grenades are ammunition items: the rules of their grenade weapon (a job's weapon_frag...)
+    local grenadeClass = info.isBox and I.GrenadeOfAmmo and I.GrenadeOfAmmo(info.ammo)
+    if not info.isWeapon and not grenadeClass then return true end
+    local class = grenadeClass or (id == I.GENERIC_WEAPON and c) or info.weaponClass
     if not isstring(class) then return true end
     local name = info.name or class
     if hook.Run("AdvInv_CanWeaponLeave", ply, class) == false then return false, I.L("msg_cannot_drop", name) end
@@ -896,6 +1101,41 @@ function I.MayLeave(ply, id, c)
             if v.entity == class then return true end
         end
         return false, I.L("msg_cannot_drop", name)
+    end
+    return true
+end
+
+-- Job items are bound to their player (DarkRP: dropspawnedweapons off): they never leave him.
+function I.JobItemsBound()
+    local cfg = DarkRP and GAMEMODE and GAMEMODE.Config
+    return cfg ~= nil and not cfg.dropspawnedweapons
+end
+
+-- An item as it is (its job flag too): a job's item stays a job's item whatever his job is now
+-- (picked up again after a job change, it would pass the new job's rule).
+function I.MayLeaveItem(ply, item)
+    if not item then return true end
+    local cfg = DarkRP and GAMEMODE and GAMEMODE.Config
+    if item.j and cfg and not cfg.dropspawnedweapons then
+        local info = I.Info(item.id, item.c)
+        return false, I.L("msg_cannot_drop", info.name or info.weaponClass or item.c or "?")
+    end
+    return I.MayLeave(ply, item.id, item.c)
+end
+
+-- An equipped item leaving its slot (dropped, swapped for one on the ground...): the item's rule,
+-- job flag included (a job's weapon in its slot is one too).
+function I.MayLeaveSlot(ply, cat)
+    local id, c = I.SlotRef(ply, cat)
+    return I.MayLeaveItem(ply, { id = id, c = c, j = ply.AdvInvJobSlot and ply.AdvInvJobSlot[cat] or nil })
+end
+
+-- What a vest or backpack holds leaves with it: each item under its own rule.
+function I.ContentsMayLeave(ply, cat)
+    if cat ~= "Vest" and cat ~= "Rucksack" then return true end
+    for _, it in ipairs(I.Get(ply, cat)) do
+        local may, why = I.MayLeaveItem(ply, it)
+        if not may then return false, why end
     end
     return true
 end
@@ -931,6 +1171,18 @@ net.Receive("advinv_act", function(_, ply)
     end
 end)
 
+-- ply no longer sees holder's containers (out of reach or sight, locked, its settings changed, a
+-- search over): his window closes, else it would keep showing what it saw last and refuse his actions.
+util.AddNetworkString("advinv_view_end")
+function I.EndView(holder, ply)
+    if holder.AdvInvViewers then holder.AdvInvViewers[ply] = nil end
+    if IsValid(ply) and ply:IsPlayer() then
+        net.Start("advinv_view_end")
+        net.WriteEntity(holder)
+        net.Send(ply)
+    end
+end
+
 -- Les spectateurs d'une caisse s'en vont quand ils s'éloignent.
 timer.Create("AdvInv_Viewers", 1, 0, function()
     local list = {}
@@ -941,7 +1193,7 @@ timer.Create("AdvInv_Viewers", 1, 0, function()
     for _, ent in ipairs(list) do
         if IsValid(ent) then
             for ply in pairs(ent.AdvInvViewers or {}) do
-                if not I.CanAccess(ply, ent) then ent.AdvInvViewers[ply] = nil end
+                if not I.CanAccess(ply, ent) then I.EndView(ent, ply) end
             end
         end
     end

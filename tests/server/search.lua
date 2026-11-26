@@ -20,6 +20,11 @@ local function call(fn, ply, q)
     if not ok then return "ERROR " .. tostring(a) end
     return { a, b }
 end
+-- the check that follows every item index in an action (I.ItemCheck: the item the client saw)
+local function ck(holder, cid, index)
+    local it = AdvInv.Get(holder, AdvInv.IDCont[cid])[index]
+    return it and AdvInv.ItemCheck(it) or 0
+end
 local H, ACT = I.ActHandlers, I.ACT
 local found
 hook.Add("AdvInv_Searched", "test", function(_, _, f) found = f end)
@@ -43,9 +48,9 @@ timer.Simple(1, function()
             timer.Simple(1.5, function()
                 out.after = { canAccess = I.CanAccess(cop, sus), viewer = sus.AdvInvViewers and sus.AdvInvViewers[cop] or false, found = found }
                 -- take the health kit (index 1) into the cop's uniform
-                out.take = call(H[ACT.MOVE], cop, { sus, I.ContID.Uniform, 1, cop, I.ContID.Uniform, 1 })
+                out.take = call(H[ACT.MOVE], cop, { sus, I.ContID.Uniform, 1, ck(sus, I.ContID.Uniform, 1), cop, I.ContID.Uniform, 1 })
                 -- plant: refused
-                out.plant = call(H[ACT.MOVE], cop, { cop, I.ContID.Uniform, 1, sus, I.ContID.Uniform, 1 })
+                out.plant = call(H[ACT.MOVE], cop, { cop, I.ContID.Uniform, 1, ck(cop, I.ContID.Uniform, 1), sus, I.ContID.Uniform, 1 })
                 out.afterMoves = { cop = summary(I.Get(cop, "Uniform")), suspect = summary(I.Get(sus, "Uniform")) }
                 -- confiscate the equipped AR2
                 out.takeSlot = call(H[ACT.SEARCH], cop, { 3, sus, AdvInv.CategoryID.PrimaryWep })
@@ -54,7 +59,7 @@ timer.Simple(1, function()
                 cop:SetPos(Vector(-2000, -1000, -140))
                 timer.Simple(1.2, function()
                     out.awayCanAccess = I.CanAccess(cop, sus)
-                    out.awayTake = call(H[ACT.MOVE], cop, { sus, I.ContID.Uniform, 1, cop, I.ContID.Uniform, 1 })
+                    out.awayTake = call(H[ACT.MOVE], cop, { sus, I.ContID.Uniform, 1, ck(sus, I.ContID.Uniform, 1), cop, I.ContID.Uniform, 1 })
                     -- cancelled by distance before the end
                     cop:SetPos(Vector(-2800, -1800, -140))
                     RunConsoleCommand("advinv_search_time", "3")

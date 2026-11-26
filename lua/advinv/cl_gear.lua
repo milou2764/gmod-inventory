@@ -158,6 +158,9 @@ local function drawGear(self, flags)
     -- (a preview's character is a no-draw entity drawn by its panel: its gear is drawn with it)
     if not (IsValid(owner) and owner.advinvPreview) and AdvInv.OwnerHidden(owner) then return end
     if owner == LocalPlayer() and not owner:ShouldDrawLocalPlayer() then return end
+    -- spectating him through his eyes: the engine doesn't draw him, nor his gear around the camera
+    local lp = LocalPlayer()
+    if IsValid(lp) and lp:GetObserverMode() == OBS_MODE_IN_EYE and lp:GetObserverTarget() == owner then return end
     if owner.advinvPreview or not self.advinvAttach then
         self:DrawModel(flags)
         drawShared(self)
@@ -312,7 +315,9 @@ end
 
 local function showGear(g)
     if not IsValid(g) then return end
-    g:DrawShadow(true)
+    -- (gear cut out of a playermodel keeps no shadow: the hidden body would cast it)
+    local t = g.advinvClass and AdvInv.ClassTable(g.advinvClass)
+    g:DrawShadow(not (t and t.ModelHiddenMaterials))
     g:SetMaterial("")
     g:SetRenderMode(RENDERMODE_NORMAL)
 end

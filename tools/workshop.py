@@ -149,8 +149,9 @@ def main(argv):
             assert SetItemPreview(ugc, h, str(f).encode())
         if "--description" in opts:
             text = Path(opts["--description"]).read_text(encoding="utf-8")
-            if len(text) > 8000:
-                raise SystemExit(f"description: {len(text)} characters, at most 8000")
+            size = len(text.encode("utf-8"))  # (Steam's limit is in bytes: accents count twice)
+            if size > 8000:
+                raise SystemExit(f"description: {size} bytes, at most 8000")
             assert SetItemDescription(ugc, h, text.encode("utf-8"))
         for f in images:
             assert AddItemPreviewFile(ugc, h, str(Path(f).resolve()).encode(), 0)  # k_EItemPreviewType_Image

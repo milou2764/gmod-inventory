@@ -121,11 +121,14 @@ timer.Simple(1.5, function()
         { "policeAgain", function()
             out.policeAgain = state(b) -- the glock again, from the loadout
             GetConVar("advinv_death_drop"):SetInt(3)
+            out.__bodiesBefore = table.Copy(I.Bodies)
             b:Kill()
         end, 0.8 },
         { "death", function()
+            -- (the body of this death: an earlier death of the test may have left one)
             local body
-            for e in pairs(I.Bodies) do if IsValid(e) then body = e end end
+            for e in pairs(I.Bodies) do if IsValid(e) and not out.__bodiesBefore[e] then body = e end end
+            out.__bodiesBefore = nil
             local onBody = {}
             if IsValid(body) then
                 for cat, it in pairs(body.AdvInvSlots or {}) do onBody[#onBody + 1] = cat .. "=" .. (it.c or I.IDClass[it.id]) end

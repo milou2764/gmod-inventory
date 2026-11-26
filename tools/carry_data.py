@@ -7,6 +7,15 @@ class>:<mode>" (CARRY_PREFIX): their fit is the position and angles on the mode'
 import re
 from pathlib import Path
 
+# A negative zero ("-0.00", "-0.0") written without its sign; only a number that is all zeros
+# ("-0.004" keeps its sign: a plain .replace("-0.00", "0.00") turned it into 0.004).
+_NEG_ZERO = re.compile(r"(?<![\w.])-(0\.0+)(?![0-9])")  # (not "1-0.00")
+
+
+def _nz(text):
+    return _NEG_ZERO.sub(lambda m: m.group(1), text)
+
+
 TOOLS = Path(__file__).resolve().parent
 PATH = TOOLS.parent / "lua" / "advinv" / "cl_carry_data.lua"
 CARRY_PREFIX = "carry:"
@@ -93,8 +102,8 @@ def apply_locks(locks, path=PATH):
             if k is None:
                 continue
             m = _ENTRY.match(lines[k])
-            new = (f'            {wm[1]} = {{ "{m.group(2)}", V({p[0]:.2f}, {p[1]:.2f}, {p[2]:.2f}), '
-                   f'A({a[0]:.1f}, {a[1]:.1f}, {a[2]:.1f}), {m.group(9)} }},').replace("-0.00", "0.00").replace("(-0.0,", "(0.0,")
+            new = _nz(f'            {wm[1]} = {{ "{m.group(2)}", V({p[0]:.2f}, {p[1]:.2f}, {p[2]:.2f}), '
+                   f'A({a[0]:.1f}, {a[1]:.1f}, {a[2]:.1f}), {m.group(9)} }},')
             if lines[k] != new:
                 lines[k] = new
                 changed += 1

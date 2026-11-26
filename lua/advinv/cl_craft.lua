@@ -41,7 +41,8 @@ function I.OpenCrafting()
             b:SetEnabled(ok)
             b.DoClick = function()
                 I.Act(I.ACT.CRAFT, function() net.WriteUInt(k, 8) end)
-                timer.Simple((r.time or 1) + 0.4, function() if IsValid(frame) then fill() end end)
+                -- (this window only: one reopened meanwhile has its own list, this one's is gone)
+                timer.Simple((r.time or 1) + 0.4, function() if IsValid(list) then fill() end end)
             end
         end
     end

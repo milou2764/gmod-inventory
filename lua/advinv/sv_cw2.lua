@@ -65,7 +65,7 @@ local function setup()
             local cat = IsValid(ply) and IsValid(w) and slotOf(ply, w:GetClass())
             if cat then
                 if w.disableDropping or not ply:Alive() then return end
-                local may, why = I.MayLeave(ply, I.SlotRef(ply, cat))
+                local may, why = I.MayLeaveSlot(ply, cat) -- (its job flag too)
                 if not may then
                     if why then I.Tell(ply, why) end
                     return
@@ -101,5 +101,47 @@ local function setup()
     end
 end
 
-hook.Add("InitPostEntity", "AdvInv_CW2", setup)
-if CustomizableWeaponry then setup() end -- Lua refresh
+-- Magazine and ammunition attachments empty the magazine into the reserve (cw_base's unloadWeapon,
+-- a SetAmmo): those rounds go into ammo boxes, else the next count would erase them.
+hook.Add("PreRegisterSWEP", "AdvInv_CW2", function(swep, class)
+    if class ~= "cw_base" or rawget(swep, "AdvInvCW2Patched") then return end
+    local unload = rawget(swep, "unloadWeapon")
+    if isfunction(unload) then
+        swep.unloadWeapon = function(self, ...)
+            local owner, ammo = self.Owner, self.Primary and self.Primary.Ammo
+            local before = IsValid(owner) and owner:IsPlayer() and isstring(ammo) and owner:GetAmmoCount(ammo)
+            if not before then return unload(self, ...) end
+            I.BeginGainConversion(owner)
+            local r = { pcall(unload, self, ...) }
+            local gained = IsValid(owner) and owner:GetAmmoCount(ammo) - before or 0
+            if gained > 0 then I.GiveRounds(owner, ammo, gained, I.IsBoundJobWeapon and I.IsBoundJobWeapon(owner, self)) end
+            I.EndGainConversion(owner, gained > 0 and { [ammo] = true } or nil)
+            if not r[1] then error(r[2], 0) end
+            return unpack(r, 2)
+        end
+    end
+    swep.AdvInvCW2Patched = true
+end)
+
+-- A dying player's primed quick grenade falls without its ammunition being taken (its DoPlayerDeath
+-- hook): one grenade item less, or the body would keep it too.
+local function setupQuickGrenade()
+    local q = CustomizableWeaponry and CustomizableWeaponry.quickGrenade
+    if not q then return end
+    for _, name in ipairs({ "createThrownGrenade", "createUnthrownGrenade" }) do
+        local orig = q["AdvInvOrig_" .. name] or q[name]
+        if isfunction(orig) then
+            q["AdvInvOrig_" .. name] = orig
+            q[name] = function(self, ply, ...)
+                local nade = orig(self, ply, ...)
+                if IsValid(nade) and IsValid(ply) and ply:IsPlayer() and not ply:Alive() and I.GrenadeDroppedAtDeath then
+                    I.GrenadeDroppedAtDeath(ply, "Frag Grenades")
+                end
+                return nade
+            end
+        end
+    end
+end
+
+hook.Add("InitPostEntity", "AdvInv_CW2", function() setup() setupQuickGrenade() end)
+if CustomizableWeaponry then setup() setupQuickGrenade() end -- Lua refresh

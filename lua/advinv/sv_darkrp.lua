@@ -58,7 +58,12 @@ end
 
 -- Dying: the body has the inventory's weapons (sv_death.lua), DarkRP doesn't drop them.
 hook.Add("canDropWeapon", "AdvInv_DarkRP", function(ply, wep)
-    if IsValid(wep) and not ply:Alive() and slotOf(ply, wep:GetClass()) then return false end
+    if not IsValid(wep) then return end
+    local cat = slotOf(ply, wep:GetClass())
+    if cat and not ply:Alive() then return false end
+    -- a job's weapon while job items are bound: DarkRP compares the class with the job's list as
+    -- written ("Weapon_AR2"), the inventory without case: /drop let it go as an ordinary weapon
+    if cat and ply.AdvInvJobSlot and ply.AdvInvJobSlot[cat] and I.JobItemsBound and I.JobItemsBound() then return false end
 end)
 
 -- /drop: once DarkRP has dropped it, the slot is free; the dropped weapon keeps its attachments and
@@ -80,8 +85,53 @@ hook.Add("playerWeaponsConfiscated", "AdvInv_DarkRP", function(_, target, list)
     if not (IsValid(target) and istable(list)) then return end
     for class in pairs(list) do
         local cat = isstring(class) and slotOf(target, class)
-        if cat then releaseSlot(target, cat) end
+        if cat then
+            -- what the item was (its magazine and attachments were kept when it was stripped), to
+            -- become it again when DarkRP gives the weapon back
+            local id, c = I.SlotRef(target, cat)
+            target.AdvInvConfiscated = target.AdvInvConfiscated or {}
+            target.AdvInvConfiscated[class] = { cat = cat, item = { id = id, c = c, a = 0,
+                m = I.CarryConfig(id, c) and target:GetNWInt(cat .. "Carry", 0) or nil,
+                x = target.AdvInvSlotExtra and target.AdvInvSlotExtra[cat] or nil,
+                -- (a job's weapon comes back a job's weapon: else saved and left on his body)
+                j = target.AdvInvJobSlot and target.AdvInvJobSlot[cat] or nil } }
+            releaseSlot(target, cat)
+        end
     end
+end)
+
+-- Given back (a plain Give with its magazine): an inventory weapon again, in its slot if it is free,
+-- else stored (else on the ground), with its attachments and carry mode.
+hook.Add("playerWeaponsReturned", "AdvInv_DarkRP", function(_, target)
+    if not IsValid(target) then return end
+    local list = target.AdvInvConfiscated
+    target.AdvInvConfiscated = nil
+    if not list then return end
+    timer.Simple(0, function()
+        if not (IsValid(target) and target:Alive()) then return end
+        for class, v in pairs(list) do
+            local wep = target:GetWeapon(class)
+            if IsValid(wep) and not slotOf(target, class) then
+                local item = table.Copy(v.item)
+                item.r = math.max(wep:Clip1(), 0)
+                target:StripWeapon(class)
+                if not (I.SlotID(target, v.cat) <= 1 and I.Equip(target, item)) and not I.Store(target, item) then
+                    local pockets = I.Get(target, "Uniform")
+                    if item.j and I.JobItemsBound and I.JobItemsBound() then
+                        -- (a job's weapon never goes down while job items are bound: in the pockets;
+                        -- with 255 items there, gone: the next loadout gives it again)
+                        if #pockets < I.MAX_ITEMS then
+                            pockets[#pockets + 1] = item
+                            I.MarkDirty(target, "Uniform")
+                        end
+                    else
+                        item.j = nil -- (on the ground: an ordinary one)
+                        I.SpawnItem(item, I.DropPos(target))
+                    end
+                end
+            end
+        end
+    end)
 end)
 
 -- DarkRP's drop takes the reserve away (RemoveAmmo): guarded, the boxes stay.
@@ -121,6 +171,39 @@ hook.Add("PlayerLoadout", "AdvInv_DarkRP", function(ply)
             end
         end
     end)
+end)
+
+-- DarkRP's pocket keeps an entity's Lua table, not its networked values: a ground stack came back as
+-- one item, and never went away by itself (advinv_ground_item_time). Its networked values travel
+-- with it (its removal moves nothing elsewhere: nothing is doubled). Storages are never pocketed:
+-- the built-in ones refuse the duplicator already; another addon's, or a permanent one (same UID),
+-- came back next to the one a map cleanup puts back from the database, contents doubled.
+local function setNW(ent, k, v)
+    if isbool(v) then ent:SetNWBool(k, v)
+    elseif isstring(v) then ent:SetNWString(k, v)
+    elseif isnumber(v) then if v == math.floor(v) then ent:SetNWInt(k, v) else ent:SetNWFloat(k, v) end
+    elseif isentity(v) then ent:SetNWEntity(k, v)
+    elseif isvector(v) then ent:SetNWVector(k, v)
+    elseif isangle(v) then ent:SetNWAngle(k, v) end
+end
+hook.Add("canPocket", "AdvInv_DarkRP", function(_, item)
+    if IsValid(item) and I.IsStorage and I.IsStorage(item) then
+        return false, DarkRP and DarkRP.getPhrase and DarkRP.getPhrase("cannot_pocket_x") or nil
+    end
+end)
+hook.Add("onPocketItemAdded", "AdvInv_DarkRP", function(_, ent, serialized)
+    if not (IsValid(ent) and istable(serialized)) then return end
+    -- (a loot spawn's item isn't in I.GroundItems: it stays until taken, but has a stack key)
+    local ground = I.GroundItems[ent] ~= nil
+    if not (ground or ent.AdvInvStackKey ~= nil) then return end
+    serialized.AdvInvPocketNW = table.Copy(ent:GetNWVarTable() or {})
+    serialized.AdvInvPocketGround = ground or nil
+end)
+hook.Add("onPocketItemDropped", "AdvInv_DarkRP", function(_, ent)
+    if not (IsValid(ent) and istable(ent.AdvInvPocketNW)) then return end
+    for k, v in pairs(ent.AdvInvPocketNW) do setNW(ent, k, v) end
+    if ent.AdvInvPocketGround then I.GroundItems[ent] = CurTime() end
+    ent.AdvInvPocketNW, ent.AdvInvPocketGround = nil, nil
 end)
 
 -- Leaving a job: its weapons stay with it (DarkRP calls this before its strip and new loadout).

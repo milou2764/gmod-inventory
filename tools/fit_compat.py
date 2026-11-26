@@ -49,6 +49,14 @@ import fit_locks  # noqa: E402
 import mdl_render as mr  # noqa: E402
 from compat_packs import PACKS  # noqa: E402
 
+# A negative zero ("-0.00", "-0.0") written without its sign; only a number that is all zeros
+# ("-0.004" keeps its sign: a plain .replace("-0.00", "0.00") turned it into 0.004).
+_NEG_ZERO = re.compile(r"(?<![\w.])-(0\.0+)(?![0-9])")  # (not "1-0.00")
+
+
+def _nz(text):
+    return _NEG_ZERO.sub(lambda m: m.group(1), text)
+
 TOOLS = Path(__file__).resolve().parent
 OUT_DATA = TOOLS.parent / "lua" / "advinv" / "sh_compat_data.lua"
 OUT_FITS = TOOLS.parent / "lua" / "advinv" / "cl_fits_compat.lua"
@@ -328,7 +336,8 @@ def lua_str(s):
 
 
 def main():
-    lst = Path(sys.argv[1]) if len(sys.argv) > 1 else TOOLS / "playermodels.txt"
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    lst = Path(args[0]) if args else TOOLS / "playermodels.txt"
     models = [l.strip() for l in lst.read_text(encoding="utf-8").splitlines() if l.strip()]
     bodies = {}
     for m in models:
@@ -338,6 +347,14 @@ def main():
             print(f"{m}: skipped ({e})")
             continue
         bodies[m] = b
+    # playermodels of the shipped file that can't be read now (MDL_EXTRA_DIRS not set: run from
+    # fit_editor\local.bat's settings) would be dropped from it with their approved fits
+    shipped = OUT_FITS.read_text(encoding="utf-8").lower() if OUT_FITS.exists() else ""
+    lost = [m for m in models if m not in bodies and f'"{m.lower()}"' in shipped]
+    if lost and "--allow-drop" not in sys.argv:
+        print(f"{len(lost)} playermodels of {OUT_FITS.name} can't be read now (e.g. {lost[0]}): nothing written."
+              " Set MDL_EXTRA_DIRS (fit_editor\\local.bat), or --allow-drop to drop them.")
+        return
     ref = bodies.get(fi.REF) or fi.Body(fi.REF)
     ref_girth = chest_girth(ref)
     locks = fit_locks.load()
@@ -404,7 +421,10 @@ def main():
             bone = fi.HEAD if kind == "helmet" else SPINE4 if kind == "vest" else fi.SPINE
             fits[cls] = per
             scales = sorted(v[2] for v in per.values())
-            print(f"{iid} {cls:58} {len(per):3d} fits  size {scales[0]:.2f}-{scales[-1]:.2f}")
+            if scales:
+                print(f"{iid} {cls:58} {len(per):3d} fits  size {scales[0]:.2f}-{scales[-1]:.2f}")
+            else:  # (every playermodel of the list has that slot built in: nothing to fit, not a crash)
+                print(f"{iid} {cls:58}   0 fits")
             items.append({"id": iid, "class": cls, "model": model, "name": (en, fr), "bone": bone, "attach": default, **st})
         data.append((pack, items))
 
@@ -413,7 +433,7 @@ def main():
 
 
 def vec(p, n=2):
-    return ", ".join(f"{x:.{n}f}" for x in p).replace("-0.00", "0.00").replace("-0.0,", "0.0,")
+    return _nz(", ".join(f"{x:.{n}f}" for x in p))
 
 
 def write_data(data, base_hev):
@@ -459,7 +479,7 @@ def write_fits(models, fits):
                 parts.append("")
                 continue
             p, a, s = f
-            parts.append(" ".join([f"{x:.2f}" for x in p] + [f"{x:.1f}" for x in a] + [f"{s:g}"]).replace("-0.00", "0.00"))
+            parts.append(_nz(" ".join([f"{x:.2f}" for x in p] + [f"{x:.1f}" for x in a] + [f"{s:g}"])))
         out.append(f"    {cls} = \"{'|'.join(parts)}\",")
     out.append("}")
     out += [

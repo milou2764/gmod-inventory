@@ -20,6 +20,11 @@ local function call(fn, ply, q)
     if not ok then return "ERROR " .. tostring(a) end
     return { a, b }
 end
+-- the check that follows every item index in an action (I.ItemCheck: the item the client saw)
+local function ck(holder, cid, index)
+    local it = AdvInv.Get(holder, AdvInv.IDCont[cid])[index]
+    return it and AdvInv.ItemCheck(it) or 0
+end
 local H, ACT = I.ActHandlers, I.ACT
 player.CreateNextBot("User")
 timer.Simple(1, function()
@@ -29,27 +34,28 @@ timer.Simple(1, function()
     I.Store(p, { id = I.GENERIC_ENTITY, c = "item_battery" })
     I.Store(p, { id = idOf.advinv_ammo_ar2, r = 5 }) -- a started box
     p:SetHealth(50) p:SetArmor(0)
-    out.useKit = call(H[ACT.USE], p, { p, I.ContID.Uniform, 1 })
+    out.useKit = call(H[ACT.USE], p, { p, I.ContID.Uniform, 1, ck(p, I.ContID.Uniform, 1) })
     out.afterKit = { hp = p:Health(), uniform = summary(I.Get(p, "Uniform")) }
     p:SetHealth(p:GetMaxHealth())
     -- battery is now index 1
-    out.useBatteryFullHp = call(H[ACT.USE], p, { p, I.ContID.Uniform, 1 })
+    out.useBatteryFullHp = call(H[ACT.USE], p, { p, I.ContID.Uniform, 1, ck(p, I.ContID.Uniform, 1) })
     out.afterBattery = { armor = p:Armor(), uniform = summary(I.Get(p, "Uniform")) }
     I.Store(p, { id = I.GENERIC_ENTITY, c = "item_healthvial" })
-    out.vialNotNeeded = call(H[ACT.USE], p, { p, I.ContID.Uniform, #I.Get(p, "Uniform") })
-    out.useAmmoBox = call(H[ACT.USE], p, { p, I.ContID.Uniform, 1 })
+    out.vialNotNeeded = call(H[ACT.USE], p, { p, I.ContID.Uniform, #I.Get(p, "Uniform"), ck(p, I.ContID.Uniform, #I.Get(p, "Uniform")) })
+    out.useAmmoBox = call(H[ACT.USE], p, { p, I.ContID.Uniform, 1, ck(p, I.ContID.Uniform, 1) })
     -- unload: equipped AR2 with 25 rounds -> the 5-round box gets 15 (to 20), then a new box of 10
     I.Equip(p, { id = idOf.advinv_hl2_ar2, r = 25 })
     out.unloadEquipped = call(H[ACT.UNLOAD], p, { true, AdvInv.CategoryID.PrimaryWep })
     local wep = p:GetWeapon("weapon_ar2")
     out.afterUnloadEquipped = { clip = IsValid(wep) and wep:Clip1(), uniform = summary(I.Get(p, "Uniform")), reserve = p:GetAmmoCount("AR2") }
-    -- unload a stored weapon item
-    I.Store(p, { id = idOf.advinv_hl2_pistol, r = 12 })
+    -- unload a stored weapon item (put in directly: the pockets have 16 of 40 left, the pistol weighs 20)
+    table.insert(I.Get(p, "Uniform"), { id = idOf.advinv_hl2_pistol, r = 12 })
+    I.MarkDirty(p, "Uniform")
     local idx
     for k, it in ipairs(I.Get(p, "Uniform")) do if it.id == idOf.advinv_hl2_pistol then idx = k end end
-    out.unloadStored = call(H[ACT.UNLOAD], p, { false, p, I.ContID.Uniform, idx })
+    out.unloadStored = call(H[ACT.UNLOAD], p, { false, p, I.ContID.Uniform, idx, ck(p, I.ContID.Uniform, idx) })
     out.afterUnloadStored = summary(I.Get(p, "Uniform"))
-    out.unloadEmpty = call(H[ACT.UNLOAD], p, { false, p, I.ContID.Uniform, idx })
+    out.unloadEmpty = call(H[ACT.UNLOAD], p, { false, p, I.ContID.Uniform, idx, ck(p, I.ContID.Uniform, idx) })
     timer.Simple(0.2, function()
         out.reserveAfterSync = { ar2 = p:GetAmmoCount("AR2"), pistol = p:GetAmmoCount("Pistol") }
         done(out)

@@ -120,9 +120,9 @@ end
 function I.SaveStorage(ent)
     if not (IsValid(ent) and ent.AdvInvUID) then return end
     local data = settingsOf(ent)
-    if not I.IsKeyed(ent) then
-        data.items = withUnknown(I.PackItems(ent.AdvInvData and ent.AdvInvData.Storage or {}), ent.AdvInvUnknownItems)
-    end
+    -- its own contents, also while it shows a shared or personal store: else making a permanent crate
+    -- shared or personal dropped them from the save (gone at the next restart, back if undone now)
+    data.items = withUnknown(I.PackItems(ent.AdvInvData and ent.AdvInvData.Storage or {}), ent.AdvInvUnknownItems)
     sql.Query("REPLACE INTO advinv_storage (UID, Map, Class, Pos, Ang, Data) VALUES (" ..
         SQLStr(ent.AdvInvUID) .. ", " .. SQLStr(game.GetMap()) .. ", " .. SQLStr(ent:GetClass()) .. ", " ..
         SQLStr(tostring(ent:GetPos())) .. ", " .. SQLStr(tostring(ent:GetAngles())) .. ", " ..
@@ -215,6 +215,14 @@ local function protected(ply, ent)
     if IsValid(ent) and ent:GetNWBool("AdvInvPermanent") and not I.IsAdmin(ply) then return false end
 end
 hook.Add("PhysgunPickup", "AdvInv_PermanentStorages", protected)
+-- moved by an admin: frozen again where he left it, and that place saved (else a map cleanup or a
+-- crash put it back where it was made permanent)
+hook.Add("PhysgunDrop", "AdvInv_PermanentStorages", function(_, ent)
+    if IsValid(ent) and ent.AdvInvUID and ent:GetNWBool("AdvInvPermanent") then
+        freeze(ent)
+        I.StorageChanged(ent)
+    end
+end)
 hook.Add("CanTool", "AdvInv_PermanentStorages", function(ply, tr) return protected(ply, tr.Entity) end)
 hook.Add("CanProperty", "AdvInv_PermanentStorages", function(ply, prop, ent)
     if string.StartWith(prop, "advinv_") then return end
@@ -253,6 +261,17 @@ function I.StorageUse(ent, ply)
     net.WriteEntity(ent)
     net.Send(ply)
 end
+
+-- The context menu's "Inventory" (sh_properties.lua): the same as the Use key (a locked one asks for
+-- its code, instead of opening as if it were empty).
+util.AddNetworkString("advinv_storage_use")
+net.Receive("advinv_storage_use", function(_, ply)
+    local ent = net.ReadEntity()
+    if (ply.AdvInvStorageUseWait or 0) > CurTime() then return end
+    ply.AdvInvStorageUseWait = CurTime() + 0.5
+    if not (IsValid(ent) and I.IsStorage(ent) and ply:Alive() and I.InReach(ply, ent)) then return end
+    I.StorageUse(ent, ply)
+end)
 
 net.Receive("advinv_storage_code", function(_, ply)
     local ent, code = net.ReadEntity(), net.ReadString()
@@ -306,7 +325,7 @@ net.Receive("advinv_storage_set", function(_, ply)
     elseif key == "personal" or key == "sync" then
         if ent:GetClass() == "advinv_bank" then return end -- a bank is always the player's own
         -- viewers leave (what they see changes)
-        for v in pairs(ent.AdvInvViewers or {}) do ent.AdvInvViewers[v] = nil end
+        for v in pairs(ent.AdvInvViewers or {}) do I.EndView(ent, v) end
         if key == "personal" then
             ent.AdvInvPersonal = on or nil
             ent:SetNWBool("AdvInvPersonal", on)

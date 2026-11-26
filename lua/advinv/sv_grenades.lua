@@ -67,12 +67,15 @@ local function itemCount(ply, ammo)
 end
 
 local function takeItems(ply, ammo, n)
+    -- the job's grenades first, then the others (a looted grenade isn't used up while a job one,
+    -- taken back at death, stays)
+    for pass = 1, 2 do
     for _, cont in ipairs(I.PLAYER_CONTAINERS) do
         local items = I.Get(ply, cont)
         for k = #items, 1, -1 do
             if n <= 0 then return end
             local it = items[k]
-            if it.id == I.GENERIC_AMMO and it.c and sameAmmo(it.c, ammo) then
+            if it.id == I.GENERIC_AMMO and it.c and sameAmmo(it.c, ammo) and (pass == 2 or it.j) then
                 local take = math.min(it.r or 0, n)
                 it.r = (it.r or 0) - take
                 n = n - take
@@ -81,6 +84,25 @@ local function takeItems(ply, ammo, n)
             end
         end
     end
+    end
+end
+
+-- A grenade another addon drops from a dying player's hands without taking its ammunition (CW 2.0's
+-- quick grenade, a cooked ArcCW grenade): one item less, from the player or else from the body just
+-- made of him (death hooks run in no fixed order: the body may already have his things).
+function I.GrenadeDroppedAtDeath(ply, ammo)
+    if not (IsValid(ply) and isstring(ammo) and ammo ~= "") then return end
+    -- the job's items already taken at this death: the primed one was a job's grenade (taken first,
+    -- as when thrown), already gone; the looted ones stay (on him or on the body)
+    local gone = ply.AdvInvJobAmmoGone
+    local key = string.lower(ammo)
+    if gone and gone.t == CurTime() and (gone[key] or 0) > 0 then
+        gone[key] = gone[key] - 1
+        return
+    end
+    if itemCount(ply, ammo) > 0 then return takeItems(ply, ammo, 1) end
+    local body = ply.AdvInvLastBody
+    if IsValid(body) and body.AdvInvBorn == CurTime() then takeItems(body, ammo, 1) end
 end
 
 -- Records the grenades as they are now (after the inventory set them, or a strip).
@@ -97,9 +119,31 @@ end
 -- Most grenade items one change may add (a bulk GiveAmmo of another addon: the rest is lost).
 local MAX_ADD = 20
 
+-- The player's DarkRP job gives grenades of this ammunition (its weapon list).
+local function jobGrenade(ply, ammo)
+    local job = ply.getJobTable and ply:getJobTable()
+    if not (job and istable(job.weapons)) then return false end
+    for _, class in ipairs(job.weapons) do
+        local a = I.GrenadeAmmo(string.lower(tostring(class)))
+        if a and sameAmmo(a, ammo) then return true end
+    end
+    return false
+end
+
+-- Grenades of a job's loadout: items of the job (I.RemoveJobItems takes them at death and at a job
+-- change, the save leaves them out, I.MayLeave keeps them on him like the job's weapons), else
+-- each loadout made new ordinary grenades to put in a crate (a farm).
+local function giveJobGrenades(ply, ammo, n)
+    local boxID, boxC = I.AmmoBoxFor(ammo)
+    if not boxID then return end
+    for _ = 1, n do I.Store(ply, { id = boxID, c = boxC, r = 1, a = 0, j = true }) end
+end
+
 -- Reads what happened to ply's grenades since the last look, and changes the items to match.
-function I.ReconcileGrenades(ply)
-    if not (IsValid(ply) and ply:Alive()) then return end
+-- force: also for a player already dead (his death: the throws are counted before the body takes
+-- his items).
+function I.ReconcileGrenades(ply, force)
+    if not (IsValid(ply) and (force or ply:Alive())) then return end
     local st = ply.AdvInvGrenades
     if not st then return I.GrenadeBaseline(ply) end
     for key, ammo in pairs(I.GrenadeTypes()) do
@@ -117,12 +161,15 @@ function I.ReconcileGrenades(ply)
         if delta < 0 then
             takeItems(ply, ammo, -delta)
         elseif delta > 0 then
-            local add = delta
+            local add, fromJob = delta, false
             if (ply.AdvInvLoadoutUntil or 0) > CurTime() then
                 add = math.max(delta - itemCount(ply, ammo), 0) -- a loadout tops up
+                fromJob = jobGrenade(ply, ammo)
             end
             add = math.min(add, MAX_ADD)
-            if add > 0 then I.GiveRounds(ply, ammo, add) end
+            if add > 0 then
+                if fromJob then giveJobGrenades(ply, ammo, add) else I.GiveRounds(ply, ammo, add) end
+            end
             if add < delta then I.MarkDirty(ply, "Uniform") end -- the rest goes (reserve = items)
         end
     end
@@ -157,7 +204,7 @@ end)
 
 -- Dead: the grenade in the hands is not dropped (the items are on the body).
 hook.Add("DoPlayerDeath", "AdvInv_Grenades", function(ply)
-    I.ReconcileGrenades(ply)
+    I.ReconcileGrenades(ply, true)
     ply.AdvInvGrenades = nil
     for class in pairs(I.Grenades) do
         if ply:HasWeapon(class) then ply:StripWeapon(class) end

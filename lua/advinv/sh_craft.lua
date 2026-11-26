@@ -50,7 +50,11 @@ end
 
 -- Does an item match an ingredient?
 function I.ItemMatches(it, spec)
-    if spec.item then return AdvInv.ClassID[spec.item] == it.id end
+    if spec.item then
+        if AdvInv.ClassID[spec.item] ~= it.id then return false end
+        local info = I.Info(it.id)
+        return not info.isBox or (it.r or 0) >= (info.boxRounds or 0) -- boxes: full ones only
+    end
     if spec.entity then return it.id == I.GENERIC_ENTITY and it.c == spec.entity end
     if spec.ammo then
         local info = I.Info(it.id, it.c)

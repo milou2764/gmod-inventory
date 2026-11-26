@@ -249,6 +249,9 @@ function AdvInvAdjustableModelPanel:DrawModel()
             if not m.advinvHiddenNoBone then
                 AdvInv.PlaceGearModel(m, self.Entity)
                 m:DrawModel()
+                -- the parts it shares with its pack's playermodel (straps...), as in the world
+                local t = m.advinvClass and AdvInv.ClassTable(m.advinvClass)
+                if t and t.ModelSharedLooks and m.advinvAttach and AdvInv.DrawSharedParts then AdvInv.DrawSharedParts(m, t, true) end
                 self:PostDrawModel(m)
             end
         end

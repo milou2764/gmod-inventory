@@ -904,8 +904,12 @@ static void remove_locks(int p, int only_claude)
     wchar_t path[1400]; lock_path(path);
     long len; char *t = read_file(path, &len);
     if (!t) return;
-    FILE *f = _wfopen(path, L"wb");
+    /* written beside it, then put in its place: a crash or a full disk mid-write must not leave the
+       approvals truncated */
+    wchar_t tmpp[1420]; swprintf(tmpp, 1420, L"%ls.tmp", path);
+    FILE *f = _wfopen(tmpp, L"wb");
     if (!f) { free(t); return; }
+    int bad = 0;
     char *s = t;
     while (*s) {
         char *e = strchr(s, '\n'); size_t n = e ? (size_t)(e - s + 1) : strlen(s);
@@ -921,10 +925,15 @@ static void remove_locks(int p, int only_claude)
                 for (int k = 0; k < q->n; k++) if (F[q->f[k]].pm == pm) drop = 1;
             }
         }
-        if (!drop) fwrite(s, 1, n, f);
+        if (!drop && fwrite(s, 1, n, f) != n) bad = 1;
         s += n;
     }
-    fclose(f); free(t);
+    if (fclose(f) != 0) bad = 1;
+    free(t);
+    if (bad || !MoveFileExW(tmpp, path, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+        _wremove(tmpp); /* the file as it was: nothing removed */
+        return;
+    }
     for (int k = 0; k < q->n; k++) {
         Fit *x = &F[q->f[k]];
         if (x->locked && (!only_claude || x->byc)) { x->locked = 0; x->byc = 0; }

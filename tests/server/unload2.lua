@@ -5,7 +5,7 @@ local p = player.GetBots()[1]
 I.Set(p, "Uniform", {})
 I.Store(p, { id = idOf.advinv_hl2_pistol, r = 12 })
 local real = { net.ReadUInt, net.ReadEntity, net.ReadBool }
-local q, k = { false, p, I.ContID.Uniform, 1 }, 0
+local q, k = { false, p, I.ContID.Uniform, 1, I.ItemCheck(I.Get(p, "Uniform")[1]) }, 0
 local function nxt() k = k + 1 return q[k] end
 net.ReadUInt, net.ReadEntity, net.ReadBool = nxt, nxt, nxt
 local ok, a, b = pcall(I.ActHandlers[I.ACT.UNLOAD], p)

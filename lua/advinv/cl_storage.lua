@@ -54,8 +54,21 @@ local function settingsWindow(ent)
             e:Dock(FILL)
             e:SetValue(value or "")
             e:SetNumeric(numeric or false)
-            e.OnEnter = function(self) set(ent, key, self:GetValue()) end
-            e.OnLoseFocus = function(self) set(ent, key, self:GetValue()) end
+            -- Enter sends (an empty code + Enter removes the code); leaving the field sends only a
+            -- change: clicking through the empty code field must not wipe the crate's code
+            local last = value or ""
+            e.OnEnter = function(self)
+                last = self:GetValue()
+                set(ent, key, last)
+            end
+            e.OnLoseFocus = function(self)
+                local v = self:GetValue()
+                if v ~= last then
+                    last = v
+                    set(ent, key, v)
+                end
+                DTextEntry.OnLoseFocus(self)
+            end
         end)
     end
     local bank = ent:GetClass() == "advinv_bank"

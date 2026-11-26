@@ -162,45 +162,55 @@ function I.WeaponGeometry(path)
         geomCache[path] = false
         return
     end
-    ent:SetNoDraw(true)
-    ent:SetPos(vector_origin)
-    ent:SetAngles(angle_zero)
-    ent:ResetSequence(0)
-    ent:SetCycle(0)
-    ent:InvalidateBoneCache()
-    ent:SetupBones()
-    local hmin, hmax = ent:GetModelBounds()
-    local hullMin, hullMax = hmin, hmax
-    local mn, mx, core = meshBounds(ent, path, hmin, hmax)
-    if not mn then
-        -- the posed mesh is checked against the model's hull (skinned the right way). Some hulls
-        -- don't cover the mesh (the Fallout 4 Institute rifle's is shorter, 30 wide and 20 tall
-        -- for a 32 x 5 x 9 rifle): the mesh was refused and that hull taken for the gun, carried
-        -- as a bulky block. Then the hull or the render box, whichever reaches further
-        local rmin, rmax = ent:GetRenderBounds()
-        hullMin = Vector(math.min(hmin.x, rmin.x), math.min(hmin.y, rmin.y), math.min(hmin.z, rmin.z))
-        hullMax = Vector(math.max(hmax.x, rmax.x), math.max(hmax.y, rmax.y), math.max(hmax.z, rmax.z))
-        mn, mx, core = meshBounds(ent, path, hullMin, hullMax)
-    end
-    -- barrel along Y (see TURN): measured again a quarter turn round
-    local bmn, bmx = mn or hmin, mx or hmax
-    local turn = (bmx.y - bmn.y) > TURN_RATIO * (bmx.x - bmn.x)
-    if turn then
-        if mn then
-            mn, mx, core = meshBounds(ent, path, hullMin, hullMax, true)
-        else
-            hmin, hmax = Vector(hmin.y, hmin.x, -hmax.z), Vector(hmax.y, hmax.x, -hmin.z)
+    -- measured in a pcall: an error mustn't leave the temporary model behind, nor be retried every
+    -- frame (the model counts as unreadable)
+    local ok, g = pcall(function()
+        ent:SetNoDraw(true)
+        ent:SetPos(vector_origin)
+        ent:SetAngles(angle_zero)
+        ent:ResetSequence(0)
+        ent:SetCycle(0)
+        ent:InvalidateBoneCache()
+        ent:SetupBones()
+        local hmin, hmax = ent:GetModelBounds()
+        local hullMin, hullMax = hmin, hmax
+        local mn, mx, core = meshBounds(ent, path, hmin, hmax)
+        if not mn then
+            -- the posed mesh is checked against the model's hull (skinned the right way). Some hulls
+            -- don't cover the mesh (the Fallout 4 Institute rifle's is shorter, 30 wide and 20 tall
+            -- for a 32 x 5 x 9 rifle): the mesh was refused and that hull taken for the gun, carried
+            -- as a bulky block. Then the hull or the render box, whichever reaches further
+            local rmin, rmax = ent:GetRenderBounds()
+            hullMin = Vector(math.min(hmin.x, rmin.x), math.min(hmin.y, rmin.y), math.min(hmin.z, rmin.z))
+            hullMax = Vector(math.max(hmax.x, rmax.x), math.max(hmax.y, rmax.y), math.max(hmax.z, rmax.z))
+            mn, mx, core = meshBounds(ent, path, hullMin, hullMax)
         end
-    end
-    local g = { mins = mn or hmin, maxs = mx or hmax, exact = mn ~= nil, turn = turn or nil }
-    g.core = core or { y = { lo = g.mins.y, hi = g.maxs.y }, z = { lo = g.mins.z, hi = g.maxs.z } }
-    -- some models point their muzzle to -X (HL2 pistol, AR2, shotgun, RPG): read it on the model
-    local mz = ent:LookupAttachment("muzzle")
-    local at = mz and mz > 0 and ent:GetAttachment(mz)
-    g.muzzleBack = at ~= nil and at ~= false and (turn and at.Pos.y or at.Pos.x) < (g.mins.x + g.maxs.x) * 0.5
-    local b0 = ent:GetBoneMatrix(0) -- its root bone at rest: carries the model when it is bonemerged
-    g.restBone0 = b0 and Matrix(b0) or nil
+        -- barrel along Y (see TURN): measured again a quarter turn round
+        local bmn, bmx = mn or hmin, mx or hmax
+        local turn = (bmx.y - bmn.y) > TURN_RATIO * (bmx.x - bmn.x)
+        if turn then
+            if mn then
+                mn, mx, core = meshBounds(ent, path, hullMin, hullMax, true)
+            else
+                hmin, hmax = Vector(hmin.y, hmin.x, -hmax.z), Vector(hmax.y, hmax.x, -hmin.z)
+            end
+        end
+        local g = { mins = mn or hmin, maxs = mx or hmax, exact = mn ~= nil, turn = turn or nil }
+        g.core = core or { y = { lo = g.mins.y, hi = g.maxs.y }, z = { lo = g.mins.z, hi = g.maxs.z } }
+        -- some models point their muzzle to -X (HL2 pistol, AR2, shotgun, RPG): read it on the model
+        local mz = ent:LookupAttachment("muzzle")
+        local at = mz and mz > 0 and ent:GetAttachment(mz)
+        g.muzzleBack = at ~= nil and at ~= false and (turn and at.Pos.y or at.Pos.x) < (g.mins.x + g.maxs.x) * 0.5
+        local b0 = ent:GetBoneMatrix(0) -- its root bone at rest: carries the model when it is bonemerged
+        g.restBone0 = b0 and Matrix(b0) or nil
+        return g
+    end)
     ent:Remove()
+    if not ok then
+        geomCache[path] = false
+        ErrorNoHalt("[AdvInv] weapon model " .. tostring(path) .. " couldn't be measured: " .. tostring(g) .. "\n")
+        return
+    end
     if not g.exact then
         local tries = (cached and cached.tries or 0) + 1
         if tries <= GEOM_RETRIES then g.tries, g.retryAt = tries, RealTime() + GEOM_RETRY_DELAY end
@@ -425,14 +435,13 @@ local function drawAt(m, ent, pos, ang)
 end
 
 -- Old-style mount (sidearm on the thigh, long guns without carry modes across the back).
-local function drawMounted(ent, owner, store, w, back, primaryThickness)
+-- -> world position, angles and the room it takes (nil, 0 when it can't be placed)
+local function placeMounted(ent, w, back, primaryThickness)
     local mount = I.WeaponMountFor(w.cat, ent:GetModel())
     local bone = mount and ent:LookupBone(mount.bone)
     local matrix = bone and ent:GetBoneMatrix(bone)
     local g = I.WeaponGeometry(w.model)
-    if not (matrix and g) then return 0 end
-    local m = mountedModel(store, w.cat, w.model)
-    if not IsValid(m) then return 0 end
+    if not (matrix and g) then return nil, nil, 0 end
     local extra = 0
     if w.cat ~= "SecondaryWep" then
         extra = (back or 0) + (w.cat == "RocketLauncher" and primaryThickness or 0)
@@ -457,21 +466,12 @@ local function drawMounted(ent, owner, store, w, back, primaryThickness)
     local scale = ent:GetModelScale()
     local localPos = (mount.pos + mount.out:GetNormalized() * (half + extra + C.WeaponMountGap) - center) * scale
     local pos, ang = LocalToWorld(localPos, wang, matrix:GetTranslation(), matrix:GetAngles())
-    drawAt(m, ent, pos, I.GeomToModelAngles(g, ang))
-    return 2 * half + C.WeaponMountGap
+    return pos, I.GeomToModelAngles(g, ang), 2 * half + C.WeaponMountGap
 end
 
---[[
-    Draws a list of weapons on ent (a player, a ragdoll-free preview model...):
-        list = { { cat = slot, class = weapon class, model = world model, mode = carry mode or nil }, ... }
-    gearOwner: whose worn vest / backpack push the weapons out (nil: none). Long guns with a carry
-    mode go where the mode puts them (cl_carry.lua; "stowed": not drawn); the others use the
-    mounts above.
---]]
-function I.DrawWeaponList(ent, gearOwner, list)
-    if not IsValid(ent) then return end
-    local store = storeFor(ent)
-    local used = {}
+-- Where each weapon of the list goes on ent: slot -> { pos, ang } (none: not drawn).
+local function placeList(ent, gearOwner, list)
+    local placed = {}
     local carried = {}
     for _, w in ipairs(list) do
         if w.mode then carried[w.cat] = w end
@@ -485,19 +485,51 @@ function I.DrawWeaponList(ent, gearOwner, list)
                 if pos and pushes.beside and pushes.beside[w.cat] then
                     pos, ang = I.CarryBeside(ent, w, pos, ang, pushes.beside[w.cat]) -- against the backpack's side
                 end
-                if pos then
-                    local m = mountedModel(store, w.cat, w.model)
-                    if IsValid(m) then
-                        drawAt(m, ent, pos, ang)
-                        used[w.cat] = true
-                    end
-                end
+                if pos then placed[w.cat] = { pos, ang } end
             end
         else
             if w.cat ~= "SecondaryWep" and IsValid(gearOwner) then back = back or backLayer(gearOwner) end
-            local thick = drawMounted(ent, gearOwner, store, w, back, primaryThickness)
-            if thick > 0 then used[w.cat] = true end
+            local pos, ang, thick = placeMounted(ent, w, back, primaryThickness)
+            if pos then placed[w.cat] = { pos, ang } end
             if w.cat == "PrimaryWep" then primaryThickness = thick end
+        end
+    end
+    return placed
+end
+
+-- A player is drawn once per view of the frame (the screen, and water reflection and refraction,
+-- mirrors, cameras...): the bones don't move within a frame, so the placement is worked out once
+-- per frame and the other views only draw it (it cost about 100 us per player and view).
+local placedCache = setmetatable({}, { __mode = "k" })
+
+--[[
+    Draws a list of weapons on ent (a player, a ragdoll-free preview model...):
+        list = { { cat = slot, class = weapon class, model = world model, mode = carry mode or nil }, ... }
+    gearOwner: whose worn vest / backpack push the weapons out (nil: none). Long guns with a carry
+    mode go where the mode puts them (cl_carry.lua; "stowed": not drawn); the others use the
+    mounts above.
+--]]
+function I.DrawWeaponList(ent, gearOwner, list)
+    if not IsValid(ent) then return end
+    local store = storeFor(ent)
+    local sig = {}
+    for i, w in ipairs(list) do sig[i] = w.cat .. "|" .. tostring(w.model) .. "|" .. tostring(w.mode) end
+    sig = table.concat(sig, ";")
+    local frame = FrameNumber()
+    local pc = placedCache[ent]
+    if not (pc and pc.frame == frame and pc.sig == sig and pc.owner == gearOwner) then
+        pc = { frame = frame, sig = sig, owner = gearOwner, placed = placeList(ent, gearOwner, list) }
+        placedCache[ent] = pc
+    end
+    local used = {}
+    for _, w in ipairs(list) do
+        local pl = pc.placed[w.cat]
+        if pl then
+            local m = mountedModel(store, w.cat, w.model)
+            if IsValid(m) then
+                drawAt(m, ent, pl[1], pl[2])
+                used[w.cat] = true
+            end
         end
     end
     -- free the models of slots that are no longer drawn

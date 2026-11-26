@@ -55,8 +55,19 @@ function I.GearBuiltInCheck(ply)
     for cat, msg in pairs(I.GearBuiltInMessages) do
         if I.SlotID(ply, cat) > 1 and I.HasBuiltInGear(ply, cat) then
             local item, contents = I.TakeOff(ply, cat)
+            -- a job's items inside, and what his drop rules keep (DisallowDrop...), stay with him (in
+            -- his other containers), never on the ground; the rest leaves as ordinary items
+            for k = #(contents or {}), 1, -1 do
+                if contents[k].j or not I.MayLeaveItem(ply, contents[k]) then
+                    local it = table.remove(contents, k)
+                    if not I.Store(ply, it) then I.ForceStore(ply, it) end
+                end
+            end
             local empty = not contents or #contents == 0
-            if item and not (empty and I.Store(ply, item)) then I.SpawnItem(item, I.DropPos(ply), contents) end
+            if item and not (empty and I.Store(ply, item)) then
+                item.j = nil
+                I.SpawnItem(item, I.DropPos(ply), contents)
+            end
             I.Tell(ply, I.L(msg))
         end
     end

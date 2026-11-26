@@ -60,14 +60,32 @@ local function mirror(w)
     orig.SetMags(w, mags)
 end
 
+-- The reserve changed (boxes dropped, moved, used): the spare magazines follow at once, not at the
+-- base's next 0.25 s Think. Else a reload ending in that gap loaded a magazine the boxes no longer
+-- held (nothing left to remove from the reserve: free rounds).
+hook.Add("PlayerAmmoChanged", "AdvInv_SandSwep", function(ply, ammoID)
+    for _, w in ipairs(ply:GetWeapons()) do
+        if w.IsSandSwep and w:GetPrimaryAmmoType() == ammoID and not w.AdvInvMirroring then mirror(w) end
+    end
+end)
+
 -- rounds the base took from its spare magazines (a reload) or put back (a magazine taken out)
 local function account(o, w, delta)
     local ammo = game.GetAmmoName(w:GetPrimaryAmmoType())
     if not ammo or delta == 0 then return end
     if delta < 0 then
+        local have = o:GetAmmoCount(ammo)
         o:RemoveAmmo(-delta, ammo) -- the boxes are emptied by the reserve going down (sv_containers.lua)
+        -- the reserve couldn't pay for all of it: what it lacked comes back out of the magazine the
+        -- base loads (it sets the clip after this, so next tick)
+        local short = -delta - have
+        if short > 0 then
+            timer.Simple(0, function()
+                if IsValid(w) then w:SetClip1(math.max(w:Clip1() - short, 0)) end
+            end)
+        end
     else
-        I.GiveRounds(o, ammo, delta)
+        I.GiveRounds(o, ammo, delta, I.IsBoundJobWeapon and I.IsBoundJobWeapon(o, w))
         I.SyncAmmo(o)
     end
 end

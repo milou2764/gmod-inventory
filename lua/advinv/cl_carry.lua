@@ -247,6 +247,9 @@ end
     -> new world position and angles
 --]]
 function I.CarryBeside(ent, w, pos, ang, halfWidth)
+    -- a standing (or crouched) player only: world up and the floor under his feet mean nothing for a
+    -- body lying on the ground (its rifle was turned upright and swung out of it)
+    if I.IsBody and I.IsBody(ent) then return pos, ang end
     local g = halfWidth and halfWidth > 0 and I.WeaponGeometry(w.model)
     local l = ent:LookupBone("ValveBiped.Bip01_L_Clavicle")
     local r = ent:LookupBone("ValveBiped.Bip01_R_Clavicle")

@@ -111,13 +111,20 @@ end
 
 local function writeCont(cont) net.WriteUInt(I.ContID[cont], 3) end
 
+-- An item by its place in the list and what it is (the server checks it is still that one:
+-- sv_containers.lua I.ResolveItemRef)
+local function writeRef(src)
+    net.WriteUInt(src.index, 8)
+    net.WriteUInt(I.ItemCheck(src.item), 32)
+end
+
 -- count: how many identical items of the stack (1 by default, the whole stack with Shift held;
 -- the server stops when space runs out)
 local function moveItem(src, toHolder, toCont, count)
     if src.holder == toHolder and src.cont == toCont then return end
     count = count or (input.IsShiftDown() and src.count) or 1
     I.Act(ACT.MOVE, function()
-        net.WriteEntity(src.holder) writeCont(src.cont) net.WriteUInt(src.index, 8)
+        net.WriteEntity(src.holder) writeCont(src.cont) writeRef(src)
         net.WriteEntity(toHolder) writeCont(toCont)
         net.WriteUInt(math.Clamp(count or 1, 1, 255), 8)
     end)
@@ -126,22 +133,22 @@ end
 local function dropItem(src, count)
     count = count or (input.IsShiftDown() and src.count) or 1
     I.Act(ACT.DROP, function()
-        net.WriteEntity(src.holder) writeCont(src.cont) net.WriteUInt(src.index, 8)
+        net.WriteEntity(src.holder) writeCont(src.cont) writeRef(src)
         net.WriteUInt(math.Clamp(count or 1, 1, 255), 8)
     end)
 end
 
 local function equipItem(src)
-    I.Act(ACT.EQUIP, function() net.WriteEntity(src.holder) writeCont(src.cont) net.WriteUInt(src.index, 8) end)
+    I.Act(ACT.EQUIP, function() net.WriteEntity(src.holder) writeCont(src.cont) writeRef(src) end)
 end
 
 local function useItem(src)
-    I.Act(ACT.USE, function() net.WriteEntity(src.holder) writeCont(src.cont) net.WriteUInt(src.index, 8) end)
+    I.Act(ACT.USE, function() net.WriteEntity(src.holder) writeCont(src.cont) writeRef(src) end)
 end
 
 local function unloadItem(src)
     I.Act(ACT.UNLOAD, function()
-        net.WriteBool(false) net.WriteEntity(src.holder) writeCont(src.cont) net.WriteUInt(src.index, 8)
+        net.WriteBool(false) net.WriteEntity(src.holder) writeCont(src.cont) writeRef(src)
     end)
 end
 
@@ -323,7 +330,7 @@ local function itemMenu(src)
     local menu = DermaMenu()
     local info = I.Info(src.item.id, src.item.c)
     local n = src.count or 1
-    if isEquipable(info) and not (src.holder == LocalPlayer() and src.cont == info.cat) then
+    if isEquipable(info) and not (src.holder == LocalPlayer() and src.cont == info.cat and info.cat ~= "Uniform") then
         menu:AddOption(I.L("menu_equip"), function() equipItem(src) end):SetIcon("icon16/user_go.png")
     end
     if src.holder == LocalPlayer() and I.UseOf(src.item) then
@@ -370,7 +377,7 @@ local function itemMenu(src)
         menu:AddOption(I.L("menu_split"), function()
             askAmount(I.L("menu_split"), src.item.r - 1, math.floor(src.item.r / 2), function(k)
                 I.Act(ACT.SPLIT, function()
-                    net.WriteEntity(src.holder) writeCont(src.cont) net.WriteUInt(src.index, 8)
+                    net.WriteEntity(src.holder) writeCont(src.cont) writeRef(src)
                     net.WriteUInt(k, I.NET_ROUNDS_BITS)
                 end)
             end)
@@ -379,7 +386,7 @@ local function itemMenu(src)
     if I.IsAdmin(LocalPlayer()) then -- admin: delete (the server checks again)
         local del = function(count)
             adminAct(I.ADMIN.DELETE, function()
-                net.WriteEntity(src.holder) writeCont(src.cont) net.WriteUInt(src.index, 8)
+                net.WriteEntity(src.holder) writeCont(src.cont) writeRef(src)
                 net.WriteUInt(math.Clamp(count, 1, 255), 8)
             end)
         end
@@ -576,7 +583,7 @@ local function makeGearSlot(panel, target, cat, x, y, w, h)
         if IsValid(self.Model) then self.Model:Remove() end
         self.Model = nil
         local id, c = I.SlotRef(target, cat)
-        self.id = id
+        self.id, self.c = id, c -- (generic weapons all share one ID: their class tells them apart)
         panel[cat] = {}
         if self.id <= 1 then return end
         local t = I.DefTable(id, c)
@@ -732,10 +739,26 @@ local function makePreview(panel, target)
     pmodel:SetSize(325, 470)
     local ent = pmodel.Entity
     ent:SetAngles(Angle(0, 20, 0)) -- facing the camera, a little turned; dragging turns him (cl_vgui.lua)
-    local head = ent:LookupBone("ValveBiped.Bip01_Head1") or 1
-    ent:SetEyeTarget(ent:GetBonePosition(head) + Vector(40, 0, 0)) -- towards the camera
+    local head = ent:LookupBone("ValveBiped.Bip01_Head1")
+    local headPos = head and ent:GetBonePosition(head)
+    if headPos then ent:SetEyeTarget(headPos + Vector(40, 0, 0)) end -- towards the camera
     for k = 0, target:GetNumBodyGroups() - 1 do ent:SetBodygroup(k, target:GetBodygroup(k)) end
     ent:SetSkin(target:GetSkin())
+    -- what the playermodel shows by its bodygroups (its own pack's gear worn or taken off, a choice
+    -- made meanwhile) follows the target while the window is open
+    local baseThink, nextLook = pmodel.Think, 0
+    pmodel.Think = function(self, ...)
+        if baseThink then baseThink(self, ...) end
+        if CurTime() < nextLook then return end
+        nextLook = CurTime() + 0.25
+        local e = self.Entity
+        if not (IsValid(target) and IsValid(e)) or e:GetModel() ~= target:GetModel() then return end
+        for k = 0, target:GetNumBodyGroups() - 1 do
+            local v = target:GetBodygroup(k)
+            if e:GetBodygroup(k) ~= v then e:SetBodygroup(k, v) end
+        end
+        if e:GetSkin() ~= target:GetSkin() then e:SetSkin(target:GetSkin()) end
+    end
     updateHeldWeapon(pmodel, target)
     -- his upper body, where the gear is, stays in the window whichever side he shows, the weapon in his
     -- hands too; the camera stays put and he turns when dragged (cl_vgui.lua)
@@ -925,7 +948,9 @@ function AdvInv.OpenPlyInvPanel(target, mode)
         nextCheck = CurTime() + 0.15
         local changed = false
         for cat, slot in pairs(panel.slots) do
-            if IsValid(slot) and slotID(target, cat) ~= slot.id then
+            local id, c
+            if IsValid(slot) then id, c = I.SlotRef(target, cat) end
+            if IsValid(slot) and (id ~= slot.id or c ~= slot.c) then
                 slot:Rebuild()
                 changed = true
             end
@@ -1081,6 +1106,18 @@ function AdvInv.OpenSearchView(target)
     return panel
 end
 
+-- The server stopped showing us a holder (out of reach or sight, locked, a search over): its window
+-- closes (it would keep what it saw last, and the actions would be refused).
+net.Receive("advinv_view_end", function()
+    local holder = net.ReadEntity()
+    -- (each panel on its own: either may be nil, and ipairs would stop at the first nil)
+    local panels = { AdvInv.storagePanel, AdvInv.adminPanel }
+    for i = 1, 2 do
+        local p = panels[i]
+        if IsValid(p) and not p.admin and (p.holder == holder or p.target == holder) then p:Remove() end
+    end
+end)
+
 -- Fouiller une caisse ou un véhicule : son contenu à droite, l'inventaire du joueur à gauche.
 function AdvInv.OpenStorage(ent)
     if hook.Run("AdvInv_CanOpen", LocalPlayer()) == false then return end
@@ -1097,7 +1134,9 @@ end)
 
 -- Contenu reçu du serveur : les vues concernées se mettent à jour.
 hook.Add("AdvInv_Changed", "AdvInv_Panels", function(holder, cont, idx)
-    for _, p in ipairs({ AdvInv.plyInvPanel, AdvInv.storagePanel, AdvInv.adminPanel }) do
+    local panels = { AdvInv.plyInvPanel, AdvInv.storagePanel, AdvInv.adminPanel }
+    for i = 1, 3 do
+        local p = panels[i]
         local v = IsValid(p) and p.view
         if IsValid(v) and v.cont == cont and (v.holder == holder
             or (idx and IsValid(v.holder) and v.holder:EntIndex() == idx)) then

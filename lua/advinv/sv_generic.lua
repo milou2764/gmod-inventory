@@ -102,8 +102,70 @@ I.WeaponDataAdapters = I.WeaponDataAdapters or {
     },
 }
 
+--[[
+    Rounds in an underbarrel launcher: an ArcCW UBGL (Clip2, of its UBGL_Ammo), CW 2.0's M203 (one
+    40MM round chambered), another base's Clip2 (its secondary ammunition). The item keeps only the
+    magazine: when the weapon leaves its slot (taken off, stripped, its owner dead) they go back into
+    ammo boxes, else they would be lost. -> ammo, rounds, clear() (nil when there are none)
+--]]
+function I.UnderbarrelRounds(wep)
+    if not IsValid(wep) then return end
+    if wep.CW20Weapon then
+        -- (M203Chamber is true on every CW 2.0 weapon by default: a round only with the M203 fitted)
+        if not (wep.M203Chamber and istable(wep.ActiveAttachments) and wep.ActiveAttachments.md_m203) then return end
+        return "40MM", 1, function()
+            -- (set here; CW's own setter messages the owner, who may be gone: dropped, stripped)
+            wep.M203Chamber = false
+            local o = wep:GetOwner()
+            if wep.networkM203Chamber and IsValid(o) and o:IsPlayer() then wep:networkM203Chamber() end
+        end
+    end
+    local n = wep:Clip2()
+    if not (n and n > 0) then return end
+    local ammo = wep.ArcCW and wep.GetBuff_Override and wep:GetBuff_Override("UBGL_Ammo") or nil
+    if (not isstring(ammo) or ammo == "") and wep.ArcCW and ArcCW and ArcCW.AttachmentTable then
+        -- (the buff cache may not have it: the installed attachment's own table)
+        for _, a in pairs(wep.Attachments or {}) do
+            local att = a.Installed and ArcCW.AttachmentTable[a.Installed]
+            if att and isstring(att.UBGL_Ammo) then ammo = att.UBGL_Ammo break end
+        end
+    end
+    if not isstring(ammo) or ammo == "" then ammo = game.GetAmmoName(wep:GetSecondaryAmmoType()) end
+    if not (isstring(ammo) and ammo ~= "" and I.AmmoBoxFor(ammo)) then return end
+    return ammo, n, function() wep:SetClip2(0) end
+end
+
+-- A weapon the inventory has just given: its underbarrel launcher starts empty (the round it had was
+-- put into boxes when it left its slot; CW 2.0 chambers one on every new weapon, Give may fill a
+-- Clip2): else every equip would make a round, and every take-off a box of it.
+function I.EmptyUnderbarrel(wep)
+    if not IsValid(wep) then return end
+    if wep.CW20Weapon and wep.M203Chamber then
+        -- set here, told to the owner's client a moment later: CW's message names the weapon, which a
+        -- client doesn't know yet in the tick it is given (its receiver would index a NULL entity)
+        wep.M203Chamber = false
+        if wep.networkM203Chamber then
+            timer.Simple(0.5, function()
+                if IsValid(wep) and IsValid(wep:GetOwner()) and wep:GetOwner():IsPlayer() and not wep.M203Chamber then
+                    wep:networkM203Chamber()
+                end
+            end)
+        end
+    end
+    if (wep:Clip2() or 0) > 0 then wep:SetClip2(0) end
+end
+
+function I.UnloadUnderbarrel(ply, wep)
+    local ammo, n, clear = I.UnderbarrelRounds(wep)
+    if not ammo then return 0 end
+    clear()
+    I.GiveRounds(ply, ammo, n)
+    return n
+end
+
 function I.WeaponExtra(wep)
     if not IsValid(wep) then return end
+    if wep.AdvInvExtraPending then return wep.AdvInvExtraPending end -- not on yet (I.ApplyWeaponExtra)
     local h = hook.Run("AdvInv_WeaponData", wep)
     if h ~= nil then return isstring(h) and h ~= "" and string.sub(h, 1, 4096) or nil end
     for _, a in ipairs(I.WeaponDataAdapters) do
@@ -118,8 +180,11 @@ end
 
 function I.ApplyWeaponExtra(wep, data)
     if not (IsValid(wep) and isstring(data) and data ~= "") then return end
+    wep.AdvInvExtraPending = data -- until they are on, its attachments are these (I.WeaponExtra)
     timer.Simple(0.2, function() -- the weapon base sets itself up first
         if not IsValid(wep) then return end
+        if wep.AdvInvExtraPending ~= data then return end -- applied again meanwhile: that one counts
+        wep.AdvInvExtraPending = nil
         if hook.Run("AdvInv_ApplyWeaponData", wep, data) then return end
         for _, a in ipairs(I.WeaponDataAdapters) do
             local okMatch, matches = pcall(a.match, wep)
@@ -161,7 +226,7 @@ function I.GenericItemFromEntity(ent, light)
         if not clip then -- from a shipment: full magazine
             local swep = weapons.Get(wclass)
             local reg = I.ItemForWeapon(wclass)
-            clip = (swep and swep.Primary and swep.Primary.ClipSize) or (reg and I.Info(reg).clipSize) or 0
+            clip = I.SwepClipSize(swep) or (reg and I.Info(reg).clipSize) or 0
         end
         local item = I.ItemForWeaponClass(wclass, math.max(clip, 0))
         if item then
@@ -226,8 +291,19 @@ hook.Add("PlayerCanPickupWeapon", "AdvInv_WorldWeapons", function(ply, wep)
     if I.GenericItemFromEntity(wep, true) then return false end
 end)
 
+-- Ammo type of an ammo entity (HL2 ammo, other bases' ammo, DarkRP's), nil for anything else.
+local function entityAmmo(ent)
+    local conv = I.PickupConvert[ent:GetClass()]
+    local id = conv and AdvInv.ClassID[conv]
+    if id then return I.Info(id).ammo end
+    return (baseAmmo(ent))
+end
+
 hook.Add("PlayerCanPickupItem", "AdvInv_WorldItems", function(ply, item)
-    if not pickEntities:GetBool() or beingGiven(item, ply) then return end
+    if not pickEntities:GetBool() or beingGiven(item, ply) then
+        I.AllowAmmoGain(ply, entityAmmo(item)) -- picked up the game's way: its rounds become boxes
+        return
+    end
     local class = item:GetClass()
     if I.PickupWhitelist[class] or I.PickupConvert[class] then return false end
 end)
@@ -240,6 +316,9 @@ hook.Add("PlayerUse", "AdvInv_WorldItems", function(ply, ent)
         I.Use(ply, ent)
         return false
     end
+    -- not taken into the inventory (advinv_pickup_entities 0): an ammo entity's own Use puts its
+    -- rounds into the reserve; they become boxes
+    I.AllowAmmoGain(ply, entityAmmo(ent))
 end)
 
 -- Spawn menu (gm_giveswep): the gamemode decides as usual (DarkRP: adminweapons, arrested...).

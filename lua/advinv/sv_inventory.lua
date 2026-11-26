@@ -86,15 +86,24 @@ function I.RemoveJobItems(ply)
         if I.SlotRef(ply, cat) > 1 then I.TakeOff(ply, cat) end -- gone with its weapon
     end
     ply.AdvInvJobSlot = {}
+    -- job grenades removed this tick (I.GrenadeDroppedAtDeath: a grenade primed at death is a job's
+    -- one first, as when thrown, whichever death hook runs first)
+    local gone = { t = CurTime() }
     for _, cont in ipairs(I.PLAYER_CONTAINERS) do
         local items = I.Get(ply, cont)
         for k = #items, 1, -1 do
-            if items[k].j then
+            local it = items[k]
+            if it.j then
+                if it.id == I.GENERIC_AMMO and isstring(it.c) then
+                    local key = string.lower(it.c)
+                    gone[key] = (gone[key] or 0) + (it.r or 1)
+                end
                 table.remove(items, k)
                 I.MarkDirty(ply, cont)
             end
         end
     end
+    ply.AdvInvJobAmmoGone = gone
 end
 
 local function slotOfClass(ply, class)
@@ -109,11 +118,18 @@ I.SlotOfWeaponClass = slotOfClass
 function I.GiveWeapons(ply)
     for _, cat in ipairs(I.WeaponCat) do
         local info = I.SlotInfo(ply, cat)
-        if info.weaponClass and not ply:HasWeapon(info.weaponClass) then
-            local wep = ply:Give(info.weaponClass, true) -- the reserve is the boxes
+        local wep = info.weaponClass and ply:GetWeapon(info.weaponClass)
+        ply.AdvInvSlotWep = ply.AdvInvSlotWep or {}
+        -- the slot's own weapon still held (a loadout without a strip: DarkRP's norespawn job change
+        -- with keepPickedUp...): nothing to give back. Another one of that class is the loadout's
+        -- copy (full magazine, no attachments): it gets the slot's.
+        if info.weaponClass and not (IsValid(wep) and ply.AdvInvSlotWep[cat] == wep) then
+            if not IsValid(wep) then wep = ply:Give(info.weaponClass, true) end -- the reserve is the boxes
             if IsValid(wep) and wep:GetMaxClip1() > 0 then wep:SetClip1(ply:GetNWInt(cat .. "Rounds")) end
+            if I.EmptyUnderbarrel then I.EmptyUnderbarrel(wep) end -- (its round, if any, is in the boxes)
             local x = ply.AdvInvSlotExtra and ply.AdvInvSlotExtra[cat]
             if IsValid(wep) and x then I.ApplyWeaponExtra(wep, x) end
+            ply.AdvInvSlotWep[cat] = IsValid(wep) and wep or nil
         end
     end
     I.MarkAllDirty(ply)
@@ -128,6 +144,7 @@ hook.Add("PlayerDroppedWeapon", "AdvInv_KeepRounds", function(ply, wep)
     local cat = slotOfClass(ply, wep:GetClass())
     if not cat then return end
     if wep:GetMaxClip1() > 0 then ply:SetNWInt(cat .. "Rounds", math.max(wep:Clip1(), 0)) end
+    if I.UnloadUnderbarrel then I.UnloadUnderbarrel(ply, wep) end -- (an underbarrel launcher's rounds: boxes)
     ply.AdvInvSlotExtra = ply.AdvInvSlotExtra or {}
     ply.AdvInvSlotExtra[cat] = I.WeaponExtra(wep)
     local class, mode = wep:GetClass(), ply:GetNWInt(cat .. "Carry", 0)
@@ -235,17 +252,24 @@ function I.Serialize(ply)
     local data = { v = 4, s = {}, c = {} }
     local extra = ply.AdvInvSlotExtra or {}
     local job = ply.AdvInvJobSlot or {}
+    local under = {} -- rounds in underbarrel launchers: saved as boxes (the weapon comes back empty)
     for _, cat in ipairs(I.WeaponCat) do
         local id, c = I.SlotRef(ply, cat)
         if id > 1 and not job[cat] then -- a job's weapon is not saved
             local info = I.Info(id, c)
             local wep = info.weaponClass and ply:GetWeapon(info.weaponClass)
+            -- the weapon's attachments as they are (none: nil), else the ones kept in the slot
+            local x
+            if IsValid(wep) then x = I.WeaponExtra(wep) else x = extra[cat] end
             data.s[cat] = packItem({
                 id = id, c = c,
                 r = IsValid(wep) and math.max(wep:Clip1(), 0) or ply:GetNWInt(cat .. "Rounds"),
                 m = I.CarryConfig(id, c) and ply:GetNWInt(cat .. "Carry") or nil,
-                x = IsValid(wep) and I.WeaponExtra(wep) or extra[cat],
+                x = x,
             })
+            local ammo2, n2 -- (not "f and f(wep)": that keeps the first value only)
+            if I.UnderbarrelRounds then ammo2, n2 = I.UnderbarrelRounds(wep) end
+            if ammo2 then under[#under + 1] = { ammo2, n2 } end
         end
     end
     for cat in pairs(I.GearCat) do
@@ -259,15 +283,34 @@ function I.Serialize(ply)
         end
         data.c[cont] = I.PackItems(mine)
     end
-    -- items of addons that are missing now: written back as they were
+    for _, u in ipairs(under) do
+        local id, c = I.AmmoBoxFor(u[1])
+        local size = math.max(I.Info(id, c).boxRounds or 1, 1)
+        local n = u[2]
+        while n > 0 do
+            local take = math.min(size, n)
+            table.insert(data.c.Uniform, packItem({ id = id, c = c, r = take }))
+            n = n - take
+        end
+    end
+    -- items of addons that are missing now: written back as they were, never lost
     local uk = ply.AdvInvUnknown
     if uk then
+        local function keep(cont, v)
+            data.c[cont] = data.c[cont] or {}
+            table.insert(data.c[cont], v)
+        end
         for cat, v in pairs(uk.s) do
-            if data.s[cat] == nil then data.s[cat] = v end
+            local held = uk.held and uk.held[cat] or {} -- what an unknown vest or backpack holds
+            -- its slot holds another item now: into the pockets, with what it held
+            local into = data.s[cat] == nil and cat or "Uniform"
+            if into == cat then data.s[cat] = v else keep("Uniform", v) end
+            for _, e in ipairs(held) do keep(into, e) end
         end
         for cont, list in pairs(uk.c) do
-            data.c[cont] = data.c[cont] or {}
-            for _, v in ipairs(list) do table.insert(data.c[cont], v) end
+            -- in a vest or a backpack no longer worn: into the pockets
+            local into = (cont == "Uniform" or data.s[cont] ~= nil) and cont or "Uniform"
+            for _, v in ipairs(list) do keep(into, v) end
         end
     end
     return util.TableToJSON(data)
@@ -310,7 +353,7 @@ local GEAR_ORDER = { "Uniform", "Vest", "Rucksack", "Helmet", "Gasmask", "NVGs",
 
 function I.Load(ply, owner)
     I.Clear(ply)
-    local uk = { s = {}, c = {} }
+    local uk = { s = {}, c = {}, held = {} }
     ply.AdvInvUnknown = uk
     local data, why, raw = I.Record(owner)
     if why == "corrupt" then
@@ -339,15 +382,24 @@ function I.Load(ply, owner)
                     pockets[#pockets + 1] = it
                     for _, v in ipairs(inside or {}) do pockets[#pockets + 1] = v end
                 end
+            elseif uk.s[cat] and (cat == "Vest" or cat == "Rucksack") and istable(conts[cat]) then
+                uk.held[cat] = conts[cat] -- a vest or a backpack of a missing addon: what it holds, as saved
             end
         end
         for _, cat in ipairs(I.WeaponCat) do
             local it = slotItem(cat)
             if it and not I.Equip(ply, it) then pockets[#pockets + 1] = it end
         end
-        local list = contents("Uniform")
-        for _, it in ipairs(pockets) do list[#list + 1] = it end
-        I.Set(ply, "Uniform", list)
+        I.Set(ply, "Uniform", contents("Uniform"))
+        -- what couldn't be equipped goes where it fits; else in the pockets even over their load
+        -- (still seen and movable), never past the 255 items a container can show: then the ground
+        for _, it in ipairs(pockets) do
+            if not I.Store(ply, it) then
+                local list = I.Get(ply, "Uniform")
+                if #list < I.MAX_ITEMS then list[#list + 1] = it else I.SpawnItem(it, I.DropPos(ply)) end
+            end
+        end
+        I.MarkDirty(ply, "Uniform")
         if #pockets > 0 then I.Log.e("Inventory", #pockets .. " saved items of " .. ownerKey(owner) .. " couldn't be equipped: in the pockets") end
         I.ValidateCarry(ply, false)
     end
