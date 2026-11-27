@@ -116,8 +116,18 @@ local function guessCategory(class, swep)
     -- HoldtypeActive)
     local hold = swep and string.lower(swep.HoldType or swep.NormalHoldType or swep.HoldtypeActive or "") or ""
     local ammo = string.lower(tostring(I.SwepAmmo(swep) or ""))
-    if hold == "rpg" or ammo == "rpg_round" then return "RocketLauncher" end
-    -- (not SWEP.Slot: many weapons set it on the client only, the server would guess another slot)
+    -- a launcher: rockets or missiles, or the rocket launcher's hold type on a single-shot weapon. Not
+    -- the hold type alone: ARC9's third-person-IK packs (ARC9 Escape From Tarkov...) hold every weapon,
+    -- pistols too, with the "rpg" hold type
+    local clip = tonumber(I.SwepClipSize(swep)) or -1
+    if ammo == "rpg_round" or ammo:find("rocket", 1, true) or ammo:find("missile", 1, true)
+        or (hold == "rpg" and clip <= 1) then
+        return "RocketLauncher"
+    end
+    -- (not SWEP.Slot in general: many weapons set it on the client only, the server would guess
+    -- another slot; ARC9's weapons declare it with the rest: 0 and 1 are hand weapons)
+    local slot = swep and swep.ARC9 and tonumber(swep.Slot)
+    if slot then return slot <= 1 and "SecondaryWep" or "PrimaryWep" end
     if hold == "pistol" or hold == "revolver" or hold == "melee" or hold == "knife"
         or hold == "fist" or hold == "grenade" or hold == "slam" or hold == "melee2" then
         return "SecondaryWep"
