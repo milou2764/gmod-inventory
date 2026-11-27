@@ -39,6 +39,9 @@ C.CarryBesideForward = C.CarryBesideForward or 0.75
 -- the modes where a longer gun hangs from where that gun's butt is instead of being centred
 C.CarryTemplateGun = C.CarryTemplateGun or "models/weapons/w_irifle.mdl"
 C.CarryLongHang = C.CarryLongHang or { front_hang = true }
+-- weapons without offsets stand off the body that much more in these modes (their magazine, scope or
+-- grip, sticking out toward the chest, sink in otherwise: measured on the M9K, TFA and ARC9 packs)
+C.CarryTemplateGap = C.CarryTemplateGap or { front_hang = 1.2, sling_up = 0.5, sling_down = 1.2 }
 
 I.CarryOffsets = I.CarryOffsets or {}
 I.CarryAliases = I.CarryAliases or {}
@@ -75,12 +78,48 @@ function I.CarrySetFor(playermodel)
     return I.CarryOffsets[name] or {}, name
 end
 
--- Template placement of a weapon that has no offsets: the mode's rules on the default body,
+-- The mode's template on a playermodel's offset set: the template fits the default body; on another
+-- set it moves as the template gun (C.CarryTemplateClass) moves from the default set to that one
+-- (a bulkier chest, a deeper back: tuned per set), else it is the default body's.
+C.CarryTemplateClass = C.CarryTemplateClass or "weapon_ar2"
+local function row(e)
+    if not e then return end
+    return e.bone or e[1], e.pos or e[2], e.ang or e[3], e.out or e[4]
+end
+local setTemplates = {}
+local function templateFor(mode, setName)
+    local t = I.CarryTemplates[mode]
+    if not t or not setName or setName == "default" then return t end
+    local key = mode .. "|" .. setName
+    local c = setTemplates[key]
+    if c ~= nil then return c or t end
+    setTemplates[key] = false
+    local d = I.CarryOffsets.default and I.CarryOffsets.default[C.CarryTemplateClass]
+    local s = I.CarryOffsets[setName] and I.CarryOffsets[setName][C.CarryTemplateClass]
+    local bd, pd, ad = row(d and d[mode])
+    local bs, ps, as, os = row(s and s[mode])
+    if not (bd and bs and bd == bs and bd == t.bone and pd and ps and ad and as) then return t end
+    -- delta = set row * default row^-1, in the bone's frame
+    local Md, Ms = Matrix(), Matrix()
+    Md:SetTranslation(pd) Md:SetAngles(ad)
+    Ms:SetTranslation(ps) Ms:SetAngles(as)
+    local Mt = Matrix()
+    Mt:SetTranslation(t.pos) Mt:SetAngles(t.ang)
+    local M = Ms * Md:GetInverseTR() * Mt
+    local R = Matrix()
+    R:SetAngles((Ms * Md:GetInverseTR()):GetAngles())
+    c = { bone = t.bone, pos = M:GetTranslation(), ang = M:GetAngles(), out = (os and os:GetNormalized()) or (R * t.out),
+        anchor = t.anchor }
+    setTemplates[key] = c
+    return c
+end
+
+-- Template placement of a weapon that has no offsets: the mode's rules on the playermodel's set,
 -- fitted to the weapon's shape (it rests on its thinner side, muzzle as the mode wants).
 local templateCache = {}
-local function templateEntry(mode, path)
-    local key = mode .. "|" .. path
-    local t = I.CarryTemplates[mode]
+local function templateEntry(mode, path, setName)
+    local key = mode .. "|" .. path .. "|" .. (setName or "default")
+    local t = templateFor(mode, setName)
     local g = t and I.WeaponGeometry(path)
     local e = templateCache[key]
     -- (built on the weapon's current shape: a shape measured again is a new table)
@@ -127,7 +166,8 @@ local function templateEntry(mode, path)
     local ax = t.anchor == "butt" and mn.x or (mn.x + mx.x) / 2
     local face, zmid = yAxis:Dot(out) > 0 and lo or hi, (mn.z + mx.z) / 2
     local inner = Vector(ax, face, zmid)
-    local pos = t.pos + out * C.CarryGap - R * inner
+    local gap = C.CarryGap + (C.CarryTemplateGap[mode] or 0)
+    local pos = t.pos + out * gap - R * inner
     -- a gun longer than the one the templates were fitted with, in the modes that would centre it
     -- (C.CarryLongHang: the front carry): its butt where that gun's butt is, turned toward the
     -- vertical so it spans no wider; the extra length hangs down (centred, a 130 cm rifle stuck out
@@ -158,7 +198,7 @@ local function templateEntry(mode, path)
         end
         R = Matrix()
         R:SetAngles(a)
-        local butt = t.pos + out * C.CarryGap - d * (refLen / 2)
+        local butt = t.pos + out * gap - d * (refLen / 2)
         pos = butt - R * Vector(mn.x, face, zmid)
     end
     local M = R * Q
@@ -181,7 +221,7 @@ function I.CarryEntry(ent, class, mode, path)
         return e, name
     end
     if not path then return nil, name end
-    return templateEntry(mode, path), name
+    return templateEntry(mode, path, name), name
 end
 
 local function hasOffsets(ent, class, mode)

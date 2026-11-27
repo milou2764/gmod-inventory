@@ -145,6 +145,9 @@ function JB.Register()
     local J = JMod
     if not istable(J) then return end
     I.JModActive = true
+    -- (its flintlock pistol has no hold type of its own: its gun base's rifle one, and menu slot 3)
+    I.WeaponCategory = I.WeaponCategory or {}
+    I.WeaponCategory.wep_jack_gmod_flintlockpistol = I.WeaponCategory.wep_jack_gmod_flintlockpistol or "SecondaryWep"
     local eftNames = istable(J.EFTArmorTable) and J.EFTArmorTable or {}
     for _, tbl in ipairs({ J.ArmorTable, J.EFTArmorTable, J.AdditionalArmorTable }) do
         if istable(tbl) then
@@ -294,21 +297,79 @@ if CLIENT then
         return res
     end
 
-    -- A piece placed by JMod (default: on the reference body), adapted to playermodel pm.
+    -- The inventory's own items fitted to (nearly) every playermodel, by hand or by its fitting
+    -- tools: a JMod piece follows the one of its slot from the reference body to the playermodel
+    -- (its place, its size). Approved helmets snug on each head, masks on each face, a vest and a
+    -- backpack on each chest and back: better than any measure of the mesh.
+    local REFITEM = {
+        Helmet = "advinv_barney_helmet", Radio = "advinv_barney_helmet",
+        Gasmask = "advinv_cp_mask", NVGs = "advinv_cp_mask",
+        Vest = "advinv_c_eft_6b23", Rucksack = "advinv_jetpack",
+    }
+    for _, c in pairs(REFITEM) do
+        local t = scripted_ents.GetStored(c)
+        local a = t and t.t and t.t.Attach
+        if a and a.bone then JB.Bones[a.bone] = true end
+    end
+    JB.Bones["ValveBiped.Bip01_Spine2"] = true
+    JB.Bones["ValveBiped.Bip01_Spine4"] = true
+
+    local function fitOf(class, pm)
+        local t = AdvInv.ClassTable(class)
+        local base = t and t.Attach
+        if not (base and base.bone) then return end
+        local f = AdvInv.Fits and AdvInv.Fits[pm] and AdvInv.Fits[pm][class]
+        if f then return base.bone, f[1], f[2], f[3] or 1 end
+        if pm == REF then return base.bone, base.pos or vector_origin, base.ang or angle_zero, base.scale or 1 end
+    end
+
+    local function TR(pos, ang)
+        local m = Matrix()
+        m:SetTranslation(pos)
+        m:SetAngles(ang)
+        return m
+    end
+
+    local function byReference(cat, pm, default, t, r)
+        local refc = REFITEM[cat]
+        if not refc then return end
+        local bt, pt, at, st = fitOf(refc, pm)
+        local br, pr, ar, sr = fitOf(refc, REF)
+        if not (bt and br) then return end
+        local Mt, Mr = t.mats[bt], r.mats[br]
+        local Mtp, Mrp = t.mats[default.bone], r.mats[default.bone]
+        if not (Mt and Mr and Mtp and Mrp and sr > 0) then return end
+        local k = st / sr
+        -- the piece in the frame of the reference item on the reference body, carried into that
+        -- item's frame on this playermodel (distances times the item's change of size)
+        local rel = (Mr * TR(pr, ar)):GetInverseTR() * (Mrp * TR(default.pos or vector_origin, default.ang or angle_zero))
+        rel:SetTranslation(rel:GetTranslation() * k)
+        local L = Mtp:GetInverseTR() * (Mt * TR(pt, at)) * rel
+        return { bone = default.bone, pos = L:GetTranslation(), ang = L:GetAngles(), scale = (default.scale or 1) * k }
+    end
+
+    -- A piece placed by JMod (default: on the reference body), adapted to playermodel pm: after the
+    -- inventory's item of its slot fitted to that playermodel, else after its head or chest measured
+    -- on its mesh (kept close: hair, a hood or kit in the mesh make it look bigger than it is).
     function JB.Adapt(cat, pm, default)
         if not (default and isstring(default.bone) and pm ~= "" and pm ~= REF) then return end
         local t, r = JB.Measure(pm), JB.Measure(REF)
         if not (t and r) then return end
+        local a = byReference(cat, pm, default, t, r)
+        if a then return a end
         local key = (cat == "Vest" or cat == "Rucksack") and "chest" or "head"
         local Bt, Br = t.mats[default.bone], r.mats[default.bone]
         if not (Bt and Br and r[key].k > 0) then return end
-        -- (a slim chest is not much less deep: a vest made much smaller sinks into the back)
-        local ratio = key == "head" and math.Clamp(t[key].k / r[key].k, .85, 1.2) or math.Clamp(t[key].k / r[key].k, .92, 1.25)
-        local grow = cat == "Rucksack" and math.Clamp(ratio, .9, 1.1) or ratio
+        local ratio = math.Clamp(t[key].k / r[key].k, .92, 1.1)
+        local grow = cat == "Rucksack" and math.Clamp(ratio, .95, 1.05) or ratio
         local cr = Br:GetInverse() * r[key].c -- (the head's or the chest's centre, in the bone's frame)
         local ct = Bt:GetInverse() * t[key].c
+        local shift = ct - cr
+        local most = key == "head" and 1.5 or 2
+        if shift:Length() > most then shift = shift:GetNormalized() * most end
+        local pos = (default.pos or vector_origin)
         return {
-            bone = default.bone, pos = ct + ((default.pos or vector_origin) - cr) * ratio, ang = default.ang,
+            bone = default.bone, pos = cr + shift + (pos - cr) * ratio, ang = default.ang,
             scale = (default.scale or 1) * grow,
         }
     end
