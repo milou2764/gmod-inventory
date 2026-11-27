@@ -296,8 +296,8 @@ A grenade is not a slot weapon: it is one round of its ammunition type (a generi
 size 1). Register other grenade weapons (shared): `AdvInv.Grenades["my_grenade"] = "My Grenades"`
 (its `Primary.Ammo`). The inventory keeps the items equal to the grenades (reserve + loaded): a
 throw takes one away, ammo given by other code adds some, and Use puts the weapon in the hands.
-Grenades a DarkRP job's loadout gives are job items (taken at death and at a job change, not
-saved), and grenade items follow their weapon's DarkRP drop rules (`dropspawnedweapons`,
+Grenades a spawn loadout gives (a DarkRP job's, a gamemode's such as Sandbox's, another addon's
+`PlayerLoadout`) are job items (taken at death and at a job change, not saved), and grenade items follow their weapon's DarkRP drop rules (`dropspawnedweapons`,
 `DisallowDrop`, `restrictdrop`, `AdvInv_CanWeaponLeave`).
 
 ## Compatible Workshop addons (their models as items)

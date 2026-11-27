@@ -473,8 +473,11 @@ empilé comme les autres (grenade de HL2, grenades à fragmentation, aveuglantes
 CW 2.0 ; d'autres : `AdvInv.Grenades[classe] = type de munitions`). Clic droit sur une grenade >
 **Utiliser** la met en main ; chaque grenade lancée retire un objet, et l'arme part avec la
 dernière. Une arme grenade donnée par un autre code (un métier, le menu de spawn, une caisse de
-munitions) devient autant d'objets qu'elle a de grenades. Les grenades se lâchent depuis
-l'inventaire (`/drop` de DarkRP et le lâcher de CW 2.0 ne les prennent pas).
+munitions) devient autant d'objets qu'elle a de grenades. Les grenades d'un équipement d'apparition
+(celui d'un métier DarkRP, les armes d'apparition de Sandbox avec `sbox_weapons 1`) sont à cet
+équipement : reprises à la mort au lieu de rester sur le corps, pas sauvegardées, redonnées à
+l'apparition suivante. Les grenades se lâchent depuis l'inventaire (`/drop` de DarkRP et le
+lâcher de CW 2.0 ne les prennent pas).
 
 ## Utiliser des objets, décharger les armes
 

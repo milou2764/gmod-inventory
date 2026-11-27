@@ -4,7 +4,10 @@
       - fewer (reserve down, or a magazine down on a weapon still held): thrown -> items taken away;
       - more: given by other code (an ammo crate, the spawn menu, a job) -> items added (into the
         containers, else on the ground). During a loadout (respawn, job change) the grenades given
-        only top up to what the loadout gives: changing job again and again gives nothing more;
+        are the loadout's (a DarkRP job's, Sandbox's spawn weapons, another addon's loadout): they
+        only top up to what the loadout gives (changing job again and again gives nothing more),
+        go at death instead of staying on the body, and are not saved: the next loadout gives them
+        again, as without the inventory;
       - a grenade weapon taken away (stripped, confiscated) is not a throw: its grenades stay items.
     Read 5 times a second, and before every reserve sync (I.SyncAmmo) and ammo strip, so an
     inventory change right after a throw can't keep the thrown grenade. The sync then sets the
@@ -119,20 +122,10 @@ end
 -- Most grenade items one change may add (a bulk GiveAmmo of another addon: the rest is lost).
 local MAX_ADD = 20
 
--- The player's DarkRP job gives grenades of this ammunition (its weapon list).
-local function jobGrenade(ply, ammo)
-    local job = ply.getJobTable and ply:getJobTable()
-    if not (job and istable(job.weapons)) then return false end
-    for _, class in ipairs(job.weapons) do
-        local a = I.GrenadeAmmo(string.lower(tostring(class)))
-        if a and sameAmmo(a, ammo) then return true end
-    end
-    return false
-end
-
--- Grenades of a job's loadout: items of the job (I.RemoveJobItems takes them at death and at a job
--- change, the save leaves them out, I.MayLeave keeps them on him like the job's weapons), else
--- each loadout made new ordinary grenades to put in a crate (a farm).
+-- Grenades of a loadout (a DarkRP job's, Sandbox's spawn weapons...): items of the loadout, like a
+-- job's (I.RemoveJobItems takes them at death and at a job change, the save leaves them out,
+-- I.MayLeave keeps them on him like a job's weapons under DarkRP), else each loadout made new
+-- ordinary grenades, left on the body at each death or put in a crate (a farm).
 local function giveJobGrenades(ply, ammo, n)
     local boxID, boxC = I.AmmoBoxFor(ammo)
     if not boxID then return end
@@ -164,13 +157,15 @@ function I.ReconcileGrenades(ply, force)
             local add, fromJob = delta, false
             if (ply.AdvInvLoadoutUntil or 0) > CurTime() then
                 add = math.max(delta - itemCount(ply, ammo), 0) -- a loadout tops up
-                fromJob = jobGrenade(ply, ammo)
+                fromJob = true -- (whatever gave them: the job, the gamemode, another addon)
             end
             add = math.min(add, MAX_ADD)
             if add > 0 then
                 if fromJob then giveJobGrenades(ply, ammo, add) else I.GiveRounds(ply, ammo, add) end
             end
-            if add < delta then I.MarkDirty(ply, "Uniform") end -- the rest goes (reserve = items)
+            -- the reserve follows the items: the rest left out, and those that found no room went
+            -- to the ground (else thrown from the reserve and picked up again: twice)
+            I.MarkDirty(ply, "Uniform")
         end
     end
 end

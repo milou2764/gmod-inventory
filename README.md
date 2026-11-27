@@ -445,8 +445,10 @@ Grenades are items, not weapons in a slot: one grenade = one item, stored and st
 others (HL2 grenade, CW 2.0 frag, flash and smoke grenades; others: `AdvInv.Grenades[class] = ammo
 type`). Right-click a grenade > **Use** puts it in your hands; each grenade thrown takes one item
 away, and the weapon goes with the last one. A grenade weapon given by other code (a job, the spawn
-menu, an ammo crate) becomes as many items as it has grenades. Grenades are dropped from the
-inventory (DarkRP's `/drop` and CW 2.0's drop don't take them).
+menu, an ammo crate) becomes as many items as it has grenades. Grenades a spawn loadout gives (a
+DarkRP job's, Sandbox's spawn weapons with `sbox_weapons 1`) are the loadout's: taken back at
+death instead of staying on the body, not saved, given again at the next spawn. Grenades are
+dropped from the inventory (DarkRP's `/drop` and CW 2.0's drop don't take them).
 
 ## Using items, unloading weapons
 
