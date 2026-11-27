@@ -295,6 +295,24 @@ Ready or Not pistols; `lua/advinv/sv_sandswep.lua`):
   grenade items (one ammunition type each, ArcCW's default);
 - the 28 long guns of Counter-Strike+ have carry positions on every fitted playermodel.
 
+## Advanced Crafting System
+
+With [Advanced Crafting System](https://steamcommunity.com/sharedfiles/filedetails/?id=3017902884)
+(or a copy of it) installed (`lua/advinv/sh_acs.lua`, `sv_acs.lua`):
+
+- its resources are an inventory item, **bags of crafting resources** (50 per bag, 3 points each):
+  they fill the pockets, vest and backpack, go into crates and trunks, can be searched, and stay on
+  the body when the player dies (its own drop at death then finds nothing to drop twice);
+- its workbench, resource boxes, scrapper, kills that give resources and admin commands work as
+  before, on the bags the player carries: gains fill the started bags, then new ones, then the
+  ground (the player is told); spending takes from the least full bags;
+- kept between visits: with a character system the bags are saved with the inventory (a balance
+  the crafting system saved before is given once, as bags); without one, what the player carries is
+  written into the crafting system's own save and given back as bags at his first spawn;
+- its tools and its box of crafted things are never turned into inventory weapons.
+
+Nothing changes when it is not installed.
+
 ## Compatible Workshop addons
 
 When the server has one of these addons installed, its models become inventory items: worn,

@@ -58,6 +58,9 @@ for _, class in ipairs({
     "weapon_physgun", "weapon_physcannon", "gmod_tool", "gmod_camera", "weapon_fists", "weapon_medkit",
     "manhack_welder", "weapon_flechettegun", "keys", "pocket", "weapon_keypadchecker", "arrest_stick",
     "unarrest_stick", "stunstick", "door_ram", "lockpick", "med_kit", "weaponchecker", "weapon_inventory",
+    -- Advanced Crafting System: its tools and its box of crafted things (it gives and takes it itself)
+    "advancedcraftingsystem_take_box", "advancedcraftingsystem_add_recipe", "advancedcraftingsystem_npc_pricer",
+    "advancedcraftingsystem_swep_base",
 }) do
     if I.WeaponBlacklist[class] == nil then I.WeaponBlacklist[class] = true end
 end
