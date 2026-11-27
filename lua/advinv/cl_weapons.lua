@@ -481,9 +481,18 @@ local function placeList(ent, gearOwner, list)
     for _, w in ipairs(list) do
         if w.mode then
             if w.mode ~= "stowed" then
+                -- over a vest: as far out as the drawn vest needs (not beside a backpack: moved there).
+                -- Only on the wearer itself (a player, a body): the inventory preview's model is drawn
+                -- elsewhere than its owner's gear (it keeps the vest's fixed thickness)
+                local vestPush = gearOwner == ent and pushes.vest and pushes.vest[w.cat]
+                if vestPush and not (pushes.beside and pushes.beside[w.cat]) then
+                    local other = (pushes[w.cat] or 0) - vestPush
+                    local need = I.CarryVestClearance(ent, gearOwner, w, other)
+                    if need then pushes[w.cat] = other + need end
+                end
                 local pos, ang = I.CarryTransform(ent, w, pushes[w.cat] or 0)
                 if pos and pushes.beside and pushes.beside[w.cat] then
-                    pos, ang = I.CarryBeside(ent, w, pos, ang, pushes.beside[w.cat]) -- against the backpack's side
+                    pos, ang = I.CarryBeside(ent, w, pos, ang, pushes.beside[w.cat], gearOwner == ent and gearOwner or nil) -- against the backpack's side
                 end
                 if pos then placed[w.cat] = { pos, ang } end
             end

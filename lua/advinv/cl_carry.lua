@@ -201,7 +201,13 @@ function I.CarryPushes(ent, gearOwner, carried)
     local pack = IsValid(gearOwner) and I.BackpackThickness(gearOwner) or 0
     for cat, w in pairs(carried) do
         local push = 0
-        if vest then push = push + (I.CarryZone[w.mode] == "front" and C.CarryVestThickness or back) end
+        if vest then
+            local v = I.CarryZone[w.mode] == "front" and C.CarryVestThickness or back
+            push = push + v
+            -- (what the vest adds: replaced by the room the drawn vest really takes, I.CarryVestClearance)
+            out.vest = out.vest or {}
+            out.vest[cat] = v
+        end
         if pack > 0 and C.CarryOverPack[w.mode] then
             if C.CarryBesidePack then
                 out.beside = out.beside or {}
@@ -231,6 +237,226 @@ function I.CarryPushes(ent, gearOwner, carried)
     return out
 end
 
+--[[
+    How far a carried weapon must go out to clear the vest really drawn on its wearer (the fixed
+    thickness above guessed it: a slim body's vest left rifles hanging off its back, a thick vest
+    swallowed them). The vest's surface (its mesh, the parts its model hides left out) and the
+    weapon's (its mesh at rest) are compared along the weapon's outward direction, cell by cell
+    across it: the push puts the weapon's inner side C.CarryGap above the vest's outer side where
+    they overlap, 0 where the weapon doesn't pass over the vest. nil when it can't be measured (the
+    fixed thickness is kept): a bonemerged vest, a model that can't be read. Worked out again when
+    something changes, else every C.CarryVestClearanceEvery seconds (the pose moves the torso).
+--]]
+C.CarryVestClearanceEvery = C.CarryVestClearanceEvery or 0.5
+local CELL = 1 -- size of a cell across the weapon (units)
+local MAX_PUSH = 8
+local VEST_POINTS, WEP_POINTS = 6000, 500
+
+-- Points spread over a model's visible surface, in its own space at rest (sequence 0): its mesh
+-- skinned by a temporary copy's bones (the bind matrices taken whichever way fits in its hull),
+-- triangles of hidden materials (submaterial "nodraw") left out, big triangles filled in.
+local function surfacePoints(model, bodyValue, hidden, budget)
+    local ok, meshes, bind = pcall(util.GetModelMeshes, model, 0, bodyValue or 0)
+    if not ok or not istable(meshes) or not istable(bind) then return end
+    local tmp = ClientsideModel(model, RENDERGROUP_OTHER)
+    if not IsValid(tmp) then return end
+    local pts
+    local okRun = pcall(function()
+        tmp:SetNoDraw(true)
+        tmp:SetPos(vector_origin)
+        tmp:SetAngles(angle_zero)
+        tmp:ResetSequence(0)
+        tmp:SetCycle(0)
+        tmp:InvalidateBoneCache()
+        tmp:SetupBones()
+        local hmin, hmax = tmp:GetModelBounds()
+        local base = bind[0] and 0 or 1
+        for _, invert in ipairs({ false, true }) do
+            local K, bad = {}, false
+            local function skin(v)
+                local p = Vector(0, 0, 0)
+                local weights = v.weights
+                if not weights or #weights == 0 then weights = { { bone = 0, weight = 1 } } end
+                for _, w in ipairs(weights) do
+                    local k = K[w.bone]
+                    if not k then
+                        local bm, bp = tmp:GetBoneMatrix(w.bone), bind[w.bone + base]
+                        if not (bm and bp and bp.matrix) then bad = true return p end
+                        k = bm * (invert and bp.matrix:GetInverse() or bp.matrix)
+                        K[w.bone] = k
+                    end
+                    p = p + (k * v.pos) * w.weight
+                end
+                return p
+            end
+            local tris, area = {}, 0
+            for _, m in ipairs(meshes) do
+                if not hidden[string.lower(m.material or "")] then
+                    local tri = m.triangles or {}
+                    for i = 1, #tri - 2, 3 do
+                        local a, b, c = skin(tri[i]), skin(tri[i + 1]), skin(tri[i + 2])
+                        if bad then break end
+                        local s = (b - a):Cross(c - a):Length() / 2
+                        tris[#tris + 1] = { a, b, c, s }
+                        area = area + s
+                    end
+                end
+                if bad then break end
+            end
+            if not bad and #tris > 0 then
+                -- inside the hull (with some room): the right way round
+                local tol, fits = Vector(3, 3, 3), true
+                for i = 1, #tris, math.max(1, math.floor(#tris / 50)) do
+                    if not tris[i][1]:WithinAABox(hmin - tol, hmax + tol) then fits = false break end
+                end
+                if fits then
+                    pts = {}
+                    local per = budget / math.max(area, 1e-3) -- points per square unit
+                    local acc = 0
+                    for _, t in ipairs(tris) do
+                        acc = acc + t[4] * per
+                        local n = math.floor(acc)
+                        acc = acc - n
+                        if n >= 1 then pts[#pts + 1] = (t[1] + t[2] + t[3]) / 3 end
+                        for k = 2, n do -- more inside a big triangle
+                            local r1, r2 = (k * 0.618) % 1, (k * 0.382 + 0.5) % 1
+                            if r1 + r2 > 1 then r1, r2 = 1 - r1, 1 - r2 end
+                            pts[#pts + 1] = t[1] + (t[2] - t[1]) * r1 + (t[3] - t[1]) * r2
+                        end
+                    end
+                    for _, t in ipairs(tris) do -- and the corners
+                        if #pts >= budget * 1.5 then break end
+                        pts[#pts + 1] = t[1]
+                    end
+                    return
+                end
+            end
+        end
+    end)
+    tmp:Remove()
+    return okRun and pts or nil
+end
+
+local vestCache, wepCache = {}, {}
+
+local function vestKey(g)
+    local v, mul = 0, 1
+    for _, bg in ipairs(g:GetBodyGroups() or {}) do
+        v = v + g:GetBodygroup(bg.id) * mul
+        mul = mul * math.max(bg.num or 1, 1)
+    end
+    local hidden, hk = {}, {}
+    local mats = g:GetMaterials() or {}
+    for i, m in ipairs(mats) do
+        local sub = g:GetSubMaterial(i - 1)
+        if sub and sub ~= "" and string.lower(sub) == I.NODRAW_MATERIAL then
+            hidden[string.lower(m)] = true
+            hk[#hk + 1] = i
+        end
+    end
+    return g:GetModel() .. "|" .. v .. "|" .. table.concat(hk, ","), v, hidden
+end
+
+-- the vest's points and its heightfields (per outward direction, in its space scaled by s)
+local function vestData(g)
+    local key, bodyValue, hidden = vestKey(g)
+    local d = vestCache[key]
+    if d == nil then
+        local pts = surfacePoints(g:GetModel(), bodyValue, hidden, VEST_POINTS)
+        d = pts and { pts = pts, fields = {} } or false
+        vestCache[key] = d
+    end
+    return d or nil
+end
+
+local function basisOf(dir)
+    local a = dir:Cross(Vector(0, 0, 1))
+    if a:LengthSqr() < 1e-4 then a = dir:Cross(Vector(1, 0, 0)) end
+    a:Normalize()
+    local b = dir:Cross(a)
+    b:Normalize()
+    return a, b
+end
+
+-- highest point of the vest along dir per cell across it (dir in the vest's space, scale s)
+local function heightField(d, dir, s)
+    local fk = ("%.2f %.2f %.2f %.2f"):format(dir.x, dir.y, dir.z, s)
+    local f = d.fields[fk]
+    if f then return f end
+    local a, b = basisOf(dir)
+    f = { a = a, b = b, h = {} }
+    local h = f.h
+    for _, p in ipairs(d.pts) do
+        local q = p * s
+        local k = math.floor(q:Dot(a) / CELL) * 4096 + math.floor(q:Dot(b) / CELL)
+        local z = q:Dot(dir)
+        if not h[k] or z > h[k] then h[k] = z end
+    end
+    d.fields[fk] = f
+    return f
+end
+
+local function weaponPoints(path)
+    local p = wepCache[path]
+    if p == nil then
+        p = surfacePoints(path, 0, {}, WEP_POINTS) or false
+        wepCache[path] = p
+    end
+    return p or nil
+end
+
+local clearCache = setmetatable({}, { __mode = "k" })
+
+-- -> units to push w (on ent, already pushed by otherPush) out to clear gearOwner's vest, or nil
+function I.CarryVestClearance(ent, gearOwner, w, otherPush)
+    if not (IsValid(ent) and IsValid(gearOwner)) then return end
+    local uid = gearOwner.UserID and gearOwner:UserID() or gearOwner
+    local g = AdvInv.mountedGear[uid] and AdvInv.mountedGear[uid].Vest
+    if not (IsValid(g) and g.advinvAttach) then return end -- (a bonemerged vest bends: not measured)
+    local sig = table.concat({ g:GetModel(), w.model or "", w.class or "", w.mode or "", ent:GetModel(),
+        ("%.2f %.2f"):format(otherPush or 0, g:GetModelScale()) }, "|")
+    local per = clearCache[ent]
+    if not per then per = {} clearCache[ent] = per end
+    local c = per[w.cat]
+    local now = RealTime()
+    if c and c.sig == sig and now < c.expires then return c.val end
+    local val
+    local ok = pcall(function()
+        local d = vestData(g)
+        local wp = d and weaponPoints(w.model)
+        local e = wp and I.CarryEntry(ent, w.class, w.mode, w.model)
+        if not (e and e.out) then return end
+        local bone = ent:LookupBone(e.bone)
+        local bm = bone and ent:GetBoneMatrix(bone)
+        if not bm then return end
+        local pos, ang = I.CarryTransform(ent, w, otherPush or 0)
+        local gpos, gang = AdvInv.GearPlacement(g, gearOwner)
+        if not (pos and gpos) then return end
+        -- the outward direction and the weapon, in the vest's space (its scale kept: world units)
+        local outW = LocalToWorld(e.out, angle_zero, vector_origin, bm:GetAngles())
+        local dir = WorldToLocal(outW, angle_zero, vector_origin, gang)
+        dir:Normalize()
+        dir = Vector(math.Round(dir.x, 2), math.Round(dir.y, 2), math.Round(dir.z, 2))
+        dir:Normalize()
+        local f = heightField(d, dir, g:GetModelScale())
+        local ws = ent:GetModelScale()
+        local need
+        for _, p in ipairs(wp) do
+            local q = WorldToLocal(LocalToWorld(p * ws, angle_zero, pos, ang), angle_zero, gpos, gang)
+            local k = math.floor(q:Dot(f.a) / CELL) * 4096 + math.floor(q:Dot(f.b) / CELL)
+            local top = f.h[k]
+            if top then
+                local over = top - q:Dot(dir)
+                if not need or over > need then need = over end
+            end
+        end
+        val = math.Clamp((need or -math.huge) + C.CarryGap, 0, MAX_PUSH)
+    end)
+    if not ok then val = nil end
+    per[w.cat] = { sig = sig, expires = now + C.CarryVestClearanceEvery, val = val }
+    return val
+end
+
 -- Copy of an angle turned by deg around a world axis.
 local function turned(a, axis, deg)
     local t = Angle(a.p, a.y, a.r)
@@ -246,7 +472,56 @@ end
         the collarbones), its front edge where the mode put it (against the back).
     -> new world position and angles
 --]]
-function I.CarryBeside(ent, w, pos, ang, halfWidth)
+-- How far the drawn backpack reaches on one side of the back (from center along side * right), within
+-- a height band (zlo, zhi: world heights from center) and a depth band (dlo, dhi: along back from
+-- center): its mesh, not its hull (a hull's middle dimension put rifles 1-2 units off the pack's side,
+-- or, the shoulder line inside a wide pack, into it). nil when it can't be measured. Cached per
+-- weapon slot for C.CarryVestClearanceEvery seconds.
+local packCache, besideCache = {}, setmetatable({}, { __mode = "k" })
+local PACK_POINTS = 1500
+local function packReach(ent, gearOwner, cat, side, center, right, back, zlo, zhi, dlo, dhi)
+    if not (IsValid(ent) and IsValid(gearOwner)) then return end
+    local uid = gearOwner.UserID and gearOwner:UserID() or gearOwner
+    local g = AdvInv.mountedGear[uid] and AdvInv.mountedGear[uid].Rucksack
+    if not (IsValid(g) and g.advinvAttach) then return end
+    local sig = ("%s|%d|%.1f %.1f %.1f %.1f"):format(g:GetModel(), side, zlo, zhi, dlo, dhi)
+    local per = besideCache[ent]
+    if not per then per = {} besideCache[ent] = per end
+    local c = per[cat]
+    local now = RealTime()
+    if c and c.sig == sig and now < c.expires then return c.val end
+    local val
+    pcall(function()
+        local key, bodyValue, hidden = vestKey(g)
+        local pts = packCache[key]
+        if pts == nil then
+            pts = surfacePoints(g:GetModel(), bodyValue, hidden, PACK_POINTS) or false
+            packCache[key] = pts
+        end
+        if not pts then return end
+        local gpos, gang = AdvInv.GearPlacement(g, gearOwner)
+        if not gpos then return end
+        local s = g:GetModelScale()
+        local cL = WorldToLocal(center, angle_zero, gpos, gang)
+        local rL = WorldToLocal(right, angle_zero, vector_origin, gang)
+        local bL = WorldToLocal(back, angle_zero, vector_origin, gang)
+        local uL = WorldToLocal(Vector(0, 0, 1), angle_zero, vector_origin, gang)
+        local best
+        for _, p in ipairs(pts) do
+            local d = p * s - cL
+            local h, dep = d:Dot(uL), d:Dot(bL)
+            if h >= zlo and h <= zhi and dep >= dlo and dep <= dhi then
+                local l = side * d:Dot(rL)
+                if not best or l > best then best = l end
+            end
+        end
+        val = best
+    end)
+    per[cat] = { sig = sig, expires = now + C.CarryVestClearanceEvery, val = val }
+    return val
+end
+
+function I.CarryBeside(ent, w, pos, ang, halfWidth, gearOwner)
     -- a standing (or crouched) player only: world up and the floor under his feet mean nothing for a
     -- body lying on the ground (its rifle was turned upright and swung out of it)
     if I.IsBody and I.IsBody(ent) then return pos, ang end
@@ -314,11 +589,23 @@ function I.CarryBeside(ent, w, pos, ang, halfWidth)
         front, rear = math.min(front, d), math.max(rear, d)
     end
     local want = front0 - (rear - front) * (C.CarryBesideForward or 0)
-    -- sideways: in line with the shoulder joint (the sling hangs from it), else against the pack's side
-    local shift = halfWidth * scale + C.CarryGap - inner
+    -- sideways: in line with the shoulder joint (the sling hangs from it), else against the pack's
+    -- side; never inside the pack (a pack wider than the shoulders swallowed the weapon)
+    local packSide = halfWidth * scale + C.CarryGap - inner
+    if gearOwner then
+        -- the drawn pack's side where the weapon will hang (its heights; its depths once moved)
+        local zlo, zhi = math.huge, -math.huge
+        for _, p in ipairs(c2) do
+            local h = p.z - center.z
+            zlo, zhi = math.min(zlo, h), math.max(zhi, h)
+        end
+        local reach = packReach(ent, gearOwner, w.cat, side, center, right, back, zlo, zhi, want - 1, want + (rear - front) + 1)
+        if reach then packSide = reach + C.CarryGap - inner end
+    end
+    local shift = packSide
     local arm = ent:LookupBone(side > 0 and "ValveBiped.Bip01_R_UpperArm" or "ValveBiped.Bip01_L_UpperArm")
     local am = C.CarryBesideShoulder ~= false and arm and ent:GetBoneMatrix(arm)
-    if am then shift = side * (am:GetTranslation() - center):Dot(right) - (inner + outer) / 2 end
+    if am then shift = math.max(side * (am:GetTranslation() - center):Dot(right) - (inner + outer) / 2, packSide) end
     p2 = p2 + right * (side * shift) + back * (want - front)
     local p3, a3 = I.CarryBesideCrouch(ent, g, p2, a, right, back, am, cornersAt)
     return p3, I.GeomToModelAngles(g, a3)
