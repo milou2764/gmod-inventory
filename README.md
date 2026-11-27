@@ -238,9 +238,9 @@ AdvInv.WeaponCategory["my_rifle"] = "PrimaryWep"  -- force the slot of a weapon
 ```
 
 The slot of a weapon with no registered item is guessed from its menu slot and hold type (pistols,
-melee and grenades: sidearm; rockets or a single-shot weapon held like the RPG: launcher; the rest:
-primary; ARC9 weapons by their own menu slot, since packs such as ARC9 Escape From Tarkov hold every
-weapon like the RPG); `SWEP.AdvInvCategory` and
+melee and grenades: sidearm; rockets, missiles or a weapon held like the RPG with no magazine: launcher; the rest:
+primary; ARC9 and Sandstorm SWEPs weapons by their own menu slot, since packs such as ARC9 Escape
+From Tarkov hold every weapon like the RPG); `SWEP.AdvInvCategory` and
 `SWEP.AdvInvMass` on a weapon override it. Physgun, toolgun, camera, hands and DarkRP's tools are
 blacklisted.
 

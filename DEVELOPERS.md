@@ -271,7 +271,7 @@ on a body and in saves: see the hooks `AdvInv_GearEquipped` / `AdvInv_GearTakenO
 
 Any SWEP lying in the world becomes a **generic weapon** (ID 100, `c = class`): its slot is guessed
 from its hold type (`HoldType`, `NormalHoldType` or ArcCW's `HoldtypeActive`) and its ammo (launcher:
-rockets or missiles, or the RPG hold type on a single-shot weapon), `SWEP.Slot` for ARC9 weapons,
+rockets, missiles or warheads, or the RPG hold type with no magazine), `SWEP.Slot` for ARC9 and Sandstorm SWEPs weapons,
 its mass from the slot. Tables
 your addon can fill (shared):
 
