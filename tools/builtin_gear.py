@@ -1,17 +1,17 @@
 """Gear that is part of a playermodel's mesh (AdvInv.GearBuiltIn, lua/advinv/sh_modelgear.lua): headgear, a
-vest, a backpack. Nothing of that kind is worn over it, so the fit tools give the items of that slot no fit
+vest, a backpack, a mask. Nothing of that kind is worn over it, so the fit tools give the items of that slot no fit
 on those playermodels (and the fit editor doesn't list those pairs). Only the entries true for every
 bodygroup count here: an entry for some bodygroup choices (an armoured body, a helmeted outfit) leaves the
 default, bare one wearable.
 
-    blocked = builtin()      {"Helmet": {models}, "Vest": {...}, "Rucksack": {...}}
+    blocked = builtin()      {"Helmet": {models}, "Gasmask": {...}, "Vest": {...}, "Rucksack": {...}}
     slots = item_slots()     {item class: slot}
 """
 import re
 from pathlib import Path
 
 ADDON = Path(__file__).resolve().parent.parent
-SLOTS = ("Helmet", "Vest", "Rucksack")
+SLOTS = ("Helmet", "Gasmask", "Vest", "Rucksack")
 BASES = {"advinv_base_helmet": "Helmet", "advinv_base_vest": "Vest", "advinv_base_pocketvest": "Vest",
          "advinv_base_rucksack": "Rucksack"}
 

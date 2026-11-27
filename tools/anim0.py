@@ -22,6 +22,13 @@ import mdl_render as mr  # noqa: E402
 
 RAWPOS, RAWROT, ANIMPOS, ANIMROT, DELTA, RAWROT2 = 0x01, 0x02, 0x04, 0x08, 0x10, 0x20
 STATIC_PROP = 0x10  # studiohdr flags
+# Models the game draws in their bind pose turned to face +x, not in their first sequence's: the
+# Escape From Tarkov PMC playermodels, whose first sequence ("reference", 101 frames) stores a taller
+# skeleton the game doesn't show (measured in game: pelvis, spine, chest, head and hands exactly at
+# their bind places, turned a quarter; the feet a little off). Lowercase paths; modelgear_pack.py adds
+# a pack's with "bind_positions".
+BIND_POSITIONS = set()
+_TURN = np.array([[0.0, -1.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
 
 
 def quat_matrix(q):
@@ -52,6 +59,9 @@ def rest_bones(model):
     if i(152) & STATIC_PROP:
         import refbody  # noqa: E402
         return [b["world"] for b in refbody.bones(model)]
+    if model.lower() in BIND_POSITIONS:
+        import refbody  # noqa: E402
+        return [_TURN @ b["world"] for b in refbody.bones(model)]
     nb, bi = i(156), i(160)
     bones = []
     for k in range(nb):

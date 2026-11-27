@@ -269,6 +269,7 @@ PACKS = {
     # The armour choices are armour and a chest rig in one mesh: one item each.
     "eft_pmc": {
         "key": "eft_pmc",
+        "bind_positions": True,  # (anim0.BIND_POSITIONS: the game ignores their first sequence's positions)
         "title": "Escape From Tarkov PMC",
         "wid": "2568198284",
         "author": "milou2764 (gear of the Escape From Tarkov PMC playermodels)",
@@ -312,6 +313,7 @@ PACKS = {
     },
     "eft_pmc_usec": {
         "key": "eft_pmc_usec",
+        "bind_positions": True,  # (anim0.BIND_POSITIONS: the game ignores their first sequence's positions)
         "title": "Escape From Tarkov PMC (USEC)",
         "wid": "2568198284",
         "author": "milou2764 (gear of the Escape From Tarkov PMC playermodels)",
@@ -324,6 +326,7 @@ PACKS = {
     },
     "eft_pmc_bear": {
         "key": "eft_pmc_bear",
+        "bind_positions": True,  # (anim0.BIND_POSITIONS: the game ignores their first sequence's positions)
         "title": "Escape From Tarkov PMC (BEAR)",
         "wid": "2568198284",
         "author": "milou2764 (gear of the Escape From Tarkov PMC playermodels)",

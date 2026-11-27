@@ -19,10 +19,12 @@ local download = CreateConVar("advinv_compat_download", "1", { FCVAR_ARCHIVE },
 local BASES = { Helmet = "advinv_base_helmet", Rucksack = "advinv_base_rucksack", Vest = "advinv_base_pocketvest" }
 
 -- Is this addon here? Its first model; an addon that replaces a base game model also needs one of
--- its own materials, and a model that is not the base game's one.
+-- its own materials, and a model that is not the base game's one; an addon drawn with another game's
+-- materials (mount = "tf": the TF2 hats) needs that game mounted (else it is all magenta).
 local function installed(pack)
     local first = pack.items[1]
     if not (first and file.Exists(first.model, "GAME")) then return false end
+    if pack.mount and not IsMounted(pack.mount) then return false end
     if pack.probeMaterial then
         if not file.Exists(pack.probeMaterial, "GAME") then return false end
         if (pack.baseModelSize or 0) > 0 and file.Size(first.model, "GAME") == pack.baseModelSize then return false end

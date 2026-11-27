@@ -252,6 +252,8 @@ def main():
         preview = args[k + 1]
         del args[k:k + 2]
     pack = PACKS[args[0]]
+    if pack.get("bind_positions"):  # (the game draws them with their bind positions: anim0.py)
+        anim0.BIND_POSITIONS.update(m.lower() for m in pack["models"])
     targets = [l.strip() for l in Path(args[1]).read_text(encoding="utf-8").splitlines() if l.strip()]
     out = Path(args[2])
     draw = pack["models"][0]
@@ -318,6 +320,14 @@ def main():
     mr.BODYGROUPS[draw.lower()] = dict(base)  # the soldier himself, no gear (posed() leaves its last selection)
     src = fi.Body(draw)
     src_bones = posed_bones(draw)
+    # torso gear of a pack drawn in its bind pose (anim0.BIND_POSITIONS): placed as it looks on its own
+    # soldier in game, animated (the animation stretches his spine, and a vest spread over the spine
+    # bones with it); head gear follows the head bone rigidly: placed from the pose the copy is drawn in
+    torso_bones = src_bones
+    if pack.get("bind_positions"):
+        anim0.BIND_POSITIONS.difference_update(m.lower() for m in pack["models"])
+        torso_bones = posed_bones(draw)
+        anim0.BIND_POSITIONS.update(m.lower() for m in pack["models"])
     src_girth = fc.chest_girth(src)
     for it in items:
         it["height"] = gear_height(src, it["worn_z"])
@@ -340,7 +350,7 @@ def main():
                     bone = BONE[it["slot"]]
                     if not body.has(bone, NECK) or len(body.verts(fi.TORSO)) < 50:
                         continue
-                    fits[it["class"]][m] = transfer_torso(src, src_bones, bone, body, src_girth, it["height"],
+                    fits[it["class"]][m] = transfer_torso(src, torso_bones, bone, body, src_girth, it["height"],
                                                           it.get("drop", 0.0))
             except Exception as e:  # noqa: BLE001
                 print(f"  {it['class']} on {m}: {e}")

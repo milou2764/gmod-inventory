@@ -68,6 +68,7 @@ PACKS = [
     {
         "key": "tf2_bils", "wid": 242772309, "title": "TF2 Hex - Helmet of Victory",
         "category": ("Inventory: TF2", "Inventaire : TF2"),
+        "mount": "tf",  # (its materials are Team Fortress 2's own: without TF2 mounted, all magenta)
         "items": [
             (1020, "models/player/items/demo/demo_bils.mdl", "helmet", "auto", "Helmet of Victory (Demoman)", "Casque de la victoire (Demoman)", {"armor": 60, "ref": (0.97, 0.0)}),
             (1021, "models/player/items/engineer/engineer_bils.mdl", "helmet", "auto", "Helmet of Victory (Engineer)", "Casque de la victoire (Engineer)", {"armor": 60, "ref": (0.92, 0.0)}),

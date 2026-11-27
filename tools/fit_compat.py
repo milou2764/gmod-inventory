@@ -446,6 +446,8 @@ def write_data(data, base_hev):
         out.append("    {")
         out.append(f"        key = {lua_str(pack['key'])}, wid = \"{pack['wid']}\", title = {lua_str(pack['title'])},")
         out.append(f"        category = {{ {lua_str(pack['category'][0])}, {lua_str(pack['category'][1])} }},")
+        if pack.get("mount"):
+            out.append(f"        mount = {lua_str(pack['mount'])},")
         if pack.get("probe_material"):
             out.append(f"        probeMaterial = {lua_str(pack['probe_material'])}, baseModelSize = {base_hev or 0},")
         out.append("        items = {")

@@ -137,7 +137,7 @@ def("models/player/zombie_classic.mdl", { slots = { Helmet = { [1] = 0 } } })
     worn over it. It is impossible to put headgear on another headgear, a vest on another vest, a
     backpack on another backpack: AdvInv.Equip refuses it (sv_containers.lua), and a player who takes
     such a playermodel (or bodygroup) while wearing one gets it back (sv_modelgear.lua).
-    AdvInv.GearBuiltIn[model] = { Helmet = true, Vest = true, Rucksack = true }; a slot can also be
+    AdvInv.GearBuiltIn[model] = { Helmet = true, Gasmask = true, Vest = true, Rucksack = true }; a slot can also be
     { [bodygroup] = { [value] = true, ... } } when only some of its bodygroup choices have that gear,
     or false to allow it. Servers add theirs (models in lowercase), e.g. in a shared autorun file:
         AdvInv.GearBuiltIn["models/mine/knight.mdl"] = { Helmet = true, Vest = true }
@@ -148,6 +148,7 @@ local B = I.GearBuiltIn
 I.GearBuiltInMessages = I.GearBuiltInMessages or {
     Helmet = "msg_headgear_on_headgear", Vest = "msg_vest_on_vest", Rucksack = "msg_backpack_on_backpack",
 }
+I.GearBuiltInMessages.Gasmask = I.GearBuiltInMessages.Gasmask or "msg_mask_on_mask"
 
 local function builtin(model, slot, t)
     B[model] = B[model] or {}
@@ -167,6 +168,13 @@ builtin("models/player/police_fem.mdl", "Helmet")
 builtin("models/player/police_fem.mdl", "Vest")
 builtin("models/player/zombie_soldier.mdl", "Helmet")
 builtin("models/player/zombie_soldier.mdl", "Vest")
+-- and their masks (the face is a mask: a gas mask or a balaclava would go through it)
+builtin("models/player/combine_soldier.mdl", "Gasmask")
+builtin("models/player/combine_soldier_prisonguard.mdl", "Gasmask")
+builtin("models/player/combine_super_soldier.mdl", "Gasmask")
+builtin("models/player/police.mdl", "Gasmask")
+builtin("models/player/police_fem.mdl", "Gasmask")
+builtin("models/player/zombie_soldier.mdl", "Gasmask")
 builtin("models/player/barney.mdl", "Vest")
 builtin("models/player/eli.mdl", "Vest")
 -- Half-Life 2 rebels: beanie, vest and backpack; the medics: vest and medical backpack (one with a cap)
@@ -256,6 +264,8 @@ builtin("models/player/urban.mdl", "Helmet")
 builtin("models/player/urban.mdl", "Vest")
 builtin("models/player/gasmask.mdl", "Helmet")
 builtin("models/player/gasmask.mdl", "Vest")
+builtin("models/player/gasmask.mdl", "Gasmask")
+builtin("models/player/swat.mdl", "Gasmask")
 builtin("models/player/arctic.mdl", "Helmet")
 builtin("models/player/phoenix.mdl", "Helmet")
 builtin("models/player/phoenix.mdl", "Vest")

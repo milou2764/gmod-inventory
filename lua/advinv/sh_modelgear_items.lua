@@ -29,6 +29,42 @@ function I.SetupItemModel(ent, t, worn)
     for _, i in ipairs(t.ModelHiddenMaterials or {}) do ent:SetSubMaterial(i, I.NODRAW_MATERIAL) end
     -- shadows are drawn with a material of their own: the hidden body would cast one
     if t.ModelHiddenMaterials then ent:DrawShadow(false) end
+    I.HideMissingMaterials(ent)
+end
+
+-- Parts of a gear model whose material isn't there are hidden, not drawn magenta: the Star Wars helmet
+-- props carry a neck piece whose texture comes with the playermodel they were cut from. (Client: the
+-- material didn't load; server: no .vmt, for the ground items it networks.) Once a model.
+local missingParts = {}
+-- (a material that loads but whose base texture is missing is drawn in pink too: the lenses of a helmet)
+local function missingMaterial(m)
+    if CLIENT then
+        local mat = Material(m)
+        if mat:IsError() then return true end
+        local base = mat:GetString("$basetexture")
+        if not base or base == "" or base:sub(1, 1) == "_" then return false end
+        local tex = mat:GetTexture("$basetexture")
+        return not tex or tex:IsError()
+    end
+    local vmt = file.Read("materials/" .. m .. ".vmt", "GAME")
+    if not vmt then return true end
+    local kv = util.KeyValuesToTable(vmt) or {}
+    local base = kv["$basetexture"]
+    if not isstring(base) or base == "" or base:sub(1, 1) == "_" then return false end
+    base = string.gsub(string.gsub(base, "\\", "/"), "%.vtf$", "")
+    return not file.Exists("materials/" .. base .. ".vtf", "GAME")
+end
+function I.HideMissingMaterials(ent)
+    local mdl = ent:GetModel() or ""
+    local list = missingParts[mdl]
+    if list == nil then
+        list = {}
+        for i, m in ipairs(ent:GetMaterials() or {}) do
+            if missingMaterial(m) then list[#list + 1] = i - 1 end
+        end
+        missingParts[mdl] = list
+    end
+    for _, i in ipairs(list) do ent:SetSubMaterial(i, I.NODRAW_MATERIAL) end
 end
 
 if CLIENT then
