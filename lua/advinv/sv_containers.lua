@@ -390,7 +390,7 @@ function I.ItemFromEntity(ent)
     local item = { id = id, r = 0, a = 0 }
     if info.isBox or info.isWeapon then item.r = math.max(math.floor(ent.Rounds or 0), 0) end
     if info.isWeapon and ent.CarryMode then item.m = ent.CarryMode end -- its carry mode goes with it
-    if info.isWeapon then item.x = ent.AdvInvExtra end -- and its attachments
+    item.x = ent.AdvInvExtra -- and its attachments (or the state an addon keeps with it)
     if info.armor then item.a = math.max(math.floor(ent.Armor or info.armor), 0) end
     return item
 end
@@ -426,7 +426,8 @@ function I.SpawnItem(item, pos, contents, count)
         if not IsValid(ent) then return end
         local info = I.Info(item.id)
         if info.isBox or info.isWeapon then ent.Rounds = item.r or 0 end
-        if info.isWeapon then ent.CarryMode, ent.AdvInvExtra = item.m, item.x end
+        if info.isWeapon then ent.CarryMode = item.m end
+        ent.AdvInvExtra = item.x -- (attachments, or the state an addon keeps with the item)
         if info.armor then ent.Armor = item.a or 0 end
         if contents and #contents > 0 then ent.AdvInvContents = contents end
         ent:SetPos(pos)
@@ -548,9 +549,13 @@ function I.Equip(ply, item, contents)
     end
     ply:SetNW2Int(cat, item.id)
     if info.armor then ply:SetNWInt(cat .. "Armor", item.a or 0) end -- HelmetArmor, VestArmor...
+    -- state an addon keeps with the item (item.x, a string): worn with it, given back when taken off
+    ply.AdvInvSlotExtra = ply.AdvInvSlotExtra or {}
+    ply.AdvInvSlotExtra[cat] = item.x
     if cat == "Vest" or cat == "Rucksack" then I.Set(ply, cat, contents or {}) end
     I.MarkDirty(ply, "Uniform")
     I.ValidateCarry(ply, true) -- gear may block the zone a carried weapon uses
+    hook.Run("AdvInv_GearEquipped", ply, cat, item)
     return true
 end
 
@@ -598,6 +603,9 @@ function I.TakeOff(ply, cat)
         contents = I.Get(ply, cat)
         I.Set(ply, cat, {})
     end
+    item.x = ply.AdvInvSlotExtra and ply.AdvInvSlotExtra[cat] or nil
+    hook.Run("AdvInv_GearTakenOff", ply, cat, item) -- (still worn: may write its state into item.x)
+    if ply.AdvInvSlotExtra then ply.AdvInvSlotExtra[cat] = nil end
     ply:SetNW2Int(cat, 1)
     I.MarkDirty(ply, "Uniform")
     return item, contents

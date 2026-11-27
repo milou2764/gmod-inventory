@@ -61,6 +61,10 @@ for _, class in ipairs({
     -- Advanced Crafting System: its tools and its box of crafted things (it gives and takes it itself)
     "advancedcraftingsystem_take_box", "advancedcraftingsystem_add_recipe", "advancedcraftingsystem_npc_pricer",
     "advancedcraftingsystem_swep_base",
+    -- JMod: its tools (its guns, knife and flamethrower are inventory weapons; sv_jmod.lua)
+    "wep_jack_gmod_hands", "wep_jack_gmod_eztoolbox", "wep_jack_gmod_ezmedkit", "wep_jack_gmod_ezbucket",
+    "wep_jack_gmod_ezdesignator", "wep_jack_gmod_ezaxe", "wep_jack_gmod_ezpickaxe", "wep_jack_gmod_ezshovel",
+    "wep_jack_gmod_ezspade", "wep_jack_gmod_ezmeleebase",
 }) do
     if I.WeaponBlacklist[class] == nil then I.WeaponBlacklist[class] = true end
 end

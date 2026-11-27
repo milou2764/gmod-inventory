@@ -238,7 +238,9 @@ AdvInv.WeaponCategory["my_rifle"] = "PrimaryWep"  -- force the slot of a weapon
 ```
 
 The slot of a weapon with no registered item is guessed from its menu slot and hold type (pistols,
-melee and grenades: sidearm; RPG: launcher; the rest: primary); `SWEP.AdvInvCategory` and
+melee and grenades: sidearm; rockets or a single-shot weapon held like the RPG: launcher; the rest:
+primary; ARC9 weapons by their own menu slot, since packs such as ARC9 Escape From Tarkov hold every
+weapon like the RPG); `SWEP.AdvInvCategory` and
 `SWEP.AdvInvMass` on a weapon override it. Physgun, toolgun, camera, hands and DarkRP's tools are
 blacklisted.
 
@@ -312,6 +314,37 @@ With [Advanced Crafting System](https://steamcommunity.com/sharedfiles/filedetai
 - its tools and its box of crafted things are never turned into inventory weapons.
 
 Nothing changes when it is not installed.
+
+## JMod
+
+With [JMod](https://steamcommunity.com/sharedfiles/filedetails/?id=1919689921) installed
+(`lua/advinv/sh_jmod.lua`, `sv_jmod.lua`), and the armour packs made for it such as
+[EFT Equipment Props + JMOD Armor](https://steamcommunity.com/sharedfiles/filedetails/?id=2804625575):
+
+- **its armour is inventory gear**: every helmet, vest, chest rig, backpack, gas mask, mask,
+  goggles, glasses and headset of JMod's armour list (305 with the EFT pack) is an item, worn in
+  the slot of the body part it covers (helmet, vest, backpack, gas mask, NVG, radio). JMod still
+  protects, wears it down and gives its effects (night vision, filters, hearing); the item keeps
+  its durability, charges and colour when it is taken off, dropped, left on a body, looted or
+  saved. Alt + Use on JMod's armour puts it on (or in the inventory when the slot is taken), Use
+  picks it up, JMod's armour window puts it back in the inventory; destroyed by JMod, the item is
+  gone (what a vest or backpack held is kept). Two pieces covering the same body part are refused.
+  Its storage is the item's capacity (x4), its weight counts once, as the item's encombrement.
+  Drawn by the inventory: where JMod places it on the reference body (male_07), carried to every
+  other playermodel by the size and place of its head (skull) or chest, measured from its mesh.
+  Pieces for the limbs, full suits, helmet accessories, scarves and armbands stay JMod's own; so does
+  armour put on by code (a job's loadout, JMod's admin commands), gone at death as JMod makes it;
+- **its resources are inventory items**: a kind of bag for each (wood, steel, fuel, chemicals...,
+  100 per bag), the same amounts as JMod's own inventory of resources: what JMod's grab key,
+  crafting or window adds or takes changes the bags, and the other way round; they don't take room
+  in JMod's own inventory. Gained resources with no room: a JMod box of them at the player's feet.
+  At death they stay on the body like the rest;
+- **its munitions go into ammo boxes** (ammo and munition crates, ammo boxes); its guns are ArcCW
+  weapons, inventory weapons like any; its tools (hands, toolbox, medkit, bucket, designator, axe,
+  pickaxe, shovel, spade) stay ordinary weapons;
+- its own inventory (the grab key: grenades, items) stays its own; with its corpses on
+  (`JModCorpseStayTime`), the inventory's body takes their place and holds what JMod's corpse
+  would have (opened with JMod's grab key).
 
 ## Compatible Workshop addons
 

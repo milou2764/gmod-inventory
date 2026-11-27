@@ -44,6 +44,8 @@ local function stripInventoryWeapons(ply)
 end
 
 local function resetSlots(ply)
+    -- (before: what is worn is still in its slot; an addon wearing it otherwise takes it off too)
+    hook.Run("AdvInv_SlotsReset", ply)
     for _, cat in ipairs(I.WeaponCat) do
         ply:SetNWString(cat .. "Class", "")
         ply:SetNWInt(cat, 1)
@@ -274,7 +276,7 @@ function I.Serialize(ply)
     end
     for cat in pairs(I.GearCat) do
         local id = ply:GetNW2Int(cat)
-        if id > 1 then data.s[cat] = packItem({ id = id, a = ply:GetNWInt(cat .. "Armor") }) end
+        if id > 1 then data.s[cat] = packItem({ id = id, a = ply:GetNWInt(cat .. "Armor"), x = extra[cat] }) end
     end
     for _, cont in ipairs(I.PLAYER_CONTAINERS) do
         local mine = {}

@@ -9,7 +9,7 @@ An Arma 3-style inventory for Garry's Mod: what you wear is what you carry. Helm
 [*][b]Admin menu,[/b] CAMI privileges, server-authoritative. Five languages, Lua only.
 [/list]
 
-[b]Supported addons[/b] (gear extensions, compatible gear, weapon bases): [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845634999]the collection[/url].
+[b]Supported addons[/b] (gear extensions, compatible gear, weapon bases, Advanced Crafting System, JMod): [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3845634999]the collection[/url].
 [b]Features, settings, developer guide:[/b] [url=https://github.com/milou2764/gmod-inventory]GitHub[/url].
 
 Open the inventory with I or !inv; admin menu: advinv_admin.

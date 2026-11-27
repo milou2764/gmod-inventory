@@ -34,6 +34,18 @@ local fitCache = {}
 function AdvInv.AttachFor(class, playermodel, default)
     local fits = AdvInv.Fits and AdvInv.Fits[string.lower(playermodel or "")]
     local f = fits and class and fits[class]
+    if default and class and not f then
+        -- an item that adapts its own place to a playermodel without a fit (ENT.AdaptAttach: sh_jmod.lua)
+        local t = AdvInv.ClassTable(class)
+        if not (t and t.AdaptAttach) then return default end
+        local key = class .. "|" .. tostring(playermodel)
+        local a = fitCache[key]
+        if a == nil then
+            a = t.AdaptAttach(string.lower(playermodel or ""), default) or false
+            fitCache[key] = a
+        end
+        return a or default
+    end
     if not (f and default) then return default end
     local key = class .. "|" .. playermodel
     local a = fitCache[key]
@@ -161,6 +173,9 @@ local function drawGear(self, flags)
     -- spectating him through his eyes: the engine doesn't draw him, nor his gear around the camera
     local lp = LocalPlayer()
     if IsValid(lp) and lp:GetObserverMode() == OBS_MODE_IN_EYE and lp:GetObserverTarget() == owner then return end
+    -- an item that is drawn otherwise for now (ENT.HideWhenWorn: a JMod mask pushed up, drawn by JMod)
+    local t = self.advinvClass and AdvInv.ClassTable(self.advinvClass)
+    if t and t.HideWhenWorn and IsValid(owner) and not owner.advinvPreview and t.HideWhenWorn(owner) then return end
     if owner.advinvPreview or not self.advinvAttach then
         self:DrawModel(flags)
         drawShared(self)
@@ -171,7 +186,15 @@ local function drawGear(self, flags)
     lightFrom(owner)
     self:SetRenderOrigin(pos)
     self:SetRenderAngles(ang)
+    -- a colour chosen for the piece (ENT.WornColor: JMod's)
+    local col = t and t.WornColor and IsValid(owner) and t.WornColor(owner)
+    local r0, g0, b0
+    if col then
+        r0, g0, b0 = render.GetColorModulation()
+        render.SetColorModulation((col.r or 255) / 255, (col.g or 255) / 255, (col.b or 255) / 255)
+    end
     self:DrawModel(flags)
+    if col then render.SetColorModulation(r0, g0, b0) end
     drawShared(self)
     self:SetRenderOrigin(nil)
     self:SetRenderAngles(nil)

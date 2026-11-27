@@ -9,6 +9,10 @@ WW1 French army 1916, Vietnam era US Soldiers, Russian Army RF Soldier, Civil Wa
 [h2]Compatible gear addons[/h2]
 When the server has them, their models become inventory items fitted to every playermodel: Escape From Tarkov armour, helmets and backpacks, Fallout 76 and Fallout 3 backpacks, Star Wars helmets, TF2 Helmet of Victory, tank crew helmets, the Amnesia Adrian helmet, DayZ police vest, Petruz PMC vests, H.E.V tactical vest.
 
+[h2]Gameplay addons[/h2]
+Advanced Crafting System: its resources are bags in the inventory, its workbench, scrapper and resource boxes use what the player carries.
+JMod: its armour is inventory gear (worn through the inventory, with its durability and effects), its resources are bags, its munitions go into ammo boxes. Armour packs made for it work the same way, such as EFT Equipment Props + JMOD Armor.
+
 [h2]Weapon bases[/h2]
 Sandstorm SWEPs (the base and its packs): attachments kept with the item, spare magazines taken from the ammo boxes, rifles carried on the body.
 ArcCW (the base and packs such as Counter-Strike+): attachments kept with the item, ammo boxes and grenades as items, rifles carried on the body.

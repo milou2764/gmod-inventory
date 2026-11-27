@@ -64,7 +64,8 @@ end
 -- at death like the weapon; else each loadout's full magazine became boxes to give away), and only
 -- job boxes are topped up with them (ordinary rounds never go into a job box either).
 -- -> rounds that found no place (always 0: the ground takes them)
-function I.GiveRounds(ply, ammo, rounds, job)
+-- noGround: what doesn't fit is not dropped but returned (the caller puts it somewhere else)
+function I.GiveRounds(ply, ammo, rounds, job, noGround)
     job = job and true or false
     local boxID, boxC = I.AmmoBoxFor(ammo)
     if not boxID or rounds <= 0 then return rounds end
@@ -85,6 +86,7 @@ function I.GiveRounds(ply, ammo, rounds, job)
         local box = { id = boxID, c = boxC, r = math.min(size, rounds), a = 0, j = job or nil }
         rounds = rounds - box.r
         if not I.Store(ply, box) then
+            if noGround and not job then return rounds + box.r end
             local pockets = I.Get(ply, "Uniform")
             if job and #pockets < I.MAX_ITEMS then
                 pockets[#pockets + 1] = box -- (a job's box never goes down: in the pockets, over their load)

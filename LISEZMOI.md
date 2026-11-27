@@ -314,6 +314,59 @@ pistolets de Ready or Not ; `lua/advinv/sv_sandswep.lua`) :
   objets grenades (un type de munitions chacune, le réglage par défaut d'ArcCW) ;
 - les 28 armes longues de Counter-Strike+ ont leurs positions de port sur chaque playermodel ajusté.
 
+## Advanced Crafting System
+
+Avec [Advanced Crafting System](https://steamcommunity.com/sharedfiles/filedetails/?id=3017902884)
+(ou une copie) installé (`lua/advinv/sh_acs.lua`, `sv_acs.lua`) :
+
+- ses ressources sont un objet de l'inventaire, des **sacs de ressources d'artisanat** (50 par sac,
+  3 points chacun) : ils remplissent les poches, le gilet et le sac à dos, vont dans les caisses et
+  les coffres, se fouillent, et restent sur le corps à la mort (son propre dépôt à la mort ne
+  trouve alors rien à déposer deux fois) ;
+- son établi, ses caisses de ressources, son broyeur, les morts qui rapportent des ressources et
+  ses commandes d'admin marchent comme avant, sur les sacs portés : un gain remplit les sacs
+  entamés, puis de nouveaux, puis le sol (le joueur est prévenu) ; une dépense prend dans les sacs
+  les moins pleins d'abord ; un gain pendant que le joueur est mort lui est donné à la réapparition ;
+- gardées d'une visite à l'autre : avec un système de personnages, les sacs sont enregistrés avec
+  l'inventaire (un solde enregistré avant par l'addon est donné une fois, en sacs) ; sans, ce que le
+  joueur porte est écrit dans la sauvegarde de l'addon et rendu en sacs à sa première apparition ;
+- ses outils et sa caisse d'objets fabriqués ne deviennent jamais des armes de l'inventaire.
+
+## JMod
+
+Avec [JMod](https://steamcommunity.com/sharedfiles/filedetails/?id=1919689921) installé
+(`lua/advinv/sh_jmod.lua`, `sv_jmod.lua`), et les packs d'armures faits pour lui comme
+[EFT Equipment Props + JMOD Armor](https://steamcommunity.com/sharedfiles/filedetails/?id=2804625575) :
+
+- **ses armures sont de l'équipement de l'inventaire** : chaque casque, gilet, gilet de combat,
+  sac à dos, masque à gaz, masque, lunettes de vision nocturne, lunettes et casque audio de sa liste
+  d'armures (305 avec le pack EFT) est un objet, porté dans la case de la partie du corps qu'il
+  couvre (casque, gilet, sac à dos, masque à gaz, JVN, radio). JMod protège toujours, l'use et donne
+  ses effets (vision nocturne, filtres, audition) ; l'objet garde sa durabilité, ses charges et sa
+  couleur quand il est retiré, posé, laissé sur un corps, ramassé ou enregistré. Alt + Utiliser sur
+  une armure de JMod la met (ou la range quand la case est prise), Utiliser la ramasse, la fenêtre
+  d'armures de JMod la remet dans l'inventaire ; détruit par JMod, l'objet disparaît (ce que tenait
+  un gilet ou un sac est gardé). Deux pièces qui couvrent la même partie du corps sont refusées. Sa
+  capacité de rangement devient celle de l'objet (x4), son poids ne compte qu'une fois, comme
+  encombrement de l'objet. Dessiné par l'inventaire : où JMod le place sur le corps de référence
+  (male_07), reporté sur chaque autre playermodel d'après la taille et la place de sa tête (le
+  crâne) ou de son torse, mesurées sur son maillage. Les pièces des membres, les combinaisons
+  entières, les accessoires de casque, les foulards et les brassards restent ceux de JMod, comme les
+  armures mises par du code (l'équipement d'un métier, les commandes d'admin de JMod), perdues à la
+  mort comme JMod le fait ;
+- **ses ressources sont des objets de l'inventaire** : un genre de sac pour chacune (bois, acier,
+  carburant, produits chimiques..., 100 par sac), les mêmes quantités que l'inventaire de ressources
+  de JMod : ce que la touche de ramassage, la fabrication ou la fenêtre de JMod ajoutent ou prennent
+  change les sacs, et inversement ; elles ne prennent pas de place dans l'inventaire propre de JMod.
+  Des ressources gagnées sans place : une caisse JMod à ses pieds. À la mort, elles restent sur le
+  corps comme le reste ;
+- **ses munitions vont dans des boîtes de munitions** (caisses de munitions, boîtes) ; ses armes
+  sont des armes ArcCW, des armes de l'inventaire comme les autres ; ses outils (mains, boîte à
+  outils, trousse de soins, seau, désignateur, hache, pioche, pelles) restent des armes ordinaires ;
+- son propre inventaire (la touche de ramassage : grenades, objets) reste le sien ; avec ses cadavres
+  activés (`JModCorpseStayTime`), le corps de l'inventaire prend leur place et contient ce que le
+  cadavre de JMod aurait eu (ouvert avec la touche de ramassage de JMod).
+
 ## Addons du Workshop compatibles
 
 Quand le serveur a un de ces addons, ses modèles deviennent des objets de l'inventaire : portés,

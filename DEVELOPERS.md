@@ -147,6 +147,9 @@ Read from the item's entity table (`ENT.*`); all optional except `Model` and the
 | `Ammo`, `ClipSize`, `Rounds` | weapons | ammo type, magazine size, rounds when spawned (`ClipSize = -1`: no magazine) |
 | `CarryModes`, `CarryDefault` | long guns | `{ "sling_up", "front_hang", ... }`, default mode |
 | `CarryBackThickness` | vests | units it adds between the back and a slung weapon (default: measured by `tools/vest_back.py`, else `Config.CarryVestThickness` with armour, 0 without) |
+| `AdaptAttach` | worn | `function(playermodel, attach)` -> the placement on a playermodel without a fit (else `Attach`) |
+| `HideWhenWorn` | worn | `function(owner)` -> `true`: not drawn for now (drawn another way) |
+| `WornColor` | worn | `function(owner)` -> a `Color` the worn model is tinted with |
 | `CarryWide` | long guns | `true`: too wide to hang beside a backpack (a crossbow's bow): only in front while one is worn |
 | `Ammo`, `Rounds`, `Capacity` | ammo boxes | ammo type, rounds when spawned, rounds when full |
 
@@ -242,7 +245,9 @@ The reserve of a weapon is the ammo boxes stored in the player's containers: rel
 up (the least full first), unloading a weapon fills them. Never give reserve ammo with
 `ply:GiveAmmo` for an inventory weapon: the next count sets the reserve back to the boxes. Use
 `AdvInv.GiveRounds(ply, ammoType, rounds)` (server): it fills the started boxes, then new boxes,
-then the ground.
+then the ground (`AdvInv.GiveRounds(ply, ammoType, rounds, false, true)`: what doesn't fit is
+returned instead of dropped). Worn gear keeps a state of an addon's (a string, `item.x`) while worn,
+on a body and in saves: see the hooks `AdvInv_GearEquipped` / `AdvInv_GearTakenOff`.
 
 - A registered ammo box: an item based on `advinv_base_ammobox`.
 - Any other ammo type gets a **generic box** (ID 125, `c = ammo type`): sizes per type in
@@ -265,7 +270,9 @@ then the ground.
 ## Things that are not items: generic items
 
 Any SWEP lying in the world becomes a **generic weapon** (ID 100, `c = class`): its slot is guessed
-from `SWEP.Slot` and its hold type (`HoldType` or `NormalHoldType`), its mass from the slot. Tables
+from its hold type (`HoldType`, `NormalHoldType` or ArcCW's `HoldtypeActive`) and its ammo (launcher:
+rockets or missiles, or the RPG hold type on a single-shot weapon), `SWEP.Slot` for ARC9 weapons,
+its mass from the slot. Tables
 your addon can fill (shared):
 
 ```lua
@@ -593,6 +600,9 @@ them: use `Equip` / `TakeOff`.
 | `AdvInv_UseItem` | server | ply, item | `false` to forbid using it |
 | `AdvInv_DeathDrop` | server | ply | `false`: nothing stays on the body this time |
 | `AdvInv_DeathBody` | server | ply, body | the body was made |
+| `AdvInv_GearEquipped` | server | ply, cat, item | gear was put in its slot (`item.x`: the state kept with it) |
+| `AdvInv_GearTakenOff` | server | ply, cat, item | gear is leaving its slot (still worn): write its state into `item.x` |
+| `AdvInv_SlotsReset` | server | ply | the whole inventory is about to be emptied (a character loaded, a reset): what is worn is still in its slot |
 | `AdvInv_WeaponData` | server | wep | attachments as a string |
 | `AdvInv_ApplyWeaponData` | server | wep, data | `true` when applied |
 | `CanSearchInventory` | shared | searcher, target | `false` to forbid, `true` to allow |
