@@ -234,7 +234,11 @@ on the Fallout 4 Institute rifle; a shape only taken from the hull is measured a
 In the modes listed in `Config.CarryLongHang`
 (the front carry), a gun longer than the one the templates were fitted with (`Config.CarryTemplateGun`,
 the AR2) keeps its butt where that gun's butt is and turns toward the vertical, so it spans no wider:
-a long rifle hangs down in front instead of sticking out past the shoulder. Exact positions per playermodel:
+a long rifle hangs down in front instead of sticking out past the shoulder. Then it rests on the
+wearer's own torso (`AdvInv.CarryRestOnBody`): moved along the mode's outward direction until it is
+`Config.CarryGap` off the playermodel's mesh as drawn (its bodygroups, over its idle loop; arms left
+out), pulled in by at most `Config.CarryRestPull` (`Config.CarryRestOnBody = false` turns it off). Each body is measured once, in the background
+(`Config.CarryRestBudget` seconds a frame); until then the template places the gun. Exact positions per playermodel:
 `tools/fit_carry.py` writes `cl_carry_data.lua`; tune in game with `advinv_carry_tune`
 (`advinv_carry_cycle` cycles through the modes). Hooks: `CanChangeCarryMode`,
 `OnCarryModeChanged`.

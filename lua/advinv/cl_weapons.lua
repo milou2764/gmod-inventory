@@ -490,7 +490,14 @@ local function placeList(ent, gearOwner, list)
                     local need = I.CarryVestClearance(ent, gearOwner, w, other)
                     if need then pushes[w.cat] = other + need end
                 end
-                local pos, ang = I.CarryTransform(ent, w, pushes[w.cat] or 0)
+                local push = pushes[w.cat] or 0
+                if pushes.beside and pushes.beside[w.cat] then
+                    -- beside a backpack it has a place of its own, worked out from where the template
+                    -- puts it (resting on the back is no help at the side of the body)
+                    local e = I.CarryEntry(ent, w.class, w.mode, w.model)
+                    if e and e.rest then push = push - e.rest end
+                end
+                local pos, ang = I.CarryTransform(ent, w, push)
                 if pos and pushes.beside and pushes.beside[w.cat] then
                     pos, ang = I.CarryBeside(ent, w, pos, ang, pushes.beside[w.cat], gearOwner == ent and gearOwner or nil) -- against the backpack's side
                 end

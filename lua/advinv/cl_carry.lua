@@ -7,7 +7,8 @@
         1. values tuned in game this session (advinv_carry_tune, I.CarryTuned[set][class][mode])
         2. I.CarryOffsets[playermodel path] (a server can add a set for one model under its path)
         3. I.CarryOffsets[alias set of the playermodel], else the "default" set
-        4. a weapon without offsets (another addon's): the mode's template, fitted to its shape
+        4. a weapon without offsets (another addon's): the mode's template, fitted to its shape,
+           then rested on the wearer's own torso (I.CarryRestOnBody, measured in the background)
     Pushed along the outward direction by worn gear (vest, backpack for the shoulder modes) and,
     when two guns are carried on the back side and cross, one over the other (I.CarryStack).
 --]]
@@ -39,9 +40,14 @@ C.CarryBesideForward = C.CarryBesideForward or 0.75
 -- the modes where a longer gun hangs from where that gun's butt is instead of being centred
 C.CarryTemplateGun = C.CarryTemplateGun or "models/weapons/w_irifle.mdl"
 C.CarryLongHang = C.CarryLongHang or { front_hang = true }
--- weapons without offsets stand off the body that much more in these modes (their magazine, scope or
--- grip, sticking out toward the chest, sink in otherwise: measured on the M9K, TFA and ARC9 packs)
-C.CarryTemplateGap = C.CarryTemplateGap or { front_hang = 1.2, sling_up = 0.5, sling_down = 1.2 }
+-- weapons without offsets: an extra gap off the body per mode (none: they rest on the measured body)
+C.CarryTemplateGap = C.CarryTemplateGap or {}
+-- weapons without offsets rest on the wearer's torso itself (I.CarryRestOnBody): pulled in by that
+-- much at most when the template leaves them off it (pushed out by up to 8 when in it); the body is
+-- measured C.CarryRestBudget seconds a frame (below)
+C.CarryRestPull = C.CarryRestPull or 4
+if C.CarryRestOnBody == nil then C.CarryRestOnBody = true end -- false: where the template puts them
+local restOnBody -- (below)
 
 I.CarryOffsets = I.CarryOffsets or {}
 I.CarryAliases = I.CarryAliases or {}
@@ -221,7 +227,9 @@ function I.CarryEntry(ent, class, mode, path)
         return e, name
     end
     if not path then return nil, name end
-    return templateEntry(mode, path, name), name
+    local t = templateEntry(mode, path, name)
+    if t and restOnBody and C.CarryRestOnBody then t = restOnBody(ent, mode, path, t, name) or t end
+    return t, name
 end
 
 local function hasOffsets(ent, class, mode)
@@ -444,6 +452,280 @@ local function weaponPoints(path)
     end
     return p or nil
 end
+
+--[[
+    A weapon without offsets rests on its wearer's torso: the template puts it where the template gun
+    lies on that set's body; moved along its outward direction until it is C.CarryGap off the torso
+    under it (its spine, pelvis, neck and collarbones: the arms move; the thighs only stop it being
+    pulled in, they move when walking), as the playermodel is
+    drawn (its bodygroups, its parts the inventory hides) over its idle loop. Pulled in by up to
+    C.CarryRestPull only when most of the weapon lies over that body (what hangs past it may meet
+    something not measured), pushed out by up to 8. Another addon's long gun, a magazine or a scope
+    toward the body, a body with its kit in its mesh (a bedroll, a haversack): neither in it nor off it.
+    The body is measured in the background, a few milliseconds a frame (C.CarryRestBudget), one at a
+    time; until then the weapon is where the template puts it.
+--]]
+local TORSO = { "ValveBiped.Bip01_Pelvis", "ValveBiped.Bip01_Spine", "ValveBiped.Bip01_Spine1", "ValveBiped.Bip01_Spine2",
+    "ValveBiped.Bip01_Spine4", "ValveBiped.Bip01_Neck1", "ValveBiped.Bip01_L_Clavicle", "ValveBiped.Bip01_R_Clavicle",
+    "ValveBiped.Bip01_L_Thigh", "ValveBiped.Bip01_R_Thigh" }
+C.CarryRestBudget = C.CarryRestBudget or 0.002
+local fieldCache = {} -- body key|direction -> { a, b, h } (a height field), or false
+local jobs, queue = {}, {} -- field key -> { co, tmp }; field keys in order
+local sliceEnd = 0
+local function tick()
+    if SysTime() > sliceEnd then coroutine.yield() end
+end
+
+-- (in a job) the torso's surface in boneName's frame, over the idle loop
+local function measureTorso(mdl, bodyValue, hidden, boneName, job)
+    local meshes, bind = util.GetModelMeshes(mdl, 0, bodyValue or 0)
+    if not (istable(meshes) and istable(bind)) then return end
+    tick()
+    local tmp = ClientsideModel(mdl, RENDERGROUP_OTHER)
+    if not IsValid(tmp) then return end
+    job.tmp = tmp
+    tmp:SetNoDraw(true)
+    tmp:SetPos(vector_origin)
+    tmp:SetAngles(angle_zero)
+    local seq = tmp:LookupSequence("idle_all_01")
+    tmp:ResetSequence(seq and seq >= 0 and seq or 0)
+    local bi = tmp:LookupBone(boneName)
+    if not bi then return end
+    local keep, thigh = {}, {}
+    for _, n in ipairs(TORSO) do
+        local i = tmp:LookupBone(n)
+        if i then keep[i] = true end
+    end
+    for _, n in ipairs({ "ValveBiped.Bip01_L_Thigh", "ValveBiped.Bip01_R_Thigh" }) do
+        local i = tmp:LookupBone(n)
+        if i then thigh[i] = true end
+    end
+    local base = bind[0] and 0 or 1
+    local hmin, hmax = tmp:GetModelBounds()
+    local tol = Vector(3, 3, 3)
+    -- the torso's triangles (two corners on its bones), their corners with their bone weights; which
+    -- of them are the thighs'
+    local verts, isThigh = {}, {}
+    local function dominant(v)
+        local ws = v.weights
+        if not ws or #ws == 0 then ws = { { bone = 0, weight = 1 } } end
+        local best, bw = nil, -1
+        for _, w in ipairs(ws) do
+            if w.weight > bw then best, bw = w.bone, w.weight end
+        end
+        return best, ws
+    end
+    for _, msh in ipairs(meshes) do
+        local tri = not hidden[string.lower(msh.material or "")] and msh.triangles or {}
+        for i = 1, #tri - 2, 3 do
+            local n, nt, corner = 0, 0, {}
+            for j = 0, 2 do
+                local best, ws = dominant(tri[i + j])
+                if keep[best] then n = n + 1 end
+                if thigh[best] then nt = nt + 1 end
+                corner[j + 1] = { tri[i + j].pos, ws }
+            end
+            if n >= 2 then
+                for j = 1, 3 do verts[#verts + 1] = corner[j] end
+                isThigh[#isThigh + 1] = nt >= 2
+            end
+            if i % 600 == 1 then tick() end
+        end
+    end
+    if #verts <= 150 then return end
+    -- skinned at a moment of the idle loop (its breathing moves the back), added to acc (body and
+    -- thighs: flat x, y, z arrays in the bone's frame); false when the bind matrices taken that way
+    -- don't put the mesh inside the model's hull
+    local function skinAt(cycle, invert, acc)
+        if not IsValid(tmp) then return end
+        tmp:SetCycle(cycle)
+        tmp:InvalidateBoneCache()
+        tmp:SetupBones()
+        local B = tmp:GetBoneMatrix(bi)
+        if not B then return end
+        local Binv = B:GetInverse()
+        local K = {} -- (all taken now: the model may be set up again while this waits)
+        for i = 0, tmp:GetBoneCount() - 1 do
+            local bm, bp = tmp:GetBoneMatrix(i), bind[i + base]
+            if bm and bp and bp.matrix then K[i] = bm * (invert and bp.matrix:GetInverse() or bp.matrix) end
+        end
+        local out = {}
+        for n, vw in ipairs(verts) do
+            local q = Vector(0, 0, 0)
+            for _, w in ipairs(vw[2]) do
+                local k = K[w.bone]
+                if not k then return end
+                q = q + (k * vw[1]) * w.weight
+            end
+            out[n] = q
+            if n % 400 == 0 then tick() end
+        end
+        for i = 1, #out, math.max(1, math.floor(#out / 50)) do
+            if not out[i]:WithinAABox(hmin - tol, hmax + tol) then return false end
+        end
+        -- the triangles filled in (a cell of the height field is a unit across: corners alone
+        -- leave most of it empty, and a flat triangle over a hollow stands out past them)
+        for i = 1, #out - 2, 3 do
+            local T = isThigh[(i + 2) / 3] and acc.thigh or acc.body
+            local X, Y, Z = T.x, T.y, T.z
+            local n = #X
+            local A, Bv, Cv = Binv * out[i], Binv * out[i + 1], Binv * out[i + 2]
+            local ax, ay, az = A.x, A.y, A.z
+            local ux, uy, uz = Bv.x - ax, Bv.y - ay, Bv.z - az
+            local vx, vy, vz = Cv.x - ax, Cv.y - ay, Cv.z - az
+            local len = math.sqrt(math.max(ux * ux + uy * uy + uz * uz, vx * vx + vy * vy + vz * vz))
+            local steps = math.Clamp(math.ceil(len / 0.7), 1, 12)
+            for s1 = 0, steps do
+                for s2 = 0, steps - s1 do
+                    local f1, f2 = s1 / steps, s2 / steps
+                    n = n + 1
+                    X[n], Y[n], Z[n] = ax + ux * f1 + vx * f2, ay + uy * f1 + vy * f2, az + uz * f1 + vz * f2
+                end
+            end
+            if i % 300 == 1 then tick() end
+        end
+        return true
+    end
+    local acc = { body = { x = {}, y = {}, z = {} }, thigh = { x = {}, y = {}, z = {} } }
+    local invert
+    for _, inv in ipairs({ false, true }) do
+        if skinAt(0, inv, acc) then
+            invert = inv
+            break
+        end
+    end
+    if invert == nil then return end
+    for _, cyc in ipairs({ 0.25, 0.5, 0.75 }) do skinAt(cyc, invert, acc) end
+    return acc
+end
+
+local function runJobs()
+    local key = queue[1]
+    if not key then
+        hook.Remove("Think", "AdvInv_CarryRest")
+        return
+    end
+    local job = jobs[key]
+    sliceEnd = SysTime() + C.CarryRestBudget
+    local ok, res = coroutine.resume(job.co)
+    if not ok or coroutine.status(job.co) == "dead" then
+        if IsValid(job.tmp) then job.tmp:Remove() end
+        if not ok then ErrorNoHalt("[AdvInv] carry rest: " .. tostring(res) .. "\n") end
+        fieldCache[key] = ok and res or false
+        jobs[key] = nil
+        table.remove(queue, 1)
+    end
+end
+
+-- the torso's height field along dir (in boneName's frame) as the body is drawn (look: its drawn
+-- look's key, body value and hidden materials); nil while it is being measured, false if it can't be
+local function fieldKey(tk, dir)
+    return ("%s|%.2f %.2f %.2f"):format(tk, dir.x, dir.y, dir.z)
+end
+-- (directions rounded: one field serves the sets whose templates point the same way)
+local function roundDir(v)
+    local d = v:GetNormalized()
+    d = Vector(math.Round(d.x, 2), math.Round(d.y, 2), math.Round(d.z, 2))
+    d:Normalize()
+    return d
+end
+
+-- (in a job) the highest point of the body, and of the thighs, along dir per cell across it
+local function buildField(pts, dir)
+    local a, b = basisOf(dir)
+    local ax, ay, az, bx, by, bz, dx, dy, dz = a.x, a.y, a.z, b.x, b.y, b.z, dir.x, dir.y, dir.z
+    local floor = math.floor
+    local function heights(P)
+        local X, Y, Z = P.x, P.y, P.z
+        local h = {}
+        for i = 1, #X do
+            local x, y, z = X[i], Y[i], Z[i]
+            local k = floor((x * ax + y * ay + z * az) / CELL) * 4096 + floor((x * bx + y * by + z * bz) / CELL)
+            local up = x * dx + y * dy + z * dz
+            local top = h[k]
+            if not top or up > top then h[k] = up end
+            if i % 4000 == 0 then tick() end
+        end
+        return h
+    end
+    return { a = a, b = b, h = heights(pts.body), ht = heights(pts.thigh) }
+end
+
+-- the torso's height field along dir (in boneName's frame) as the body is drawn (look: its drawn
+-- look's key, body value and hidden materials); nil while it is being measured, false if it can't
+-- be. The fields of the set's other modes on the same bone are made with it: the body's points
+-- (a few megabytes) are not kept.
+local function torsoField(mdl, look, boneName, dir, setName)
+    local tk = mdl .. "|" .. boneName .. "|" .. look[1]
+    local key = fieldKey(tk, dir)
+    local f = fieldCache[key]
+    if f ~= nil then return f end
+    if jobs[key] then return end
+    local bodyValue, hidden = look[2], look[3]
+    local job = {}
+    job.co = coroutine.create(function()
+        if fieldCache[key] ~= nil then return fieldCache[key] end -- (made with another mode's)
+        local pts = measureTorso(mdl, bodyValue, hidden, boneName, job)
+        if IsValid(job.tmp) then job.tmp:Remove() end
+        if not pts then return false end
+        for mode in pairs(I.CarryTemplates) do
+            local t = templateFor(mode, setName)
+            if t and t.bone == boneName and t.out then
+                local d = roundDir(t.out)
+                local k = fieldKey(tk, d)
+                if k ~= key and fieldCache[k] == nil then fieldCache[k] = buildField(pts, d) end
+            end
+        end
+        return buildField(pts, dir)
+    end)
+    jobs[key] = job
+    queue[#queue + 1] = key
+    hook.Add("Think", "AdvInv_CarryRest", runJobs)
+end
+
+local restCache = {}
+local drawnLook = setmetatable({}, { __mode = "k" }) -- ent -> { key, body value, hidden, until, model }
+restOnBody = function(ent, mode, path, e, setName)
+    if not e.out then return end
+    local mdl = string.lower(ent:GetModel() or "")
+    local look, now = drawnLook[ent], RealTime()
+    if not look or now > look[4] or look[5] ~= mdl then
+        local vk, bodyValue, hidden = vestKey(ent)
+        look = { vk, bodyValue, hidden, now + 0.5, mdl }
+        drawnLook[ent] = look
+    end
+    local key = mdl .. "|" .. mode .. "|" .. path .. "|" .. (setName or "") .. "|" .. look[1]
+    local r = restCache[key]
+    if r ~= nil then return r or nil end
+    local dir = roundDir(e.out)
+    local f = torsoField(mdl, look, e.bone, dir, setName)
+    if f == nil then return end -- (being measured)
+    restCache[key] = false
+    local wp = f and weaponPoints(path)
+    if not wp then return end
+    local a, b, h, ht = f.a, f.b, f.h, f.ht
+    local need, thighNeed, over_ = nil, nil, 0
+    for _, p in ipairs(wp) do
+        local q = LocalToWorld(p, angle_zero, e.pos, e.ang)
+        local k = math.floor(q:Dot(a) / CELL) * 4096 + math.floor(q:Dot(b) / CELL)
+        local top, topT, up = h[k], ht[k], nil
+        if top or topT then
+            over_ = over_ + 1
+            up = q:Dot(dir)
+        end
+        if top and (not need or top - up > need) then need = top - up end
+        if topT and (not thighNeed or topT - up > thighNeed) then thighNeed = topT - up end
+    end
+    if not need then return end -- (it doesn't pass over the torso: as the template has it)
+    local pull = over_ >= #wp * 0.6 and C.CarryRestPull or 0
+    local move = math.Clamp(need + C.CarryGap, -pull, MAX_PUSH)
+    -- the thighs (they move when walking) only stop it being pulled in, never push it out
+    if thighNeed then move = math.max(move, math.min(thighNeed + C.CarryGap, 0)) end
+    r = { bone = e.bone, pos = e.pos + dir * move, ang = e.ang, out = e.out, geom = e.geom, rest = move }
+    restCache[key] = r
+    return r
+end
+I.CarryRestOnBody = restOnBody
 
 local clearCache = setmetatable({}, { __mode = "k" })
 
