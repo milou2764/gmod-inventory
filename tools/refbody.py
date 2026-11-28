@@ -37,22 +37,10 @@ def skinned_vertices(model=REF):
     """Positions (model space) and dominant bone index of every LOD0 vertex used by triangles."""
     vvd = mr.vpk_read(model[:-4] + ".vvd")
     pos, nrm, uv, tris, mats = mr.load_model(model, textures=False)  # (geometry only)
-    nfix, fixstart, vstart = (struct.unpack_from("<i", vvd, o)[0] for o in (48, 52, 56))
-    raw_bone = []
-    for k in range(struct.unpack_from("<i", vvd, 16)[0]):
-        o = vstart + k * 48
-        w = struct.unpack_from("<3f", vvd, o)
-        b = struct.unpack_from("<3b", vvd, o + 12)
-        nb = vvd[o + 15]
-        raw_bone.append(b[int(np.argmax(w[:nb]))] if nb else 0)
-    if nfix:
-        bone = []
-        for f in range(nfix):
-            lod, src, num = struct.unpack_from("<3i", vvd, fixstart + f * 12)
-            if lod >= 0:
-                bone.extend(raw_bone[src:src + num])
-    else:
-        bone = raw_bone
+    vv = mr.vvd_lod0(vvd)
+    # the dominant bone: the first of the highest weights among its numbones, 0 without any
+    w = np.where(np.arange(3)[None, :] < vv["n"][:, None], vv["w"].astype(np.float64), -np.inf)
+    bone = np.where(vv["n"] > 0, vv["b"][np.arange(len(vv)), np.argmax(w, 1)].astype(int), 0)
     used = sorted({t[k] for t in tris for k in range(3)})
     return pos[used], np.array(bone)[used]
 

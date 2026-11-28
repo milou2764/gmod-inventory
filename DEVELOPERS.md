@@ -364,8 +364,24 @@ of it (models of one pack may prefix them: `VN3_Headgear_Pith02`, `male_01_helme
 measures each piece of gear in the playermodel's reference pose, transfers it to every
 playermodel of a list (head gear by the skull; torso gear by the torso's girth at the height where
 most of it is, both bodies measured at the same height between pelvis and neck, kept within 15 % of
-the chest's ratio: a chest rig on a slim soldier's belly isn't sized by a citizen's chest) and writes
-`lua/autorun/<name>.lua`. `--preview FILE` draws every item alone. The format is described at the top
+the chest's ratio: a chest rig on a slim soldier's belly isn't sized by a citizen's chest). A vest
+drawn as one piece is then fitted to each body on two more axes, its width unchanged: on a body whose
+torso is longer than its girth gives it is stretched downwards up to 25 % (the female citizens, Alyx,
+G-Man); then, against the body as the game draws it (`fit_to_body`: rays cast from the vest onto the
+body's mesh), its depth is stretched (0.85 to 1.35) and it is moved forward or back until its front and
+back panels lie against the chest, the belly and the back (G-Man's jacket came through the front plate,
+Alyx's back through the back panel), and it is raised or lowered until its straps rest on the shoulders
+(placed by the neck bone, they floated over the female citizens'), each as close as it goes without the
+body showing through it but for a few cells (a ponytail; a hood the straps go under); the front rests
+against the belly, a bust allowed into the vest by up to `BUST_MAX`. A piece with only a front or a back
+(a holster, a belt's pouches) is moved against the body; only gear whose top is up on the chest is
+stretched to the torso's length. When a gap is still seen from the side, it is tilted a few degrees about
+its straps if that leaves less (`fit_vest`). Claude's own approvals in `tools/fit_locks.txt` give way to
+this fit; the user's stay final. The fit string's 8th and 9th numbers are that height and depth, around the item's
+`stretch_top` and `depth_center`. `tools/vest_check.py` checks the result offline (report, close-ups with
+a side cut, a sheet of every pack) and refits every pack. The rays and the cuts run in C when
+`tools/fitcore/fitcore.dll` is built (`sh tools/fitcore/build.sh`, MSYS2 UCRT64 gcc like the fit editor;
+`tools/fitcore.py` falls back to numpy, same results, without it; `MODELGEAR_C=0` forces numpy). It writes `lua/autorun/<name>.lua`. `--preview FILE` draws every item alone. The format is described at the top
 of `lua/advinv/sh_modelgear_items.lua`; the item classes are their IDs, put your name in them.
 
 ## Fitting more playermodels

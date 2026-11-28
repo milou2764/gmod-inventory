@@ -48,12 +48,30 @@ _trees = []
 EXTRA_DIRS = [d for d in os.environ.get("MDL_EXTRA_DIRS", "").split(os.pathsep) if d]
 
 
+_extra_index = None
+
+
+def _extra_file(path):
+    """The file of EXTRA_DIRS at path (lower case, "/"), the first folder holding it winning. The folders are
+    listed once: looking in each of them for every file (about 190 extracted addons, most files being in
+    the game's VPKs) was half a refit's time, 135,000 disk checks for 4 playermodels."""
+    global _extra_index
+    if _extra_index is None:
+        _extra_index = {}
+        for d in EXTRA_DIRS:
+            for dirpath, _dirs, files in os.walk(d, followlinks=True):
+                rel = os.path.relpath(dirpath, d).replace("\\", "/").lower()
+                for f in files:
+                    _extra_index.setdefault(f.lower() if rel == "." else f"{rel}/{f.lower()}", os.path.join(dirpath, f))
+    return _extra_index.get(path)
+
+
 def vpk_read(path):
     path = path.lower().replace("\\", "/")
-    for d in EXTRA_DIRS:
-        p = Path(d) / path
-        if p.exists():
-            return p.read_bytes()
+    if EXTRA_DIRS:
+        f = _extra_file(path)
+        if f:
+            return Path(f).read_bytes()
     if not _trees:
         for v in VPKS:
             entries, start = vpk.read_tree(str(v))
@@ -146,6 +164,26 @@ def _bodygroups():
 BODYGROUPS = _bodygroups()
 
 
+VVD_VERTEX = np.dtype([("w", "<f4", 3), ("b", "i1", 3), ("n", "u1"), ("p", "<f4", 3), ("nrm", "<f4", 3), ("uv", "<f4", 2)])
+
+
+def vvd_lod0(vvd):
+    """The LOD 0 vertices of a .vvd (mstudiovertex_t: bone weights, bones, their count, position, normal,
+    uv), its fixup table applied: a numpy record array, read in one block (vertex by vertex in Python it was
+    most of a refit's time once the files were found)."""
+    i = lambda o: struct.unpack_from("<i", vvd, o)[0]  # noqa: E731
+    nfix, fixstart, vstart = i(48), i(52), i(56)
+    raw = np.frombuffer(vvd, dtype=VVD_VERTEX, count=i(16), offset=vstart)
+    if not nfix:
+        return raw
+    parts = []
+    for f in range(nfix):
+        lod, src, num = struct.unpack_from("<3i", vvd, fixstart + f * 12)
+        if lod >= 0:
+            parts.append(raw[src:src + num])
+    return np.concatenate(parts) if parts else raw[:0]
+
+
 def load_model(model, textures=True):
     base = model[:-4].lower()
     groups = BODYGROUPS.get(base + ".mdl", {})
@@ -157,21 +195,8 @@ def load_model(model, textures=True):
     i = lambda d, o: struct.unpack_from("<i", d, o)[0]
 
     # VVD : sommets du LOD 0 (avec la table de correction éventuelle)
-    nfix, fixstart, vstart = i(vvd, 48), i(vvd, 52), i(vvd, 56)
-    raw = []
-    for k in range(i(vvd, 16)):
-        o = vstart + k * 48
-        raw.append(struct.unpack_from("<3f3f2f", vvd, o + 16))
-    if nfix:
-        verts = []
-        for f in range(nfix):
-            lod, src, num = struct.unpack_from("<3i", vvd, fixstart + f * 12)
-            if lod >= 0:
-                verts.extend(raw[src:src + num])
-    else:
-        verts = raw
-    V = np.array(verts, dtype=np.float64)
-    pos, nrm, uv = V[:, 0:3], V[:, 3:6], V[:, 6:8]
+    vv = vvd_lod0(vvd)
+    pos, nrm, uv = (vv["p"].astype(np.float64), vv["nrm"].astype(np.float64), vv["uv"].astype(np.float64))
 
     # textures et famille de skins 0
     tex_names = [cstr(mdl, i(mdl, 208) + k * 64 + i(mdl, i(mdl, 208) + k * 64)) for k in range(i(mdl, 204))]

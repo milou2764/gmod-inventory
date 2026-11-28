@@ -52,6 +52,48 @@ def get(locks, cls, pm):
     return locks.get(cls, {}).get(pm.lower())
 
 
+def unadjusted_claude(path=PATH):
+    """{(class, playermodel)}: the locks Claude approved without changing the computed fit (only stamped
+    with the rules of that day). A vest fitted to the body (modelgear_pack.py: stretch, depth, straps on
+    the shoulders) takes its new fit over those; Claude's adjusted ones keep their place and size and get
+    the rest; the user's approvals stay final."""
+    out, last = set(), {}
+    if not Path(path).exists():
+        return out
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.startswith("#"):
+            continue
+        f = line.split("\t")
+        if len(f) < 6:
+            continue
+        adj = [float(x) for x in re.findall(r"[-+]?\d+(?:\.\d+)?", f[4])]
+        last[(f[0], f[1].lower())] = f[5].strip() == "claude" and all(abs(x) < 1e-9 for x in adj)
+    return {k for k, v in last.items() if v}
+
+
+def approvers(path=PATH):
+    """{(class, playermodel): "user" | "claude"}: who approved each lock (its last line)."""
+    out = {}
+    if not Path(path).exists():
+        return out
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.startswith("#"):
+            continue
+        f = line.split("\t")
+        if len(f) >= 6:
+            out[(f[0], f[1].lower())] = f[5].strip()
+    return out
+
+
+def _stretched(head, cls):
+    """Whether an extension's item (its Lua before the fits) is a vest stretched to the body."""
+    k = head.find(f'class = "{cls}",')
+    if k < 0:
+        return False
+    nxt = head.find("\n        { class", k + 1)
+    return "stretch_top = " in head[k:nxt if nxt > 0 else len(head)]
+
+
 # ---------------------------------------------------------------- writing them into the game's files
 # (the same formats as fit_compat.py write_fits / write_data and fit_items.py lua)
 
@@ -108,7 +150,13 @@ def _apply_extensions(locks):
             if not m:
                 continue
             parts = m.group(1).split("|")
+            # (a vest fitted to the body, modelgear_pack.py: its stretch, depth and straps on the shoulders.
+            # Claude's locks are applied there, with those; only the user's are written as they are)
+            stretched = _stretched(head, cls)
+            by = approvers() if stretched else {}
             for pm, (p, a, s) in per.items():
+                if stretched and by.get((cls, pm)) == "claude":
+                    continue
                 if pm in models and parts[models.index(pm)]:  # (an empty one can't be worn there)
                     e = _compat_entry(p, a, s)
                     if parts[models.index(pm)] != e:

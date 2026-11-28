@@ -12,8 +12,10 @@
         AdvInv.ModelGearPacks = AdvInv.ModelGearPacks or {}
         local pack = { key, title, wid, author, category = { en, fr }, model, blank = { [bodygroup] = empty },
             hide = { material index, ... }, items = { { class, slot, name = { en, fr }, mass, armor, load,
-            bodygroups, origin, hull, attach, on = { [playermodel] = bodygroups } }, ... },
-            fits = { models = { ... }, items = { [class] = "x y z p y r size|..." } } }
+            bodygroups, origin, hull, attach, stretch_top, depth_center, on = { [playermodel] = bodygroups } }, ... },
+            fits = { models = { ... }, items = { [class] = "x y z p y r size[ stretch[ depth] ]|..." } } }
+    (stretch: a vest made that much taller, downwards from stretch_top, its height in the model; depth:
+    that much deeper front to back, around depth_center, its middle along the model's x)
         if AdvInv.AddModelGearPack then AdvInv.AddModelGearPack(pack) else table.insert(AdvInv.ModelGearPacks, pack) end
     The item classes are the items' IDs: put the extension author's name in them.
 --]]
@@ -275,7 +277,9 @@ function I.MergePackFits(pack)
             if e and e ~= "" and rawget(t, class) == nil then
                 local n = {}
                 for x in string.gmatch(e, "%S+") do n[#n + 1] = tonumber(x) end
-                rawset(t, class, { Vector(n[1], n[2], n[3]), Angle(n[4], n[5], n[6]), n[7] })
+                -- (an 8th number: a vest stretched downwards from its top, ENT.StretchTop; a 9th: its
+                -- depth, around ENT.DepthCenter)
+                rawset(t, class, { Vector(n[1], n[2], n[3]), Angle(n[4], n[5], n[6]), n[7], n[8], n[9] })
             end
         end
     end)
@@ -312,6 +316,8 @@ function I.AddModelGearPack(pack)
         ENT.ModelPieces = it.pieces
         ENT.PhysHull = it.hull
         ENT.WornBox = it.worn_box -- { mins, maxs } of the gear as worn, in the model's space (framing)
+        ENT.StretchTop = it.stretch_top -- a vest: the height it is stretched down from (a fit's stretch)
+        ENT.DepthCenter = it.depth_center -- and the middle it is made deeper around (a fit's depth)
         ENT.BackDepth = it.back_depth -- a backpack: how far it sticks out behind the back (carried weapons)
         ENT.BackHalfWidth = it.back_half_width -- and how far to each side (a slung rifle hangs beside it)
         ENT.pocketID = false -- (the pocket vest base's pouch bodygroup: on a playermodel, another bodygroup)

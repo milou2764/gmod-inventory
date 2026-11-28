@@ -20,6 +20,7 @@ Needs MDL_EXTRA_DIRS (see fit_compat.py).
 """
 import math
 import struct
+import os
 import sys
 from pathlib import Path
 
@@ -33,11 +34,15 @@ import fit_items as fi  # noqa: E402
 import fit_locks  # noqa: E402
 
 _nz = fit_locks._nz  # (a negative zero without its sign; "-0.004" keeps it)
+import fitcore  # noqa: E402  (the rays and cuts in C when built: tools/fitcore)
 import mdl_render as mr  # noqa: E402
 import refbody  # noqa: E402
 from modelgear_packs import PACKS  # noqa: E402
 
 SPINE2, SPINE4, NECK = "ValveBiped.Bip01_Spine2", "ValveBiped.Bip01_Spine4", "ValveBiped.Bip01_Neck1"
+PELVIS = "ValveBiped.Bip01_Pelvis"
+UPPERARMS = ("ValveBiped.Bip01_L_UpperArm", "ValveBiped.Bip01_R_UpperArm")
+_posed_cache = {}
 BONE = {"Helmet": fi.HEAD, "Vest": SPINE4, "Rucksack": SPINE2, "Gasmask": fi.HEAD, "NVGs": fi.HEAD, "Radio": fi.HEAD}
 HEAD_SLOTS = ("Helmet", "Gasmask", "NVGs", "Radio")  # (fitted by the skull: a gas mask, night vision, a headset)
 
@@ -175,10 +180,22 @@ def gear_height(body, zc):
     return float(np.clip((zc - pel) / (neck - pel), 0.25, 0.8))
 
 
-def transfer_torso(src, src_bones, bone, target, src_girth, t=None, drop=0.0):
+LEVEL = os.environ.get("MODELGEAR_LEVEL", "1") != "0"  # (0: the former placement, for comparisons)
+LEVEL_LOG = []  # (gear class, playermodel, units moved up) of the last run
+LAST_UP = None
+ANCHOR = os.environ.get("MODELGEAR_ANCHOR", "top")  # "middle": its middle at the same relative height
+STRETCH_MAX = 1.25  # a vest made taller than wide by at most that much (0 or 1: never)
+TALL = 0.6  # gear whose top is that high on the torso (pelvis 0, neck 1) or higher: stretched with it
+
+
+def transfer_torso(src, src_bones, bone, target, src_girth, t=None, drop=0.0, zc=None, ztop=None, tall=True):
     """Attach on target's spine bone: the gear in the source's bone frame, scaled by the torso's girth
     where it sits (t: its relative height, both bodies measured there; a chest rig on a slim soldier's
-    belly isn't sized by a citizen's chest), else by the chest's."""
+    belly isn't sized by a citizen's chest), else by the chest's. A vest drawn as one piece (ztop: the
+    height of its top as worn on its own soldier; zc, of its middle) keeps its straps the same distance
+    below the neck, and is stretched downwards to the torso's length when that is longer than its size
+    gives (on a slim body, sized by the girth alone, it ended high on the chest: the female citizens).
+    -> pos, angles, size, stretch (vertical, around ztop: 1 = none)."""
     bp, _br = src_bones[bone]
     Bi = np.linalg.inv(bp)
     k = fc.chest_girth(target) / src_girth
@@ -188,9 +205,354 @@ def transfer_torso(src, src_bones, bone, target, src_girth, t=None, drop=0.0):
             k = min(max(gt / gs, 0.85 * k), 1.15 * k)
     k = round(float(k), 3)
     pos = Bi[:3, 3] * k
+    stretch = 1.0
+    if tall and ztop is not None and STRETCH_MAX > 1 and PELVIS in src_bones and NECK in src_bones:
+        # a vest is as wide as the chest gives and as tall as the torso is long: on a slim body (the
+        # female citizens, Alyx) sized by the girth alone it was too short and its plate ended high on the
+        # chest; stretched downwards from its top (the straps stay on the shoulders), never shortened
+        tb = _posed_cache.get(target.model)
+        if tb is None:
+            tb = _posed_cache[target.model] = posed_bones(target.model)
+        ls = abs(src_bones[NECK][0][2, 3] - src_bones[PELVIS][0][2, 3])
+        lt = abs(tb[NECK][0][2, 3] - tb[PELVIS][0][2, 3]) if PELVIS in tb and NECK in tb else 0
+        if ls > 1 and lt > 1:
+            stretch = round(float(min(max(lt / ls / k, 1.0), STRETCH_MAX)), 3)
+    if zc is not None and ztop is not None and PELVIS in src_bones \
+            and all(u in src_bones for u in UPPERARMS) and target.has(PELVIS, *UPPERARMS):
+        # (between the pelvis and the shoulder joints, where a vest's straps and a pack's hang: the neck
+        # bone stands higher above the shoulders on some bodies, the female citizens')
+        ps = src_bones[PELVIS][0][2, 3]
+        ns = sum(src_bones[u][0][2, 3] for u in UPPERARMS) / 2
+        rel = (zc - ps) / (ns - ps)  # (where it sits on its own soldier, as drawn)
+        # the target as the game draws it too (its idle pose: the female citizens' chest bone stands
+        # differently there than in their reference pose)
+        tb = _posed_cache.get(target.model)
+        if tb is None:
+            tb = _posed_cache[target.model] = posed_bones(target.model)
+        Tt = tb[bone][0]
+        q = (Bi @ np.array([bp[0, 3], bp[1, 3], zc, 1.0]))[:3] * k  # its middle in the target bone's frame
+        z_now = (Tt[:3, :3] @ q + Tt[:3, 3])[2]
+        pt, nt = tb[PELVIS][0][2, 3], sum(tb[u][0][2, 3] for u in UPPERARMS) / 2
+        up = (pt + rel * (nt - pt)) - z_now
+        if ANCHOR == "top" and ztop is not None and NECK in src_bones and NECK in tb:
+            # a vest hangs from the shoulders: its top (the straps) the same distance below the neck,
+            # scaled like it; a smaller or larger one changes towards the waist (centred, a slim body's
+            # vest rose up the chest)
+            qt = (Bi @ np.array([bp[0, 3], bp[1, 3], ztop, 1.0]))[:3] * k
+            top_now = (Tt[:3, :3] @ qt + Tt[:3, 3])[2]
+            up = (tb[NECK][0][2, 3] - k * (src_bones[NECK][0][2, 3] - ztop)) - top_now
+        global LAST_UP
+        LAST_UP = round(float(up), 2)
+        if LEVEL:
+            pos = pos + Tt[:3, :3].T @ np.array([0.0, 0.0, up])
     if drop:  # lowered by that much (units on the source's body, scaled like it), straight down
         pos = pos + target.world[bone][:3, :3].T @ np.array([0.0, 0.0, -drop * k])
-    return pos, fi.matrix_angles(Bi[:3, :3]), k
+    return pos, fi.matrix_angles(Bi[:3, :3]), k, stretch
+
+
+# ---------------------------------------------------------------- a vest fitted to the body
+# After its placement by the neck bone and its size by the chest's girth (transfer_torso), a vest drawn as
+# one piece is fitted to the body as the game draws it (anim0.posed_mesh: no game needed):
+#   - its straps rest on the shoulders (placed by the neck bone they floated 2 units over the female
+#     citizens' shoulders: their neck bone stands differently above them);
+#   - its front and back panels lie against the chest, the belly and the back: its depth is stretched (the
+#     fit's 9th number, around the item's depth_center) and it is moved forward or back (sized by the girth
+#     it was too shallow for G-Man and Kleiner, their jackets through its front plate, and stood off the
+#     female citizens' backs).
+# Each is brought as close to the body as it goes without the body showing through it: on a grid across
+# it, its outer surface stands FIT_MARGIN outside the body's (rays cast onto the body), but for FIT_SPARE
+# percent of the cells (a ponytail, a hood, a collar). tools/vest_check.py reports what is left.
+FIT = os.environ.get("MODELGEAR_FIT", "1") != "0"  # (0: as placed by the neck bone and sized by the girth)
+FIT_MARGIN = 0.15  # (world units) its outer surface outside the body's
+FIT_SPARE = 3  # (percent of the cells) where the body may show through
+FIT_CELL = 0.6  # (units on the source's body, scaled like it) the grid across its straps and panels
+STRAP_BAND = 3.0  # the top of a vest that lies on the shoulders (units on its own soldier)
+STRAP_FLAT = 0.5  # a strap rests on what faces up at least that much (its normal's vertical part)
+REST_MAX = 4.0  # moved up or down by at most that much (units on the source's body, scaled like it)
+DEPTH_RANGE = (0.85, 1.35)
+DEPTH_MOVE = 3.0  # moved forward or back by at most that much (units on the source's body, scaled like it)
+STRAP_SPREAD, STRAP_OUTLIER = 2.5, 1.5  # (units on the source's body, scaled like them) when resting on
+# the highest things under the straps would leave most of them floating more than STRAP_SPREAD over the
+# shoulders, those standing STRAP_OUTLIER above the rest are a hood or a big collar: the straps go under it,
+# the vest isn't lifted over it (Alyx's hood raised it 2.8 units). A shoulder rising to the neck is not one.
+AIR_OK = 0.4  # (world units) a gap seen from the side up to that much is left as it is; beyond, tilted
+TILTS = (2.0, -2.0, 4.0, -4.0, 6.0, -6.0)  # (degrees, about the straps) tried for a vest that leaves a gap
+TILTS_SMALL = (4.0, -4.0, 8.0, -8.0, 12.0, -12.0)  # (and for gear hanging from a belt: a holster against the hip)
+FIT_LOG = []  # (gear class, playermodel, up, forward, depth, tilt, air left, "fit" | "lock") of the last run
+_mesh_cache = {}
+
+
+def angle_matrix(a):
+    """Source QAngle (pitch, yaw, roll), degrees -> 3x3 rotation (AngleMatrix; fit_items.matrix_angles back)."""
+    p, y, r = (math.radians(x) for x in a)
+    sp, cp, sy, cy, sr, cr = math.sin(p), math.cos(p), math.sin(y), math.cos(y), math.sin(r), math.cos(r)
+    return np.array([[cp * cy, sr * sp * cy - cr * sy, cr * sp * cy + sr * sy],
+                     [cp * sy, sr * sp * sy + cr * cy, cr * sp * sy - sr * cy],
+                     [-sp, sr * cp, cr * cp]])
+
+
+def drawn_mesh(model):
+    """The playermodel as the game draws it (anim0.posed_mesh): vertices, triangles (n, 3); the last one kept."""
+    if _mesh_cache.get("model") != model:
+        P, _N, _uv, tris, _mats = anim0.posed_mesh(model, textures=False)
+        _mesh_cache.update(model=model, P=P, T=np.array([t[:3] for t in tris], dtype=np.int64).reshape(-1, 3))
+    return _mesh_cache["P"], _mesh_cache["T"]
+
+
+def surface_below(BP, BT, pts, below, above, slope=False):
+    """Height of the highest triangle of a mesh (vertices BP, triangles BT) straight below each point,
+    from `below` under it to `above` over it; -inf where none. slope: also how flat it is there (the
+    vertical part of its normal, 1: level, 0: upright) -> (heights, flatness)."""
+    out = np.full(len(pts), -np.inf)
+    flat = np.zeros(len(pts))
+    if not len(pts) or not len(BT):
+        return (out, flat) if slope else out
+    if fitcore.available():
+        out, flat = fitcore.surface_below(BP, BT, pts, below, above)
+        return (out, flat) if slope else out
+    A, B, C = BP[BT[:, 0]], BP[BT[:, 1]], BP[BT[:, 2]]
+    lo, hi = pts.min(0), pts.max(0)
+    tmin, tmax = np.minimum(np.minimum(A, B), C), np.maximum(np.maximum(A, B), C)
+    keep = ((tmax[:, 0] >= lo[0]) & (tmin[:, 0] <= hi[0]) & (tmax[:, 1] >= lo[1]) & (tmin[:, 1] <= hi[1])
+            & (tmax[:, 2] >= lo[2] - below) & (tmin[:, 2] <= hi[2] + above))
+    A, B, C = A[keep], B[keep], C[keep]
+    e1, e2 = (B - A)[:, :2], (C - A)[:, :2]
+    den = e1[:, 0] * e2[:, 1] - e1[:, 1] * e2[:, 0]
+    ok = np.abs(den) > 1e-9
+    A, B, C, e1, e2, den = A[ok], B[ok], C[ok], e1[ok], e2[ok], den[ok]
+    if not len(A):
+        return (out, flat) if slope else out
+    nrm = np.cross(B - A, C - A)
+    level = np.abs(nrm[:, 2]) / (np.linalg.norm(nrm, axis=1) + 1e-12)
+    for s in range(0, len(pts), 256):
+        p = pts[s:s + 256]
+        d = p[:, None, :2] - A[None, :, :2]
+        u = (d[..., 0] * e2[:, 1] - d[..., 1] * e2[:, 0]) / den
+        v = (e1[:, 0] * d[..., 1] - e1[:, 1] * d[..., 0]) / den
+        z = A[:, 2] + u * (B[:, 2] - A[:, 2]) + v * (C[:, 2] - A[:, 2])
+        valid = (u >= 0) & (v >= 0) & (u + v <= 1) & (z <= p[:, 2:3] + above) & (z >= p[:, 2:3] - below)
+        zz = np.where(valid, z, -np.inf)
+        top = zz.argmax(1)
+        out[s:s + 256] = zz[np.arange(len(p)), top]
+        flat[s:s + 256] = level[top]
+    return (out, flat) if slope else out
+
+
+def placed_vest(V, ztop, xc, model, bone, fit):
+    """A vest's vertices (its model's space, as worn on its own soldier) placed on model by fit (pos, angles,
+    size[, stretch[, depth]]), as the game draws them (cl_gear.lua AdvInv.StretchGear)."""
+    tb = _posed_cache.get(model)
+    if tb is None:
+        tb = _posed_cache[model] = posed_bones(model)
+    pos, ang, k = fit[0], fit[1], fit[2]
+    st = fit[3] if len(fit) > 3 else 1.0
+    dp = fit[4] if len(fit) > 4 else 1.0
+    P = V.copy()
+    if ztop is not None and st != 1:
+        P[:, 2] = ztop + (P[:, 2] - ztop) * st
+    if xc is not None and dp != 1:
+        P[:, 0] = xc + (P[:, 0] - xc) * dp
+    Tt = tb[bone][0]
+    return (Tt[:3, :3] @ angle_matrix(ang) @ (P * k).T).T + Tt[:3, :3] @ np.asarray(pos, dtype=float) + Tt[:3, 3]
+
+
+def cover(W, BP, BT, region, k=1.0, shoulders_z=None, part=None):
+    """A placed vest (vertices W) against the body as drawn (BP, BT; it faces +x), on a grid across one
+    region: "straps" (its top, seen from above), "front" or "back" (its panels, the middle of its width,
+    from just above its bottom to below its straps, seen from that side). -> (cover, gap) per cell: how
+    far its outer and its inner surface stand outside the body's outermost surface there (cover < 0: the
+    body shows through it; gap > 0: air between them). Straps: whatever of it lies over the shoulders (the
+    body's surface under it higher than shoulders_z, the shoulder joints, and nothing of it hanging down past
+    that surface: not the top of a plate in front of the chest). Without shoulders_z: its top STRAP_BAND."""
+    empty = (np.array([]), np.array([]))
+    zt, zb = W[:, 2].max(), W[:, 2].min()
+    h = zt - zb
+    if region == "straps":  # (outward: up)
+        U = W[W[:, 2] > (shoulders_z - 2.0 * k if shoulders_z is not None else zt - STRAP_BAND * k)]
+        B = BP
+    else:
+        band = W[(W[:, 2] < zt - 0.25 * h) & (W[:, 2] > zb + 0.05 * h)]
+        if part is not None:  # (its lower half: the belly; its upper half: the chest)
+            zm = (zb + 0.05 * h + zt - 0.25 * h) / 2
+            band = band[band[:, 2] < zm] if part == "low" else band[band[:, 2] >= zm]
+        if len(band) < 20:
+            return empty
+        cy = float(np.median(band[:, 1]))
+        half = (band[:, 1].max() - band[:, 1].min()) / 2
+        band = band[np.abs(band[:, 1] - cy) < 0.6 * half]
+        near = BP[(BP[:, 2] < band[:, 2].max()) & (BP[:, 2] > band[:, 2].min()) & (np.abs(BP[:, 1] - cy) < 0.6 * half)]
+        if len(band) < 20 or len(near) < 10:
+            return empty
+        cx = float((near[:, 0].min() + near[:, 0].max()) / 2)
+        sgn = 1.0 if region == "front" else -1.0
+        side = band[(band[:, 0] - cx) * sgn > 0]
+        U = np.c_[side[:, 1], side[:, 2], sgn * side[:, 0]]  # (y, z, outward)
+        B = np.c_[BP[:, 1], BP[:, 2], sgn * BP[:, 0]]
+    if len(U) < 8:
+        return empty
+    cell = FIT_CELL * k
+    keys, inv = np.unique(np.floor(U[:, :2] / cell).astype(np.int64), axis=0, return_inverse=True)
+    inv = inv.ravel()
+    outer = np.full(len(keys), -np.inf)
+    inner = np.full(len(keys), np.inf)
+    np.maximum.at(outer, inv, U[:, 2])
+    np.minimum.at(inner, inv, U[:, 2])
+    zs, flat = surface_below(B, BT, np.c_[(keys + 0.5) * cell, outer], 10.0 * k, 2.0 * k, slope=True)
+    ok = np.isfinite(zs)
+    if region == "straps" and shoulders_z is not None:
+        # (on the top of the shoulders: not the side of the neck or of a collar, which a strap goes around:
+        # the female citizens' collar raised a soft vest 2 units)
+        ok &= (zs > shoulders_z) & (inner > zs - 2.0 * k) & (flat > STRAP_FLAT)
+    return outer[ok] - zs[ok], inner[ok] - zs[ok]
+
+
+def zcut(P, T, z):
+    """Points where the triangles T of a mesh (vertices P) cross the plane at height z (its outline there)."""
+    if fitcore.available() and len(T):
+        return fitcore.zcut(P, T, z)
+    A, B, C = P[T[:, 0]], P[T[:, 1]], P[T[:, 2]]
+    out = []
+    for p, q in ((A, B), (B, C), (C, A)):
+        dp, dq = p[:, 2] - z, q[:, 2] - z
+        m = (dp < 0) != (dq < 0)
+        t = (dp[m] / (dp[m] - dq[m]))[:, None]
+        out.append(p[m] + t * (q[m] - p[m]))
+    return np.concatenate(out) if out else np.zeros((0, 3))
+
+
+def side_air(W, WT, BP, BT, k=1.0):
+    """The air seen from the side between a placed vest (vertices W, triangles WT) and the body as drawn
+    (BP, BT; it faces +x), from just above its bottom to below its straps, every half unit of height:
+    (front, back) arrays: how far the vest's front stands off the body's foremost point at that height
+    (across the vest's width) and its back off the body's rearmost point; > 0: a gap you see from the side
+    (the belly, the small of the back), < 0: none (they overlap)."""
+    zt, zb = W[:, 2].max(), W[:, 2].min()
+    h = zt - zb
+    front, back = [], []
+    for z in np.arange(zb + 0.05 * h, zt - 0.25 * h, 0.5 * k):
+        v, b = zcut(W, WT, z), zcut(BP, BT, z)
+        if len(v) < 4:
+            continue
+        b = b[(b[:, 1] > v[:, 1].min()) & (b[:, 1] < v[:, 1].max())]
+        if len(b) < 4:
+            continue
+        cx = (b[:, 0].min() + b[:, 0].max()) / 2
+        vf, vb = v[v[:, 0] > cx], v[v[:, 0] < cx]
+        if len(vf):
+            front.append(vf[:, 0].min() - b[:, 0].max())
+        if len(vb):
+            back.append(b[:, 0].min() - vb[:, 0].max())
+    return np.array(front), np.array(back)
+
+
+def strap_support(c, k):
+    """The straps' cells that hold them up (cover): all, but for a hood (STRAP_SPREAD, STRAP_OUTLIER)."""
+    if len(c) and np.median(c) - np.percentile(c, FIT_SPARE) > STRAP_SPREAD * k:
+        return c[c > np.median(c) - STRAP_OUTLIER * k]
+    return c
+
+
+BUST_MAX = 1.0  # (units on the source's body, scaled like it) a bust may go that far into a vest's front
+
+
+def front_need(W, BP, BT, k):
+    """How far a vest's front must move outwards: against the belly (the lower half of the front panel),
+    the chest above it allowed into the vest by up to BUST_MAX (the user: "it is no big deal if female
+    breast go inside the vest"; resting on the bust, the plate stood 1.5 to 2.5 units off the belly).
+    A flat chest needs the same at both heights: nothing changes there."""
+    lo, hi = _need(cover(W, BP, BT, "front", k, part="low")[0]), _need(cover(W, BP, BT, "front", k, part="high")[0])
+    if lo is None or hi is None:
+        return _need(cover(W, BP, BT, "front", k)[0])
+    return max(lo, hi - BUST_MAX * k)
+
+
+def _need(c):
+    """How far a region must move outwards for its cover to be FIT_MARGIN but for FIT_SPARE % of it."""
+    return float(FIT_MARGIN - np.percentile(c, FIT_SPARE)) if len(c) >= 8 else None
+
+
+def fit_to_body(V, ztop, xc, model, bone, fit):
+    """fit (pos, angles, size[, stretch]) of a vest on model, fitted to its body: -> ((pos, angles, size,
+    stretch, depth), (up, forward, depth)). Depth and forward first (both panels against the body), then
+    up (the straps on the shoulders), twice (the body's shape changes with the height)."""
+    tb = _posed_cache.get(model)
+    if tb is None:
+        tb = _posed_cache[model] = posed_bones(model)
+    k = fit[2]
+    st = fit[3] if len(fit) > 3 else 1.0
+    dp = fit[4] if len(fit) > 4 else 1.0
+    pos = np.asarray(fit[0], dtype=float)
+    BP, BT = drawn_mesh(model)
+    Rt = tb[bone][0][:3, :3]
+    sh = sum(tb[u][0][2, 3] for u in UPPERARMS) / 2 if all(u in tb for u in UPPERARMS) else None
+    up_t = fwd_t = 0.0
+
+    def at(p, d):
+        return placed_vest(V, ztop, xc, model, bone, (p, fit[1], k, st, d))
+
+    for _ in range(2):
+        if xc is not None:
+            W0, W1 = at(pos, dp), at(pos, dp + 0.1)
+            nf0, nb0 = front_need(W0, BP, BT, k), _need(cover(W0, BP, BT, "back", k)[0])
+            nf1, nb1 = front_need(W1, BP, BT, k), _need(cover(W1, BP, BT, "back", k)[0])
+            if None not in (nf0, nb0, nf1, nb1):
+                dnf, dnb = (nf1 - nf0) / 0.1, (nb1 - nb0) / 0.1  # (deeper: both need less)
+                d = dp
+                if dnf + dnb < -1e-3:  # both panels against the body: their needs add up to 0
+                    d = float(np.clip(dp - (nf0 + nb0) / (dnf + dnb), *DEPTH_RANGE))
+                # forward by m: the front's need goes down by m, the back's up by m (the same miss both sides)
+                m = ((nf0 + dnf * (d - dp)) - (nb0 + dnb * (d - dp))) / 2
+                m = float(np.clip(fwd_t + m, -DEPTH_MOVE * k, DEPTH_MOVE * k)) - fwd_t
+                pos, dp, fwd_t = pos + Rt.T @ np.array([m, 0.0, 0.0]), d, fwd_t + m
+            elif nf0 is not None or nb0 is not None:
+                # only a front (a holster on the hip, it floated 2 units off the belly) or only a back: moved
+                # against the body, not made deeper (that needs both)
+                m = nf0 if nf0 is not None else -nb0
+                m = float(np.clip(fwd_t + m, -DEPTH_MOVE * k, DEPTH_MOVE * k)) - fwd_t
+                pos, fwd_t = pos + Rt.T @ np.array([m, 0.0, 0.0]), fwd_t + m
+        if sh is not None:
+            n = _need(strap_support(cover(at(pos, dp), BP, BT, "straps", k, sh)[0], k))
+            if n is not None:
+                u = float(np.clip(up_t + n, -REST_MAX * k, REST_MAX * k)) - up_t
+                pos, up_t = pos + Rt.T @ np.array([0.0, 0.0, u]), up_t + u
+    return (pos, fit[1], k, st, round(float(dp), 3)), (round(up_t, 2), round(fwd_t, 2), round(float(dp), 3))
+
+
+def tilted(fit, deg, ztop, xc):
+    """fit turned by deg about the vest's lateral axis through its straps (its model's y at stretch_top,
+    depth_center): its bottom forward (> 0) or back."""
+    a = math.radians(deg)
+    Ry = np.array([[math.cos(a), 0.0, math.sin(a)], [0.0, 1.0, 0.0], [-math.sin(a), 0.0, math.cos(a)]])
+    R = angle_matrix(fit[1])
+    c = np.array([xc or 0.0, 0.0, ztop])
+    pos = np.asarray(fit[0], dtype=float) + R @ (c - Ry @ c) * fit[2]
+    return (pos, fi.matrix_angles(R @ Ry)) + tuple(fit[2:])
+
+
+def fit_vest(V, T, ztop, xc, model, bone, fit, tall=True):
+    """fit_to_body, then, when a gap seen from the side is left (side_air: the belly under a bust, the
+    small of the back), the same tilted a little (TILTS) if that leaves less: -> (fit, (up, forward,
+    depth, tilt, air left))."""
+    BP, BT = drawn_mesh(model)
+
+    def score(f):  # the widest gap seen from the side, and 0.4 more per % of the panels the body shows through
+        W = placed_vest(V, ztop, xc, model, bone, f)
+        fa, ba = side_air(W, T, BP, BT, f[2])
+        air = max(float(fa.max()) if len(fa) else 0.0, float(ba.max()) if len(ba) else 0.0)
+        show = [cover(W, BP, BT, "front", f[2], part="low")[0], cover(W, BP, BT, "back", f[2])[0]]  # (a bust may go in)
+        return air + 0.4 * sum(max(0.0, float((c < 0).mean() * 100) - FIT_SPARE) for c in show if len(c))
+
+    best, moved = fit_to_body(V, ztop, xc, model, bone, fit)
+    air, tilt = score(best), 0.0
+    if T is not None and air > AIR_OK:
+        for deg in (TILTS if tall else TILTS_SMALL):
+            f, m = fit_to_body(V, ztop, xc, model, bone, tilted(fit, deg, ztop, xc))
+            a = score(f)
+            if a < air - 0.05:
+                best, moved, air, tilt = f, m, a, deg
+            if air <= AIR_OK:
+                break
+    return best, moved + (tilt, round(air, 2))
 
 
 def lua_vec(v, n=2):
@@ -302,13 +664,19 @@ def main():
         wt = [t for t in trisw if tuple(t) not in base_tris]
         shared_worn = bool({t[3] for t in wt} & set(hidden))
         wv = sorted({t[k] for t in wt for k in range(3)})
+        wi = {v: n for n, v in enumerate(wv)}
+        worn_T = np.array([[wi[t[0]], wi[t[1]], wi[t[2]]] for t in wt], dtype=np.int64).reshape(-1, 3)
         worn_box = (Pw[wv].min(0), Pw[wv].max(0))
         worn_z = float(np.median(Pw[wv][:, 2]))
         back_depth, back_half = backpack_depth(Pw[wv], body, face) if it["slot"] == "Rucksack" else (None, None)
-        items.append({**it, "sel": sel, "bgs": bgs, "stored_bgs": stored, "V": V, "P": P, "tris": keep, "center": center,
+        # a vest drawn as one piece stretches downwards from its top on bodies longer than wide (not one bonemerged,
+        # nor one with parts on the body's material, drawn apart)
+        stretch_top = float(worn_box[1][2]) if it["slot"] == "Vest" and not it.get("rigged") and not shared_worn else None
+        items.append({**it, "stretch_top": stretch_top, "sel": sel, "bgs": bgs, "stored_bgs": stored, "V": V, "P": P, "tris": keep, "center": center,
                       "hull": hull, "pieces": pieces, "worn_box": worn_box, "back_depth": back_depth,
                       "shared": [k for k, s in (("stored", shared_stored), ("worn", shared_worn)) if s],
-                      "worn_z": worn_z,
+                      "worn_z": worn_z, "worn_V": Pw[wv] if stretch_top is not None else None, "worn_T": worn_T,
+                      "depth_center": float((worn_box[0][0] + worn_box[1][0]) / 2) if stretch_top is not None else None,
                       "back_half_width": back_half})
         print(f"{it['class']:40} {len(keep):5} triangles, {len(hull):2} hull points, size {np.round(V.max(0) - V.min(0), 1)}"
               f"{'  in 2 pieces' if pieces else ''}{f'  {back_depth:.1f} behind the back, {back_half:.1f} half wide' if back_depth else ''}"
@@ -329,8 +697,13 @@ def main():
         torso_bones = posed_bones(draw)
         anim0.BIND_POSITIONS.update(m.lower() for m in pack["models"])
     src_girth = fc.chest_girth(src)
+    torso = abs(torso_bones[NECK][0][2, 3] - torso_bones[PELVIS][0][2, 3]) if NECK in torso_bones and PELVIS in torso_bones else 0
     for it in items:
         it["height"] = gear_height(src, it["worn_z"])
+        # stretched to the torso's length only if it runs down the torso: its top up on the chest (a vest,
+        # webbing), not a holster or a pouch hanging from a belt (a holster 9.7 high was stretched)
+        pz = torso_bones[PELVIS][0][2, 3] if PELVIS in torso_bones else 0.0
+        it["tall"] = not torso or float(it["worn_box"][1][2] - pz) >= TALL * torso
     fits = {it["class"]: {} for it in items}
     for m in targets:
         try:
@@ -350,18 +723,34 @@ def main():
                     bone = BONE[it["slot"]]
                     if not body.has(bone, NECK) or len(body.verts(fi.TORSO)) < 50:
                         continue
-                    fits[it["class"]][m] = transfer_torso(src, torso_bones, bone, body, src_girth, it["height"],
-                                                          it.get("drop", 0.0))
+                    fit = transfer_torso(src, torso_bones, bone, body, src_girth, it["height"],
+                                         it.get("drop", 0.0), it["worn_z"], it.get("stretch_top"), it.get("tall", True))
+                    LEVEL_LOG.append((it["class"], m, LAST_UP))
+                    if FIT and it.get("worn_V") is not None:  # against the body, straps on the shoulders
+                        fit, moved = fit_vest(it["worn_V"], it.get("worn_T"), it["stretch_top"], it["depth_center"], m,
+                                              bone, fit, it.get("tall", True))
+                        FIT_LOG.append((it["class"], m) + moved + ("fit",))
+                    fits[it["class"]][m] = fit
             except Exception as e:  # noqa: BLE001
                 print(f"  {it['class']} on {m}: {e}")
     # fits approved in the fit editor are final (tools/fit_locks.txt)
     locks = fit_locks.load()
+    # a vest fitted to the body: Claude's approvals give way to its new fit, the user's stay as approved
+    by = fit_locks.approvers()
     for it in items:
         per = fits[it["class"]]
+        stretchy = it.get("stretch_top") is not None
         for m in list(per):
             lk = fit_locks.get(locks, it["class"], m)
-            if lk is not None:
-                per[m] = lk
+            if lk is None:
+                continue
+            key = (it["class"], m.lower())
+            if stretchy and by.get(key) == "claude":
+                # Claude's own approvals (stamped or adjusted under the earlier rules) give way to the fit
+                # against the body, the user's standard (one adjusted by hand left a holster 8 units off the
+                # belly the new fit couldn't bring back); the user's stay final
+                continue
+            per[m] = lk
     for it in items:
         it["attach"] = fits[it["class"]].get(fi.REF)
     # the pack's own playermodels: the bodygroups that show each item there
@@ -420,6 +809,10 @@ def write_lua(pack, draw, base, hidden, items, own, targets, fits, out):
         L.append(f"          origin = {lua_vec(it['center'], 3)},")
         L.append("          hull = { " + ", ".join(lua_vec(h, 2) for h in it["hull"]) + " },")
         L.append(f"          worn_box = {{ {lua_vec(it['worn_box'][0], 1)}, {lua_vec(it['worn_box'][1], 1)} }},")
+        if it.get("stretch_top") is not None:
+            L.append(f"          stretch_top = {it['stretch_top']:.2f}, -- (a fit's 8th number stretches it downwards from there)")
+        if it.get("depth_center") is not None:
+            L.append(f"          depth_center = {it['depth_center']:.2f}, -- (a fit's 9th number: its depth, around there)")
         if it.get("rigged"):  # bonemerged on the wearer (parts on the legs follow them): no rigid fit
             L.append("          rigged = true,")
         if it["shared"]:  # looks with parts on a material of the hidden body: drawn apart by the game
@@ -445,8 +838,11 @@ def write_lua(pack, draw, base, hidden, items, own, targets, fits, out):
             if f is None:
                 parts.append("")
                 continue
-            p, ang, s = f
-            parts.append(_nz(" ".join([f"{x:.2f}" for x in p] + [f"{x:.1f}" for x in ang] + [f"{s:g}"])))
+            p, ang, s = f[:3]
+            st = f[3] if len(f) > 3 else 1.0
+            dp = f[4] if len(f) > 4 else 1.0
+            extra = [f"{st:g}", f"{dp:g}"] if abs(dp - 1) > 0.004 else [f"{st:g}"] if abs(st - 1) > 0.004 else []
+            parts.append(_nz(" ".join([f"{x:.2f}" for x in p] + [f"{x:.1f}" for x in ang] + [f"{s:g}"] + extra)))
         L.append(f"            [{lua_str(it['class'])}] = \"{'|'.join(parts)}\",")
     L.append("        },")
     L.append("    },")

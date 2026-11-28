@@ -6,3 +6,4 @@ private/
 release/
 tools/fit_editor/*.exe
 tools/fit_editor/local.bat
+tools/fitcore/*.dll

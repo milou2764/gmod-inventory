@@ -98,24 +98,10 @@ def worn_items():
 
 def vertex_weights(model):
     """Bones (N x 3) and weights (N x 3) of every vertex, in the order of mdl_render.load_model."""
-    vvd = mr.vpk_read(model[:-4] + ".vvd")
-    i = lambda o: struct.unpack_from("<i", vvd, o)[0]
-    nfix, fixstart, vstart = i(48), i(52), i(56)
-    raw = []
-    for k in range(i(16)):
-        o = vstart + k * 48
-        raw.append((struct.unpack_from("<3b", vvd, o + 12), struct.unpack_from("<3f", vvd, o), vvd[o + 15]))
-    if nfix:
-        lst = []
-        for f in range(nfix):
-            lod, src, num = struct.unpack_from("<3i", vvd, fixstart + f * 12)
-            if lod >= 0:
-                lst.extend(raw[src:src + num])
-    else:
-        lst = raw
-    B, W = np.zeros((len(lst), 3), int), np.zeros((len(lst), 3))
-    for k, (b, w, n) in enumerate(lst):
-        B[k, :n], W[k, :n] = b[:n], w[:n]
+    vv = mr.vvd_lod0(mr.vpk_read(model[:-4] + ".vvd"))
+    used = np.arange(3)[None, :] < vv["n"][:, None]  # (only the first numbones of each vertex count)
+    B = np.where(used, vv["b"].astype(int), 0)
+    W = np.where(used, vv["w"].astype(np.float64), 0.0)
     return B, W
 
 

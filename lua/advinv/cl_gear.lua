@@ -50,7 +50,7 @@ function AdvInv.AttachFor(class, playermodel, default)
     local key = class .. "|" .. playermodel
     local a = fitCache[key]
     if not a then
-        a = { bone = default.bone, pos = f[1], ang = f[2], scale = f[3] }
+        a = { bone = default.bone, pos = f[1], ang = f[2], scale = f[3], stretch = f[4], depth = f[5] }
         fitCache[key] = a
     end
     return a
@@ -201,6 +201,30 @@ local function drawGear(self, flags)
     render.SuppressEngineLighting(false)
 end
 
+-- A vest fitted to the body on two axes besides its size: made taller on a body longer than it is wide
+-- (the fit's stretch, around the item's ENT.StretchTop: its straps stay on the shoulders) and deeper
+-- or shallower front to back (the fit's depth, around ENT.DepthCenter: both its panels clear of the
+-- body). The render matrix is in the scaled model's space.
+function AdvInv.StretchGear(model, attach, parentScale)
+    local t = model.advinvClass and AdvInv.ClassTable(model.advinvClass)
+    local top, st = t and t.StretchTop, attach and attach.stretch or 1
+    local cx, dp = t and t.DepthCenter, attach and attach.depth or 1
+    if not cx then dp = 1 end
+    if top and (st ~= 1 or dp ~= 1) then
+        local s = (attach.scale or 1) * (parentScale or 1)
+        local x, z = (cx or 0) * s, top * s
+        local m = Matrix()
+        m:Translate(Vector(x, 0, z))
+        m:Scale(Vector(dp, 1, st))
+        m:Translate(Vector(-x, 0, -z))
+        model:EnableMatrix("RenderMultiply", m)
+        model.advinvStretched = true
+    elseif model.advinvStretched then
+        model:DisableMatrix("RenderMultiply")
+        model.advinvStretched = nil
+    end
+end
+
 function AdvInv.MountGearModel(model, target, attach, bodyFit, class)
     model.RenderOverride = drawGear
     model.advinvBaseAttach = attach -- the item's own ENT.Attach; the playermodel's fit is applied on top
@@ -209,6 +233,7 @@ function AdvInv.MountGearModel(model, target, attach, bodyFit, class)
     if attach then attach = AdvInv.AttachFor(model.advinvClass, target:GetModel(), attach) end
     model.advinvAttach = attach
     if not attach then
+        AdvInv.StretchGear(model, nil)
         model:SetParent(target)
         model:AddEffects(EF_BONEMERGE)
         model:AddEffects(EF_BONEMERGE_FASTCULL)
@@ -220,6 +245,7 @@ function AdvInv.MountGearModel(model, target, attach, bodyFit, class)
     model.advinvParentModel = target:GetModel()
     model.advinvParentScale = scale
     model:SetModelScale((attach.scale or 1) * scale, 0)
+    AdvInv.StretchGear(model, attach, scale)
 
     local boneID = target:LookupBone(attach.bone or "ValveBiped.Bip01_Head1")
     if not boneID then
@@ -273,7 +299,10 @@ function AdvInv.PlaceGearModel(model, target)
     model:SetRenderOrigin(pos)
     model:SetRenderAngles(ang)
     local wanted = (attach.scale or 1) * target:GetModelScale()
-    if model:GetModelScale() ~= wanted then model:SetModelScale(wanted, 0) end
+    if model:GetModelScale() ~= wanted then
+        model:SetModelScale(wanted, 0)
+        AdvInv.StretchGear(model, attach, target:GetModelScale())
+    end
 end
 
 -- Si le playermodel ou sa taille change, les index d'os peuvent changer : on réattache.
