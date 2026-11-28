@@ -1,0 +1,132 @@
+models/fsb_stalker_military_reskinned_pm.mdl	Vest	Helmet:3=6	Gasmask:3=1,3;Helmet:1=1	-	FSB Ratnik: plate carrier with pouches in both body meshes (small butt pouch, no pack); headgear 3: 0 Altyn visor up, 1 Altyn visor closed, 2 helmet, 3 helmet + gas mask, 4 helmet + NVG, 5 beret, 6 none; body 1 has a bulky parka hood up
+models/1000shells/research_cooperative/odin.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Fallout X-01 power armour (rule 4), raised back unit; extra jetpack bodygroup 1 (0 = none)
+models/1000shells/research_cooperative/x01powerarmor.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Fallout X-01 power armour (rule 4), raised back unit; extra jetpack bodygroup 1 (0 = none)
+models/sdwan/arkham_knight/playermodels/arkham_knight.mdl	Helmet,Gasmask,Vest	-	-	-	Arkham Knight armoured suit; closed full-face helmet; flat back panel, no pack
+models/eft/pmcs/bear_extended_pm.mdl	-	-	-	-	EFT BEAR PMC: 7 bare heads, 25 tops all plain clothing (hoods down), 22 pants; no gear
+models/eft/pmcs/usec_extended_pm.mdl	-	-	Helmet:0=7	-	EFT USEC PMC: head 7 (usec_head_0) wears a baseball cap + headset over a balaclava, other heads bare; 26 tops all plain clothing (hoods down)
+models/player/stalkero_anomaly/isg/stalkero_isg_1a_face_2.mdl	Helmet,Vest	-	-	-	Anomaly ISG: baseball cap + headset, face scarf (not gear), plate carrier with pouches; small pouch on the back, no pack
+models/teredit/catnike/port/zakaz/sv_freedom2a.mdl	-	Rucksack:2=0;Vest:7=0;Vest:8=0;Gasmask:9=0;Helmet:10=0	-	-	Freedom: bare = plain jacket; Rykzak backpacks (2), Jilet vests (7), Razgryzka chest rigs (8), Protivogasi gas mask/respirator (9), Headwear panama/hat/hood/helmet (10); bandana, glasses not slots
+models/teredit/catnike/port/zakaz/sv_freedom2a_mas4.mdl	-	Vest:1=0;Helmet:2=0;Gasmask:7=0;Vest:8=0;Rucksack:9=0	-	-	Freedom: balaclava in the base (not gear); Jilet vests (1), Headwear hood/panama/helmet (2), Protivogaz (7), Razgryzka chest rigs (8), Rykzak (9); keffiyeh, glasses not slots
+models/teredit/catnike/port/zakaz/sv_leader.mdl	-	Gasmask:2=0;Vest:5=0	-	-	Freedom leader: bare head, plain jacket; Protivogas gas mask (2), Razgryzka chest rig (5); beard, blunt not slots
+models/teredit/catnike/port/zakaz/sv_nauchniy.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Freedom SEVA-type suit: hood with closed visor, plate carrier, twin air tanks on the back (rule 4)
+models/player/stalkerov_anomaly/isg/stalkerov_isg_1a_face_2.mdl	Helmet,Vest	-	-	-	Anomaly ISG (winter camo): baseball cap + headset, face scarf, plate carrier with pouches; no pack
+models/stalkero_monolith/stalker_monolith1_2.mdl	Helmet,Gasmask,Vest	Rucksack:1=1	-	-	Monolith: bulky camo parka hood up (Helmet, judgment) + respirator gas mask, chest rig; backpack bodygroup 1: 0 = big pack with bedroll, 1 = rig without pack (used as none)
+models/stalkero_monolith/stalker_monolith3a.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Monolith: helmet + full gas mask, plate carrier, MOLLE backpack, all in one mesh
+models/stalkero_monolith/stalker_monolith_0.mdl	Helmet,Gasmask	-	-	-	Monolith: bulky camo parka hood up (Helmet, judgment) + respirator; no vest (belt pouches only); bedroll on the belt at the back, not a backpack
+models/stalkero_monolith/stalker_monolith_2_helm.mdl	Helmet,Vest,Rucksack	Gasmask:1=0	-	-	Monolith: helmet with goggles over balaclava, chest rig, backpack with bedroll; mask bodygroup 1: 0 (named m40) shows only the balaclava, 1 = respirator
+models/stalkero_monolith/stalker_monolith_4_proto.mdl	Helmet,Gasmask,Vest	-	-	-	Monolith prototype suit: sealed helmet with gas mask, armour, exo leg frames (rule 4); Rucksack not built-in: flat back plate with a small light, no raised unit (judgment)
+models/stalkero_monolith/stalker_monolith_nauchni3_1.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Monolith SEVA-type: hood with closed visor, plate carrier (vest bodygroup 1: two vests, no empty), air tanks on the back (rule 4)
+models/stalkero_monolith/stalker_monolith_vendor.mdl	Helmet,Vest	-	-	-	Monolith: helmet + balaclava, chest rig; vest back panel, no pack
+models/player/stalker_anomaly/clearsky/stalker_clearsky_1a_face_2.mdl	Helmet,Vest	-	-	-	Anomaly Clear Sky: baseball cap + headset, face scarf, plate carrier with pouches; no pack
+models/stalker_nebosky/stalker_barman_nebo.mdl	Helmet,Vest	-	-	-	Clear Sky barman: baseball cap + face mask (cloth), tactical vest; no pack
+models/stalker_nebosky/stalker_nebo3ab_3.mdl	Helmet,Gasmask,Vest	-	-	-	Clear Sky: helmet in the mesh, all 3 Mask choices are gas masks (GP-type, M40-type, respirator); tactical vest
+models/stalker_nebosky/stalker_nebo_1.mdl	Helmet,Vest	-	-	-	Clear Sky: bulky camo parka hood up (Helmet, judgment) + balaclava, tactical vest; belt pouches
+models/stalker_nebosky/stalker_nebo_1_backpack_helm_tactic.mdl	Vest,Rucksack	Helmet:1=3;Gasmask:1=3	-	-	Clear Sky: vest and backpack in the mesh; Mask bodygroup 1 holds helmet and mask together: 0 helmet + gas mask, 1 helmet + respirator hanging on the chest, 2 helmet + goggles, 3 empty (balaclava only); 1=2 would keep the helmet for Gasmask
+models/stalker_nebosky/stalker_nebo_1_proto.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Clear Sky prototype: camo hood up + gas mask, tactical vest, exoskeleton with a raised back power unit
+models/stalker_nebosky/stalker_nebo_seva_1_2.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Clear Sky SEVA: hood with closed visor, tactical vest, air tanks on the back (rule 4)
+models/stalker_nebosky/stalker_nebo_tropnik.mdl	Helmet,Vest	-	-	-	Clear Sky: bulky camo parka hood up (Helmet, judgment) + balaclava + goggles, light chest rig with X straps
+models/catnike/port/zakaz/do_komandir.mdl	-	Helmet:2=4;Gasmask:2=4;Vest:1=0;Rucksack:1=0	-	-	Duty commander: Head 2 = 0 beret, 1 beanie, 2 Altyn visor up, 3 gas mask, 4 none; Exo 1 = exoskeleton with chest rig and a raised pack on the back; body 3 both plain jackets; ghillie (4), bandana, cigarette not slots
+models/catnike/port/zakaz/do_mehanik.mdl	-	Helmet:1=1	-	-	Duty mechanic: beanie in Head 1 (1 = none); plain jacket; ghillie, cigarette not slots
+models/catnike/port/zakaz/do_nauchniy.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Duty SEVA-type: hood with closed visor, plate carrier, air tanks on the back (rule 4); exo and ghillie options extra
+models/catnike/port/zakaz/dolg2a.mdl	Vest	Helmet:2=0;Gasmask:4=0;Rucksack:6=0	Gasmask:2=1	-	Duty PSZ armour: body-armour vest in the base mesh (Jilet/Karmani/Racia/Exo only add to it); balaclava; Head 2: 1 Altyn visor closed, 2 Altyn visor up, 3 helmet, 0 none; Protivogas (4), Rykzak (6); exo frame has no back pack
+models/catnike/port/zakaz/dolg_0.mdl	-	Helmet:6=0;Gasmask:7=0;Vest:1=0;Vest:8=0;Vest:9=0;Vest:10=0;Vest:12=0;Rucksack:11=0	Gasmask:6=3	-	Duty: plain jacket bare; Head 6: 1 beanie, 2 beret, 3 Altyn visor closed, 4 Altyn visor up, 5 helmet; exo frame (1, no back pack), Jilet (8), Karmani vest pouches (9), Racia radio on the vest (10, removed with Vest, judgment), Razgryzka chest rig (12), Rykzak (11)
+models/kuma96/stalker_gorkasuit/stalker_gorkasuit_pm.mdl	-	Helmet:2=2;Rucksack:5=1	Gasmask:2=1	-	Gorka suit: Helmet 2: 0 visor up, 1 visor closed, 2 none; Mask 3 is a tight balaclava (not gear); goggles not a slot; parachute pack with harness on the back (5, 1 = none)
+models/catnike/port/driga/stalker_medic_3_face_1.mdl	-	Vest:4=0	-	-	Loner medic: plain jacket; exo frame (4, no back pack); beard, keffiyeh, ghillie not slots
+models/catnike/port/driga/stalker_neutral1a.mdl	-	Helmet:3=0;Gasmask:6=0;Rucksack:7=0;Vest:8=0	-	-	Loner: plain jacket; Kapyshon = hood up (3), Protivogas (6), Rykzak (7), exo frame (8); balaclava/bandana, belt, ghillie, jacket variants not slots
+models/catnike/port/driga/stalker_neutral1b.mdl	-	Vest:3=0;Gasmask:4=0;Rucksack:5=0;Helmet:6=0;Vest:7=0	-	-	Loner: plain jacket with belt; Jilet vest (3), Protivogas (4), Rykzak (5), Shapka hat (6), exo frame (7); balaclava/bandana, ghillie not slots
+models/catnike/port/driga/stalker_neutral1e.mdl	-	Vest:3=0;Gasmask:4=0;Rucksack:5=0;Helmet:6=0;Vest:7=0	-	-	Loner: same parts as neutral1b (Jilet 3, Protivogas 4, Rykzak 5, Shapka 6, exo 7)
+models/catnike/port/driga/stalker_neutral2a_gp5.mdl	Helmet,Gasmask,Vest	Rucksack:2=0	-	-	Loner: hood up + GP-5 gas mask with hose, vest with pouches, all in the base; Rykzak (2); exo frame (3) adds to the built-in vest
+models/catnike/port/driga/stalker_neutral2b.mdl	Vest	Helmet:4=0;Gasmask:6=0;Rucksack:7=0	-	-	Loner: armour vest in the base; Kapyshon hood (4), Protivogas 1/2 gas masks and 3 respirator (6), Symkizad bag on the back (7); exo moot; bandana, glasses, belt, ghillie not slots
+models/catnike/port/driga/stalker_neutral2d.mdl	Helmet,Gasmask,Vest	Rucksack:2=0	-	-	Loner: bulky camo hood up + gas mask + armour vest in the base; Zadsymka bag on the back (2); exo moot
+models/catnike/port/driga/stalker_neutral2e.mdl	Helmet,Vest	Gasmask:4=0;Rucksack:5=0	-	-	Loner: bulky camo hood up + armour vest in the base; Respirator (4), Zadsymki back bags (5); exo moot; bandana, glasses not slots
+models/catnike/port/driga/stalker_seva_nauchniy.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	SEVA: hood with closed visor, plate carrier, air tanks on the back (rule 4)
+models/player/axelnoir/resident_evil_4/bio4/em/em18/merchanto_pm.mdl	Helmet,Rucksack	-	-	-	RE4 Merchant: hooded cloak with the hood up and a big backpack in one mesh; cloth face scarf (not a gas mask); no vest
+models/tlou_zone/billkov_pm.mdl	Vest	Gasmask:2=0;Rucksack:8=1	-	-	TLOU Bill: black utility vest with pockets is a single-choice bodypart (Vest built-in, judgment); bandolier (7) moot; gas mask (2), backpack (8); no headgear
+models/stalker_mercgang/killer_leshiy.mdl	Gasmask,Vest	-	-	-	Mercenary: bare head with a full-face gas mask, tactical vest; no pack
+models/stalker_mercgang/merc_black.mdl	Helmet,Vest	-	-	-	Mercenary: helmet with headset over balaclava, glasses, tactical vest
+models/stalker_mercgang/merc_meshanik.mdl	Helmet,Vest	-	-	-	Mercenary mechanic: bulky jacket hood up (Helmet, judgment) + balaclava, chest rig with X straps
+models/stalker_mercgang/stalke_mercenary1_2.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Mercenary SEVA-type: hood with closed visor, vest, air tank on the back (rule 4); Suit 1 = two variants of the same suit
+models/stalker_mercgang/stalker_ki_head_2.mdl	Helmet,Vest	-	-	-	Mercenary: beanie, chest rig; side bag strap, no back pack
+models/stalker_mercgang/stalker_ki_head_5.mdl	Helmet,Vest	-	-	-	Mercenary: baseball cap + face mask, tactical vest
+models/stalker_mercgang/stalker_merc2a.mdl	Helmet,Vest,Rucksack	-	-	-	Mercenary: helmet + headset + balaclava, plate carrier, assault pack on the back
+models/stalker_mercgang/stalker_merc2c.mdl	Helmet,Vest	-	-	-	Mercenary: helmet + goggles, cloth lower-face mask (not a gas mask), tactical vest
+models/stalker_mercgang/stalker_merc4a.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Mercenary STALKER exoskeleton: helmet with gas mask and NVG, vest, exo back power frame (rule 4)
+models/stalker_mercgang/stalker_merc_2.mdl	Helmet,Gasmask,Vest	-	-	-	Mercenary: jacket hood up (Helmet, judgment) + full gas mask, tactical vest
+models/stalker_mercgang/stalker_merc_2_balloon_helm_tactic.mdl	Helmet,Vest	Gasmask:1=1	-	-	Mercenary: helmet over camo hood and vest in the mesh; Mask 1: 0 gas mask, 1 nogas (goggles)
+models/stlksoldaten/army_degtyarev_military.mdl	Vest	-	-	-	Army (Degtyarev): bare head, plate carrier with pouches; vest back panel
+models/stlksoldaten/esc_army_barmen.mdl	Helmet	-	-	-	Army barman: beanie, plain jacket; no vest
+models/stlksoldaten/esc_army_mechanic.mdl	Gasmask,Vest,Rucksack	-	-	-	Army mechanic: GP-5 rubber full-head gas mask (Gasmask only, not a helmet), Y-harness webbing with belt pouches, small backpack
+models/stlksoldaten/esc_army_secret_trader.mdl	Helmet,Vest	-	-	-	Army: baseball cap + face mask, chest rig; slim hydration pouch on the vest back not counted as Rucksack (judgment)
+models/stlksoldaten/light_voen.mdl	Helmet,Gasmask,Vest	-	-	-	Army: helmet + full gas mask, plate carrier with pouches; no pack
+models/stlksoldaten/solder_trader.mdl	Helmet,Vest	-	-	-	Army: beret + face mask, chest rig; slim hydration pouch on the vest back not counted as Rucksack (judgment)
+models/stlksoldaten/soldier_bandana_2.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Army: beanie + gas mask, chest rig with pouches, backpack
+models/stlksoldaten/soldier_bandana_3.mdl	Helmet,Vest	-	-	-	Army: helmet + face scarf, chest rig with pouches
+models/stlksoldaten/soldier_obichniy.mdl	Helmet,Vest	-	-	-	Army: helmet + balaclava, armour vest with pouches
+models/stlksoldaten/stalker_militari.mdl	Helmet,Vest	-	-	-	Army: helmet + goggles + balaclava, tactical vest; NVG bodygroup 1 not classified
+models/stlksoldaten/stalker_military_exo.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Army STALKER exoskeleton: helmet + gas mask, vest, exo back power frame (rule 4)
+models/stlksoldaten/stalker_soldier1a.mdl	Helmet,Vest	-	-	-	Army: beanie, armour vest with pouches
+models/stlksoldaten/stalker_soldier1c.mdl	Helmet,Vest	-	-	-	Army: helmet, armour vest with pouches
+models/stlksoldaten/stalker_soldier_1.mdl	Helmet,Vest,Rucksack	-	-	-	Army: helmet + face scarf, armour vest, backpack
+models/stlksoldaten/stalker_soldier_2_face_1.mdl	Helmet,Vest	-	-	-	Army: helmet, chest rig; slim pouch on the vest back not counted as Rucksack (judgment)
+models/stlksoldaten/stalker_soldier_3_beret.mdl	Helmet,Vest	-	-	-	Army: beret, armour vest with pouches
+models/stlksoldaten/stalker_soldier_5_beret.mdl	Helmet,Vest	-	-	-	Army: beret + face scarf, armour vest with pouches
+models/stlksoldaten/stalker_soldier_exoseva.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Army SEVA + exoskeleton: hood with closed visor, vest, air tanks on the back (rule 4)
+models/stlksoldaten/yan_army_cook.mdl	Helmet,Vest	-	-	-	Army cook: helmet + balaclava, chest rig; no pack
+models/stlkrenegadaski/stalker_bandit_3_face_1.mdl	Helmet,Rucksack	-	-	-	Bandit: flat cap + face scarf, leather coat, backpack; no vest
+models/stlkrenegadaski/stalker_bandit_7.mdl	Helmet,Vest	-	-	-	Bandit: beanie + goggles + face mask, Y-harness webbing with pouches
+models/stlkrenegadaski/stalker_renegade_1_2.mdl	Helmet,Vest	-	-	-	Renegade: beanie + face mask, chest rig
+models/stlkrenegadaski/stalker_renegade_1a_face.mdl	Vest	-	-	-	Renegade: bulky camo hood up (Helmet, judgment), chest rig; Model 1 = 3 face/balaclava choices, none a gas mask; butt pack on the belt, not a backpack; owner: hood measured tight (0.4 above the head, batch 2a, same mesh as models/stalker_renegade): not Helmet
+models/stlkrenegadaski/stalker_renegade_1a_merc.mdl	Gasmask,Vest	-	-	-	Renegade: camo hood up (Helmet, judgment) + GP gas mask, armour vest; owner: hood measured tight (0.4 above the head, batch 2a, same mesh as models/stalker_renegade): not Helmet
+models/stlkrenegadaski/stalker_renegade_1b_face.mdl	Vest	-	-	-	Renegade: camo hood up (Helmet, judgment), chest rig; Model 1 = 3 balaclava faces, none a gas mask; butt pack on the belt; owner: hood measured tight (0.4 above the head, batch 2a, same mesh as models/stalker_renegade): not Helmet
+models/stlkrenegadaski/stalker_renegade_3.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Renegade SEVA-type: hood with closed visor, vest, air tanks on the back (rule 4)
+models/stlkrenegadaski/stalker_renegade_4.mdl	Helmet,Gasmask,Vest	-	-	-	Renegade: helmet + gas mask, armour vest with chest rig, light exo frame; flat back, no pack
+models/stlkrenegadaski/stalker_renegade_leader.mdl	Vest	-	-	-	Renegade leader: bare head, armour vest
+models/stlkrenegadaski/stalker_renegade_trader.mdl	Vest	-	-	-	Renegade trader: bare head, vest with pouches
+models/call_to_arms/players/evdokimov_male.mdl	-	-	-	-	Scientist in a lab coat; head 1 = two bare heads; no gear
+models/ecologski/lazarus_ecolog.mdl	Helmet,Vest,Rucksack	-	-	-	Ecologist guard: beanie + goggles + face mask, chest rig, backpack
+models/ecologski/stalker_ecolog_exolight.mdl	Helmet,Gasmask,Vest	-	-	-	Ecologist: helmet + full gas mask, tactical vest; no exo pack, flat back
+models/ecologski/stalker_ecolog_guard.mdl	Gasmask,Vest,Rucksack	-	-	-	Ecologist guard: GP-5 rubber full-head gas mask (Gasmask only, not a helmet), tactical vest, air tank on the back
+models/ecologski/stalker_ecolog_guard_abc_mask.mdl	Helmet,Vest	-	-	-	Ecologist guard: bulky camo hood up (Helmet, judgment) + balaclava, plate carrier
+models/ecologski/stalker_ecolog_guard_abc_merc.mdl	Helmet,Gasmask,Vest	-	-	-	Ecologist guard: camo hood up (Helmet, judgment) + gas mask, plate carrier
+models/ecologski/stalker_ecolog_guard_c_seva.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Ecologist SEVA: hood with closed visor, vest, air tanks on the back (rule 4)
+models/ecologski/stalker_ecolog_medic.mdl	Helmet,Vest	-	-	-	Ecologist medic: beanie + face mask, tactical vest
+models/ecologski/stalker_ecologist_merc2.mdl	Helmet,Gasmask,Vest	-	-	-	Ecologist: camo hood up (Helmet, judgment) + gas mask, tactical vest
+models/ecologski/stalker_ecologist_proto.mdl	Helmet,Gasmask,Vest	-	-	-	Ecologist prototype: helmet + gas mask, chest rig, light exo frame; flat back, no raised unit
+models/ecologski/stalker_nauchniy_exo.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Ecologist exoskeleton: helmet + gas mask, vest, exo with a raised back power unit
+models/player/sanitarovich.mdl	-	Gasmask:4=0;Rucksack:6=1	-	-	EFT Sanitar: Facecover 4: 1 = 3M respirator, 2 = Santa beard, 0 none; medical bag at the back hip (6, 1 = none); glasses, headset not slots; parka hood down
+models/auditor/isg_redux/isg_hvy_exosuit.mdl	Helmet,Vest	Rucksack:7=1;Gasmask:8=1	-	-	ISG heavy: open helmet over balaclava (single bodypart 2) and plate carrier (4) in the mesh; BackPack (7), Gasmask (8); Exo_Suit (5) has no back unit; scarf not a slot
+models/auditor/isg_redux/isg_lightarmored_alpha.mdl	Vest	Rucksack:2=1;Gasmask:4=0;Helmet:6=2	-	-	ISG light: plate carrier in the base body (VestGear pouches 5 moot); HeadWear 4: 1/2 balaclavas, 3 SAS gas mask, 0 none; Hood 6: 0 hood up, 1 hood down, 2 none (1 would keep it down); holsters, scarf not slots
+models/auditor/isg_redux/isg_lightarmored_bravo.mdl	Vest	Rucksack:2=1;Gasmask:4=0;Helmet:6=2	-	-	ISG light: same parts as alpha (plate carrier in base; HeadWear 4 = SAS gas mask at 3; Hood 6 up/down/none; Backpack 2)
+models/auditor/isg_redux/isg_lightarmored_charlie.mdl	Vest	Rucksack:2=1;Gasmask:4=0;Helmet:6=2	-	-	ISG light: same parts as alpha (plate carrier in base; HeadWear 4 = SAS gas mask at 3; Hood 6 up/down/none; Backpack 2)
+models/auditor/isg_redux/isg_wolfhound.mdl	Vest	Rucksack:2=1;Helmet:6=2	-	-	ISG Wolfhound: plate carrier in the base; Backpack (2), Hood 6 up/down/none; GearLower belt pouches, holsters not slots
+models/omgwtfbbq/quantum_break/characters/isg02/isg01playermodel.mdl	Vest	Helmet:1=1;Gasmask:1=1	-	-	Quantum Break Monarch operator: plate carrier in the base; Helmet bodygroup 1 includes a jaw/breathing mask (Gasmask, judgment), balaclava under; Pouches/Device moot
+models/player/darkyov/rustkov/scientistisg.mdl	Helmet,Gasmask,Vest	Rucksack:1=1	-	-	Hazmat scientist (rule 4): hood up and gas mask (single bodypart) built in; air tank is bodygroup 1 (1 = none) so Rucksack removable, not built-in; Vest by rule 4 (tank harness on the chest)
+models/grehkov/shturmank.mdl	Helmet,Vest	Rucksack:1=0	-	-	EFT Shturman: fur-lined parka hood up, MOLLE rig under the open parka in both bodies; Backpack 1: 1-5 packs, 0 none; skull face cover not gear
+models/grehkov/stalker_greh_0d_face_01.mdl	Helmet,Rucksack	-	-	-	Sin: long camo coat with the hood up (Helmet, judgment), big backpack with bedroll; Model 1 = 3 printed balaclava/skull cloth masks (not gas masks); shoulder holster, no vest
+models/grehkov/stalker_greh_0d_face_02.mdl	Helmet,Rucksack	-	-	-	Sin: beanie + skull-print balaclava, long coat, big backpack; no vest
+models/grehkov/stalker_greh_0f_face_01.mdl	Helmet,Rucksack	-	-	-	Sin: long camo coat with the hood up (Helmet, judgment), big backpack; Model 1 = 3 printed balaclava faces, no gas mask; no vest
+models/grehkov/stalker_greh_0f_face_02.mdl	Rucksack	-	-	-	Sin: black knit balaclava over the head (not gear), coat hood down, big backpack; Model 1 = 2 balaclava faces; no vest
+models/grehkov/stalker_greh_1b_face_02.mdl	Rucksack	-	-	-	Sin: skull-print balaclava (not gear), long coat, big backpack; Model 1 = 2 balaclava faces; no vest
+models/grehkov/stalker_greh_2a.mdl	Helmet,Vest	-	Gasmask:1=1,3	-	Sin: bulky camo hood up (Helmet, judgment), armour vest; head 1: 0 balaclava, 1 GP-5 gas mask with hose, 2 skull balaclava, 3 old gas mask; flat back
+models/grehkov/stalker_greh_2c.mdl	Helmet,Vest	-	Gasmask:1=1,3	-	Sin: same as greh_2a (lighter camo); head 1 gas masks at 1 and 3
+models/grehkov/stalker_greh_3b.mdl	Helmet,Gasmask,Vest	-	-	-	Sin: camo hood up (Helmet, judgment), chest rig; head 1: 0 hard white skull full-face mask (counted as Gasmask, judgment), 1 gas mask: every choice covers the face
+models/grehkov/stalker_greh_3c.mdl	Helmet,Vest	-	Gasmask:1=1	-	Sin: camo hood up (Helmet, judgment), chest rig; head 1: 0 skull-print balaclava, 1 gas mask
+models/grehkov/stalker_greh_4.mdl	Helmet,Vest	-	-	-	Sin: helmet + printed cloth face mask, armour vest with chest rig, light exo frame; no raised back unit
+models/grehkov/stalker_greh_tech.mdl	Helmet	-	-	-	Sin technician: old helmet with goggles, plain jacket, hip bag; no vest
+models/player/grehkovich/stalker_greh_1a_face_2.mdl	Helmet,Vest	-	-	-	Anomaly Sin: baseball cap + headset, face scarf, plate carrier with pouches
+models/tdvbill/thedivisionbill.mdl	Gasmask,Vest,Rucksack	-	-	-	Division Bill: gas mask worn pushed up on the crown (Gasmask built-in; a helmet would also clip it, owner decides on Helmet), mesh vest with pouches, backpack; all single-choice bodyparts
+models/tdvcoach/thedivisioncoach.mdl	Vest,Rucksack	-	-	-	Division Coach: plate carrier under the open varsity jacket (judgment), big backpack; hood down, bare head
+models/tdvellis/thedivisionellis.mdl	Helmet,Vest,Rucksack	-	-	-	Division Ellis: backward baseball cap, chest rig, backpack with drone
+models/tdvfrancis/thedivisionfrancis.mdl	Helmet,Vest,Rucksack	-	-	-	Division Francis: baseball cap, vest, backpack
+models/tdvlouis/thedivisionlouis.mdl	Helmet,Vest,Rucksack	-	-	-	Division Louis: beanie, plate carrier, backpack
+models/tdvnick/thedivisionnick.mdl	Rucksack	-	-	-	Division Nick: suit with waistcoat, backpack sling strap with pouches across the chest (not counted as Vest, judgment), backpack; bare head
+models/tdvrochelle/thedivisionrochelle.mdl	Vest,Rucksack	-	-	-	Division Rochelle: chest rig under the open jacket, backpack; bare head (hair tie renders white: missing texture)
+models/tdvzoey/thedivisionzoey.mdl	Rucksack	-	-	-	Division Zoey: grey top under the jacket with the pack's sling strap (no vest), backpack; bare head (hair renders white: missing texture)
+models/arty/s.t.a.l.k.e.r 2/characters/skif/bandit/skif_pm.mdl	-	Helmet:2=2;Gasmask:3=2	Helmet:5=1	-	STALKER 2 Skif (bandit): leather jacket, no vest; Headwear 2: 0 flat cap, 1 beanie, 2 none; Mask 3: 0 cloth gaiter, 1 respirator, 2 none; Shirt 5=1 has a hoodie hood up under the jacket (Helmet, judgment)
+models/arty/s.t.a.l.k.e.r 2/characters/skif/faust/skif_pm.mdl	-	Helmet:2=1;Gasmask:4=0	-	-	STALKER 2 Skif (Faust): T-shirt, no vest; Beanie 2 (1 none), Mask 4 respirator (0 none); talismans, dosimeter, lamp, waist cloth not slots
+models/arty/s.t.a.l.k.e.r 2/characters/skif/monolith/skif_pm.mdl	Vest	Helmet:3=0;Gasmask:4=2;Helmet:6=2	-	-	STALKER 2 Skif (Monolith): armour vest in the body mesh (Pouches 7/8 add to it); Headwear 3 beanie (0 none); Mask 4: 0 cloth gaiter, 1 respirator, 2 none; Hood 6: 0 hood up, 1 hood down, 2 none
+models/arty/s.t.a.l.k.e.r 2/characters/skif/novice/skif_pm.mdl	-	Helmet:3=0;Gasmask:4=3;Helmet:6=2	-	-	STALKER 2 Skif (novice): plain jacket, no vest; Headwear 3 beanie (0 none); Mask 4: 0 GP-5 full-head gas mask, 1 cloth gaiter, 2 respirator, 3 none; Hood 6: 0 up, 1 down, 2 none; bolts, belt gear not slots
+models/arty/s.t.a.l.k.e.r 2/characters/skif/stalker/skif_pm.mdl	Vest	Helmet:3=0;Gasmask:4=4;Helmet:6=3	-	-	STALKER 2 Skif (stalker suit): armoured suit with chest and back plates in the body mesh (Vest, judgment); Headwear 3 beanie (0 none); Mask 4: 0 full gas mask, 1/3 respirators, 2 cloth gaiter, 4 none; Hood 6: 0/1 up, 2 down, 3 none; holsters not slots
+models/arty/s.t.a.l.k.e.r 2/characters/skif/x7/skif_pm.mdl	Vest	Helmet:3=1;Gasmask:6=1;Helmet:8=1	-	-	STALKER 2 Skif (X-7): black tactical suit with armoured chest in the body (Vest, judgment); Beanie 3 (1 none); Mask 6 respirator (1 none); Hood 8 has no empty choice: 0 hood up, 1 hood down used as none (judgment); USP/holster not slots
+models/arty/s.t.a.l.k.e.r 2/characters/faction/monolith/exoskeleton/grunt_pm.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	STALKER 2 Monolith exoskeleton: sealed helmet with gas mask, armoured torso, exo frame with raised back unit (exo_tank, single choice); Pouches 5/6 moot
+models/arty/s.t.a.l.k.e.r 2/characters/faction/monolith/radiation/grunt_pm.mdl	Helmet,Gasmask,Vest	-	-	-	STALKER 2 Monolith radiation suit: sealed helmet with gas mask, armoured torso (rule 4); Rucksack not built-in: flat back, no tank; pouch bodygroups moot

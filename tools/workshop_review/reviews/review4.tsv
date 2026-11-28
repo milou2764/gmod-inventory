@@ -1,0 +1,3 @@
+models/oxxy/gears/marcus3.mdl	Vest,Rucksack	-	-	-	Gears 5 Marcus: COG armour with its back unit (batch 1 convention); a do-rag, no helmet
+models/munch/na_dbs_metroman.mdl	Vest	Helmet:8=1;Gasmask:6=1	-	-	plate carrier (Chest_Rig, no empty choice) built-in; helmet and gas mask bodygroups removable; balaclava is not gear
+models/eft/pmc/shared/sweater_bear0.mdl	-	-	-	-	EFT clothing framework base body (sweater, no gear); untextured without its framework

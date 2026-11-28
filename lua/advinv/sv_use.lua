@@ -14,6 +14,8 @@ function I.UseItem(ply, item)
     if not use then return false, I.L("use_cannot") end
     if hook.Run("AdvInv_UseItem", ply, item) == false then return false end
     if use.grenade then -- the grenade weapon in the hands; the item goes when it is thrown
+        -- (its reserve set from the items first: a base's grenade removes itself when deployed with none, TacRP's)
+        if I.SyncAmmo then I.SyncAmmo(ply) end
         if not ply:HasWeapon(use.grenade) then ply:Give(use.grenade, true) end
         ply:SelectWeapon(use.grenade)
         I.MarkDirty(ply, "Uniform") -- its reserve: the grenade items
@@ -136,8 +138,8 @@ handlers[I.ACT.UNLOAD] = function(ply)
         if not may then return false, why end
     end
     if item.j and I.JobItemsBound() then return false, I.L("unload_job") end -- (as above)
-    local ammo = I.WeaponAmmo(item.id, item.c)
-    if not I.CanUnload(item.id, item.c, item.r) then return false, I.L("unload_cannot") end
+    local ammo = I.WeaponAmmo(item.id, item.c, item.x)
+    if not I.CanUnload(item.id, item.c, item.r, item.x) then return false, I.L("unload_cannot") end
     local rounds = item.r
     item.r = 0
     I.MarkDirty(holder, cont)

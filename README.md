@@ -244,7 +244,7 @@ From Tarkov hold every weapon like the RPG); `SWEP.AdvInvCategory` and
 `SWEP.AdvInvMass` on a weapon override it. Physgun, toolgun, camera, hands and DarkRP's tools are
 blacklisted.
 
-## Other weapon bases (ARC9, ArcCW, TFA, CW 2.0, Sandstorm, M9K...)
+## Other weapon bases (ARC9, ArcCW, TacRP, TFA, CW 2.0, Sandstorm, M9K...)
 
 Weapons of any base become generic weapon items (see above). Their ammunition:
 
@@ -258,7 +258,7 @@ Weapons of any base become generic weapon items (see above). Their ammunition:
 Attachments: a weapon keeps its extra data through the inventory (taken off, stored, dropped,
 equipped again, saved). Built-in, not tested on every version of these bases: ARC9 (preset code),
 TFA (selected attachments), CW 2.0 (attachments), Sandstorm SWEPs (attachments and their skins), ArcCW (installed
-attachments). Any base: hooks (server)
+attachments), TacRP (attachments, fire mode, the second pistol of a pair). Any base: hooks (server)
 `AdvInv_WeaponData(wep)` -> a string, and `AdvInv_ApplyWeaponData(wep, data)` -> true
 when done. Weapons with different data don't stack.
 
@@ -296,6 +296,45 @@ Ready or Not pistols; `lua/advinv/sv_sandswep.lua`):
 - its ammo boxes are taken with Use into the inventory (not by walking over them); its throwables are
   grenade items (one ammunition type each, ArcCW's default);
 - the 28 long guns of Counter-Strike+ have carry positions on every fitted playermodel.
+
+**TacRP** (Tactical RP Weapons and its packs: ExoOps, Scavenger's Spoils...; `lua/advinv/sv_tacrp.lua`,
+`sh_tacrp.lua`; written from its code, not yet tested in game):
+
+- its weapons go to the slot their type says (pistols and machine pistols to the sidearm slot,
+  rifles, shotguns, SMGs and machine guns to the primary slot, the RPG-7, Stinger, M202, M79 and
+  M320 to the launcher slot; the C4 detonator to the sidearm slot), with their real ammunition and
+  magazine size (TacRP keeps them out of the usual fields);
+- attachments, the fire mode and a pair's second magazine stay with the item; whoever equips it gets
+  them at once, whatever TacRP's attachment inventory, bench rule or the client's autosaved loadout
+  say; unloading gives boxes of the ammunition its attachments make it use;
+- rounds TacRP gives back (a magazine taken out by an attachment), its ammo bag and crate, the
+  surplus ammunition attachments' refunds and a thrown knife's bolt go into ammo boxes; picking up a
+  weapon of a class already held gives no free magazine;
+- its throwables (flashbang, smoke, gas, thermite, breaching charge, healing grenade) are grenade
+  items; the quick-throw throws one only while there is one, and a grenade primed at death is taken
+  from the items. Its frag grenade uses the game's grenades (Half-Life 2 grenade items); C4 charges
+  stay ammo boxes;
+- TacRP's own holstered models are not drawn for the weapons the inventory draws on the body.
+- Keep `tacrp_infiniteammo`, `tacrp_infinitelaunchers` and `tacrp_infinitegrenades` at 0 (the
+  server console warns): an infinite magazine refills from nothing, and the inventory would keep
+  those rounds in its items.
+
+**Slots of other packs** (read from their code, as text): the slot guess reads the hold type under
+the names bases give it (CW 2.0 `NormalHoldType`, ArcCW `HoldtypeActive`, NC SWEPs `RaisedHoldType`,
+ASTW2 `HoldType_Aim` / `HoldType_Hipfire`) and a weapon's own type when it has one (`SubCatType`:
+"1Pistol", "4Assault Rifle", "5Sniper Rifle"... of NC SWEPs and TacRP; ARC9's `Class`, which wins
+over its menu slot: machine pistols go to the sidearm slot, grenade launchers to the launcher slot).
+An RPG-7 firing PG-7 / OG-7 rounds is a launcher whatever its munition is called. Checked on the weapon packs
+of the Metro / S.T.A.L.K.E.R. / Fallout collection (Workshop 2876037581: ARC9, ArcCW, TFA, ASTW2,
+Draconic, NC SWEPs, about 700 weapons). Also:
+
+- not inventory weapons (they stay ordinary weapons): Vortigaunt hands and powers, the Metro gas
+  mask's actions and the GP-9 / S.T.A.L.K.E.R. gas mask weapons, the Predator bio-mask, PDAs and the
+  PDA map, the Call of Duty WW2 health kit;
+- guitars (S.T.A.L.K.E.R. guitars) are carried on the back, Metro's hand dynamo in the sidearm slot;
+- EFT Supply's food, drinks and medicine (Workshop 3845009964) are sidearm-slot items that keep their
+  uses (an AI-2 kit's 4 uses) and are never unloaded: `AdvInv.NoUnload[class] = true` does the same
+  for other weapons whose magazine holds uses.
 
 ## Advanced Crafting System
 
@@ -393,6 +432,9 @@ is fitted to these Workshop playermodels, when the server has them (nothing of t
 | [PMC Pack Redux (Playermodels & NPCs)](https://steamcommunity.com/sharedfiles/filedetails/?id=1769231405) | 8 PMC soldiers |
 | [Dying Light Security forces playermodels and ragdolls](https://steamcommunity.com/sharedfiles/filedetails/?id=3551549411) | 11 security forces (GRE, police, soldiers, T.E.A.R.) |
 | [ESCAPE FROM TARKOV - PMC PLAYERMODELS [REDUX]](https://steamcommunity.com/sharedfiles/filedetails/?id=2568198284) | 9 operators (6 USEC, 3 BEAR) |
+| [CSS ENHANCED SPECIAL FORCES /// SEB & SWAT /// PLAYERMODEL](https://steamcommunity.com/sharedfiles/filedetails/?id=3387382988) | 2 operators (SEB, SWAT) |
+| [Enhanced Citizens v4](https://steamcommunity.com/sharedfiles/filedetails/?id=677125227) | 23 citizens (male and female, rebels and refugees) |
+| [Workshop collection 2876037581](https://steamcommunity.com/sharedfiles/filedetails/?id=2876037581) (Metro, S.T.A.L.K.E.R., Fallout...) | 1,081 playermodels of 78 of its addons: Metro 2033, Last Light and Exodus, S.T.A.L.K.E.R. (Anomaly factions, Clear Sky, S.T.A.L.K.E.R. 2), Fallout (power armour, NCR, Caesar's Legion, Brotherhood), Gears of War, Army of Two, Escape From Tarkov, The Division... (the list: `tools/playermodels_workshop.txt`) |
 
 Any other playermodel uses each item's default fit (made on male_07). The list of fitted models is
 `tools/playermodels.txt` (Garry's Mod) and `tools/playermodels_workshop.txt`; DEVELOPERS.md says how
@@ -416,7 +458,9 @@ Vietcong gear* (pith helmets, AK chest rigs, backpack, bush hat, conical hat), *
 helmets with goggles or visor, gas masks, night vision, headset, packs, belt kits), *Dying Light gear*
 (combat helmet, cap, gas mask, respirator, masks, balaclava, goggles, T.E.A.R. rig and bag) and
 *Escape From Tarkov PMC gear* (helmets, caps, balaclavas, gas mask, headset, glasses, six vests, two
-packs). Each ships Lua
+packs) and *CSS special forces gear* (MICH helmets with or without night vision, headsets, ballistic
+glasses, a gas mask, plate carriers bare, with magazines or full kit, in the SEB's olive or the
+SWAT's black). Each ships Lua
 only and needs that addon, on the server and for the players. On its own playermodels the item is shown by their bodygroup; on any
 other one a copy fitted to that body; on the ground the gear alone.
 
@@ -432,6 +476,10 @@ vest on another vest, a backpack on another backpack, and the inventory says so.
   the Rogue One ground crew, and the armoured bodies of the Rogue One crew and of the Vault-Tec
   security suit (only those bodygroup choices).
 - Backpacks: the rebels and the medics.
+- The collection's playermodels (Workshop 2876037581): power armour, exoskeletons, sealed suits and
+  creatures have all four built in; armour vests, chest rigs, hoods up, caps and backpacks of the mesh
+  are built in where they are; helmets, gas masks, vests and packs that are bodygroups come off under
+  ours (each model reviewed: `lua/advinv/sh_modelgear.lua`, generated block).
 
 A player who takes such a playermodel (or outfit) while wearing ours gets it back: in the inventory,
 or at the feet without room or when it holds things (a vest or a backpack keeps its contents). Gear
@@ -449,6 +497,14 @@ menu, an ammo crate) becomes as many items as it has grenades. Grenades a spawn 
 DarkRP job's, Sandbox's spawn weapons with `sbox_weapons 1`) are the loadout's: taken back at
 death instead of staying on the body, not saved, given again at the next spawn. Grenades are
 dropped from the inventory (DarkRP's `/drop` and CW 2.0's drop don't take them).
+
+Consumables of other addons that work the same way (a weapon to hold, an ammunition type of its own,
+one round per use) are grenade-like items too: No More Room in Hell consumables (Workshop 3297936273:
+bandage, first aid kit, gene therapy, Phalanx pills) and S.T.A.L.K.E.R. 2 Consumables (Workshop
+3426614364: medkits, bandage, antirad, pills, food and drinks); so are the throwables of weapon packs
+that have a munition of their own (Metro 2033 Weapon's grenade, S.T.A.L.K.E.R. STCoP's F1 and RGD-5,
+the S.T.A.L.K.E.R. TFA pack's grenade, mine and bolts). Others (shared):
+`AdvInv.ConsumableWeapons["weapon_class"] = "ammo type"` (`lua/advinv/sh_consumables_ext.lua`).
 
 ## Using items, unloading weapons
 

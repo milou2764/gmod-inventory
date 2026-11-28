@@ -59,7 +59,7 @@ def _nz(text):
 
 TOOLS = Path(__file__).resolve().parent
 OUT_DATA = TOOLS.parent / "lua" / "advinv" / "sh_compat_data.lua"
-OUT_FITS = TOOLS.parent / "lua" / "advinv" / "cl_fits_compat.lua"
+OUT_FITS = TOOLS / "data" / "fits_compat.lua"  # (the tools' source; packed into lua/advinv/cl_fits_compat.lua)
 GAP = fi.GAP
 SPINE4 = "ValveBiped.Bip01_Spine4"
 BAND, SECTORS, RING = 0.5, 24, 0.6
@@ -500,7 +500,9 @@ def write_fits(models, fits):
         "end",
     ]
     OUT_FITS.write_text("\n".join(out) + "\n", encoding="utf-8", newline="\n")
-    print(f"-> {OUT_FITS} ({OUT_FITS.stat().st_size // 1024} KB)")
+    import fits_compat_io
+    print(f"-> {OUT_FITS} ({OUT_FITS.stat().st_size // 1024} KB), packed into {fits_compat_io.GAME.name} "
+          f"({fits_compat_io.pack() // 1024} KB)")
 
 
 if __name__ == "__main__":

@@ -31,7 +31,8 @@ def items():
 
 
 def fits():
-    t = (LUA / "cl_fits_compat.lua").read_text(encoding="utf-8")
+    import fits_compat_io
+    t = fits_compat_io.SRC.read_text(encoding="utf-8")  # (the tools' source; the game's file is packed)
     models = re.findall(r'^    "([^"]+)",$', t.split("local F")[0], re.M)
     out = {}
     for cls, packed in re.findall(r'^    (\w+) = "([^"]*)",$', t, re.M):

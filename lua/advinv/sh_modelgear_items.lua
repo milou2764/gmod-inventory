@@ -256,21 +256,29 @@ function I.MergePackFits(pack)
     local fits = pack.fits
     if not (CLIENT and I.FitsLoaded and fits and fits.models and fits.items) or pack.fitsMerged then return end
     pack.fitsMerged = true
-    I.Fits = I.Fits or {}
-    for class, packed in pairs(fits.items) do
-        local k = 0
-        for e in string.gmatch(packed .. "|", "([^|]*)|") do
-            k = k + 1
-            local m = fits.models[k]
-            if e ~= "" and m then
-                local n = {}
-                for x in string.gmatch(e, "%S+") do n[#n + 1] = tonumber(x) end
-                m = string.lower(m)
-                I.Fits[m] = I.Fits[m] or {}
-                I.Fits[m][class] = { Vector(n[1], n[2], n[3]), Angle(n[4], n[5], n[6]), n[7] }
+    -- (a source of cl_fits.lua: a playermodel's fits are read the first time one is looked up, not
+    -- the 1,300 playermodels' at once)
+    local index, split = {}, nil
+    for k, m in ipairs(fits.models) do index[string.lower(m)] = k end
+    I.AddFitSource(index, function(t, model)
+        if not split then
+            split = {}
+            for class, packed in pairs(fits.items) do
+                local a = {}
+                for e in string.gmatch(packed .. "|", "([^|]*)|") do a[#a + 1] = e end
+                split[class] = a
             end
         end
-    end
+        local k = index[model]
+        for class, a in pairs(split) do
+            local e = a[k]
+            if e and e ~= "" and rawget(t, class) == nil then
+                local n = {}
+                for x in string.gmatch(e, "%S+") do n[#n + 1] = tonumber(x) end
+                rawset(t, class, { Vector(n[1], n[2], n[3]), Angle(n[4], n[5], n[6]), n[7] })
+            end
+        end
+    end)
 end
 
 function I.AddModelGearPack(pack)

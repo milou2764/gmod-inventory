@@ -135,9 +135,11 @@ def _bodygroups():
     f = Path(__file__).resolve().parent / "playermodel_bodygroups.txt"
     if f.exists():
         for line in f.read_text(encoding="utf-8").splitlines():
-            line = line.split("#", 1)[0].split()
-            if line:
-                out[line[0].lower()] = {int(a): int(b) for a, b in (w.split("=") for w in line[1:])}
+            line = line.split("#", 1)[0].strip()
+            # (the model path may hold spaces: "models/player/stalker/compiled 0.34/radsuit.mdl 2=1")
+            k = line.lower().find(".mdl")
+            if k > 0:
+                out[line[:k + 4].lower()] = {int(a): int(b) for a, b in (w.split("=") for w in line[k + 4:].split())}
     return out
 
 

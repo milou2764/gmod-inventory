@@ -1,0 +1,132 @@
+models/auditor/mercs_redux/mercs_light/mercenary_hvy_exosuit.mdl	Helmet,Vest	Gasmask:8=1;Rucksack:7=1	-	-	merc exosuit: padded helmet and armour vest in the mesh; gas mask and backpack bodygroups; Exo_Suit 5 is a light arm/leg frame with a flat back harness (no power unit), not a slot
+models/auditor/mercs_redux/mercs_light/mercenary_hvy_exosuit_zombie.mdl	Helmet,Vest	Gasmask:8=1;Rucksack:7=1	-	-	merc exosuit: padded helmet and armour vest in the mesh; gas mask and backpack bodygroups; Exo_Suit 5 is a light arm/leg frame with a flat back harness (no power unit), not a slot
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_alpha.mdl	Vest	Rucksack:2=1;Gasmask:4=0;Helmet:6=2	-	-	merc: armour vest in the base body (VestGear 5 only adds pouches); HeadWear 4: 3 = SAS gas mask (1-2 balaclavas, 0 = none); Hood 6: 0 = loose hoodie hood up (removable either way; 1 = hood down, 2 = none)
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_balaclava.mdl	Vest	Helmet:3=2	-	-	merc: armour vest in the base body; balaclava face (not gear); Hood 3: 0 = hood up, 1 = down, 2 = none
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_bravo.mdl	Vest	Rucksack:2=1;Gasmask:4=0;Helmet:6=2	-	-	merc: armour vest in the base body (VestGear 5 only adds pouches); HeadWear 4: 3 = SAS gas mask (1-2 balaclavas, 0 = none); Hood 6: 0 = loose hoodie hood up (removable either way; 1 = hood down, 2 = none)
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_charlie.mdl	Vest	Rucksack:2=1;Gasmask:4=0;Helmet:6=2	-	-	merc: armour vest in the base body (VestGear 5 only adds pouches); HeadWear 4: 3 = SAS gas mask (1-2 balaclavas, 0 = none); Hood 6: 0 = loose hoodie hood up (removable either way; 1 = hood down, 2 = none)
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_delta.mdl	Vest	Rucksack:2=1;Gasmask:4=0;Helmet:6=2	-	-	merc: armour vest in the base body (VestGear 5 only adds pouches); HeadWear 4: 3 = SAS gas mask (1-2 balaclavas, 0 = none); Hood 6: 0 = loose hoodie hood up (removable either way; 1 = hood down, 2 = none)
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_echo.mdl	Vest	Rucksack:2=1;Gasmask:4=0;Helmet:6=2	-	-	merc: armour vest in the base body (VestGear 5 only adds pouches); HeadWear 4: 3 = SAS gas mask (1-2 balaclavas, 0 = none); Hood 6: 0 = loose hoodie hood up (removable either way; 1 = hood down, 2 = none)
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_zombified.mdl	Vest	Rucksack:2=1;Helmet:5=2	-	-	zombified merc: armour vest in the base body; backpack 2; Hood 5: 0 = hood up, 1 = down, 2 = none
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_zombified_diaz.mdl	Vest	Rucksack:2=1;Helmet:5=2	-	-	zombified merc: armour vest in the base body; backpack 2; Hood 5: 0 = hood up, 1 = down, 2 = none
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_zombified_hendricks.mdl	Vest	Rucksack:2=1;Helmet:5=2	-	-	zombified merc: armour vest in the base body; backpack 2; Hood 5: 0 = hood up, 1 = down, 2 = none
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_zombified_nomad.mdl	Vest	Rucksack:2=1;Helmet:5=2	-	-	zombified merc: armour vest in the base body; backpack 2; Hood 5: 0 = hood up, 1 = down, 2 = none
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_zombified_ruin.mdl	Vest	Rucksack:2=1;Helmet:5=2	-	-	zombified merc: armour vest in the base body; backpack 2; Hood 5: 0 = hood up, 1 = down, 2 = none
+models/auditor/mercs_redux/mercs_light/mercenary_lightarmored_zombified_taylor.mdl	Vest	Rucksack:2=1;Helmet:5=2	-	-	zombified merc: armour vest in the base body; backpack 2; Hood 5: 0 = hood up, 1 = down, 2 = none
+models/auditor/mercs_redux/mercs_light/mercenary_scar.mdl	-	Helmet:2=1	-	-	trench coat: the whole coat torso is in the Hood bodygroup 2 (0 = hood up, 1 = hood down, 2 = empty = no torso, never use); GearLower 1 = belt pouches only; no vest or pack
+models/auditor/mercs_redux/mercs_light/mercenary_wolfhound.mdl	Vest	Rucksack:2=1;Helmet:6=2	-	-	merc: armour vest in the base body; Hood 6 (2 = none); its 'Backpack' 2 is only a small strap piece (174 tris), no pack visible: listing it is harmless (doubt)
+models/ao2/afghan_elite_pm.mdl	-	-	Helmet:0=2,5;Vest:1=5,6;Rucksack:1=5	-	Army of Two: heads 2/5 wear a pakol hat; torsos 5/6 = thick padded sleeveless vests, look like improvised flak vests (doubt); torso 5 = backpack; torsos 0/1/3 only a butt pack on the belt (not counted)
+models/ao2/afghan_grunt_pm.mdl	-	-	Helmet:0=0,1,3;Rucksack:1=1,2,4,5	-	Army of Two: heads 0/1/3 = turban; torsos 1/2/4/5 = sack pack on the upper back; waistcoats are clothes; torsos 0/3 H-harness without pouches not counted as Vest (doubt)
+models/ao2/afghan_heavy_pm.mdl	Helmet,Gasmask,Vest	-	-	-	helmet with visor down, chain-mail/plate armour; harness on the back, no pack
+models/ao2/afghan_martyr_pm.mdl	Helmet,Vest	-	-	-	pakol hat; explosive vest with pouches; face scarf not gear
+models/ao2/china_heavy_pm.mdl	Helmet,Gasmask,Vest	-	-	-	riot helmet with face shield down, heavy armour; armour back plates, no pack
+models/ao2/clyde_pm.mdl	Gasmask,Vest	-	-	-	full face (skull) mask strapped over the head with a mohawk crest; tactical vest; straps only on top, not counted as Helmet (doubt: the crest would poke through a helmet)
+models/ao2/iraq_heavy_pm.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask, padded heavy armour; pouches on the belt at the back, no pack
+models/ao2/kiev_elite_pm.mdl	Vest	-	-	-	balaclava with headset (not gear); plate carrier; pouches on the vest back panel, not a pack (doubt)
+models/ao2/kiev_grunt_pm.mdl	Rucksack	-	Helmet:1=0,3	-	heads 0/3 = beanie (1/2 bare); small backpack with shoulder straps on the upper back, no vest on the front
+models/ao2/kiev_heavy_pm.mdl	Helmet,Gasmask,Vest	-	-	-	Altyn-style helmet with visor down, heavy vest; pouches on the vest back panel, not a pack (doubt)
+models/ao2/miami_elite_pm.mdl	Vest	Gasmask:1=1	-	-	ribbed padded body armour in the mesh; Armor 1: 0 = rubber creature mask over the face + belt pouches, 1 = none (balaclava)
+models/ao2/miami_grunt_pm.mdl	Vest	Helmet:1=2	-	-	ribbed padded body armour in the mesh; Armor 1: 0/1 = helmets (goggles only), 2 = none (balaclava)
+models/ao2/miami_heavy_elite_pm.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, goggles and face mask, heavy armour with shell bandoliers; tan back plate, no pack
+models/ao2/miami_heavy_pm.mdl	Helmet,Gasmask,Vest	-	-	-	Armor 1 has no empty choice: all 3 = closed helmet/mask + heavy armour
+models/ao2/phil_elite_pm.mdl	-	-	-	-	balaclava (not gear); shoulder straps and a flat MOLLE back panel without pouches, not counted as Vest (doubt)
+models/ao2/phil_heavy_pm.mdl	Helmet,Gasmask,Vest	-	-	-	helmet with visor down, sleeveless armour vest; no pack
+models/ao2/rios.mdl	Vest	Gasmask:1=4	-	-	sleeveless tactical vest with harness straps in the base body (doubt: could be clothing); Armor 1: 0 = skull face mask, 1-3 = mask + armour + butt pack, 4 = none; butt pack on the belt not counted as Rucksack
+models/ao2/rios_ranger.mdl	Vest	Helmet:1=1;Gasmask:1=1	-	-	plate carrier in the mesh; Armor 1: 0 = helmet + goggles + face mask, 1 = none; butt pack on the belt not counted
+models/ao2/salem.mdl	Vest	Helmet:1=4;Gasmask:1=4	-	-	sleeveless padded vest with harness straps in the base body (doubt, like rios); Armor 1: 0 = cap + skull face mask, 1-3 = same + armour + butt pack, 4 = none
+models/ao2/salem_ranger.mdl	Vest	Helmet:1=1;Gasmask:1=1	-	-	plate carrier in the mesh; Armor 1: 0 = cap + goggles + face mask, 1 = none; butt pack on the belt not counted
+models/ao2/us_grunt_pm.mdl	Vest	Helmet:2=3	-	-	plate carrier in the mesh; Armor 2: 0-2 = helmets (goggles/NVG mount only), 3 = none; small hydration pack on the upper back not counted (doubt)
+models/ao2/us_heavy_alt_pm.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask, heavy vest; no pack
+models/ao2/us_heavy_pm.mdl	Gasmask,Vest	-	-	-	tight black hood like a balaclava (not Helmet, doubt), gas mask, heavy vest; no pack
+models/gearsofwar/adam.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/alex_brand.mdl	Vest	-	-	-	harness vest with explosives and a curved armour back plate over clothes, like the batch-1 captain (doubt: back plate could count as Rucksack)
+models/gearsofwar/anthony_carmine.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); closed full-face helmet in the mesh (Helmet bodypart, if any, has one choice)
+models/gearsofwar/anya.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/anya_backpack.mdl	Rucksack	-	-	-	tank top with a COG back pack (padded harness straps), no armour on the front
+models/gearsofwar/anya_lieutenant.mdl	-	-	-	-	officer uniform dress, no gear
+models/gearsofwar/baird.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); goggles on the forehead (not gear)
+models/gearsofwar/baird_classic.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); goggles on the forehead (not gear)
+models/gearsofwar/baird_dlc.mdl	Helmet,Vest	-	-	-	backwards cap, goggles; plate carrier with pouches; padded back panel, no pack
+models/gearsofwar/baird_gow3.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); goggles on the forehead (not gear)
+models/gearsofwar/ben_carmine.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); closed full-face helmet in the mesh (Helmet bodypart, if any, has one choice)
+models/gearsofwar/bernie.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); back unit mostly under the dreadlocks
+models/gearsofwar/classic_clayton.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); closed full-face helmet in the mesh (Helmet bodypart, if any, has one choice)
+models/gearsofwar/clay_carmine.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); closed full-face helmet in the mesh (Helmet bodypart, if any, has one choice)
+models/gearsofwar/cog_redshirt_female.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); closed full-face helmet in the mesh (Helmet bodypart, if any, has one choice)
+models/gearsofwar/cole_civ.mdl	-	Helmet:1=1	-	-	tank top and jeans; Hat 1 = fedora (1 = none); Shades not gear
+models/gearsofwar/cole_classic.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/cole_gow3.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/cole_judgement.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/cole_thrashball.mdl	Helmet,Gasmask,Vest	-	-	-	thrashball (football) helmet with face cage (Gasmask is a judgment call: cage in front of the face) and shoulder pads (Vest)
+models/gearsofwar/dizzy.mdl	Vest	Helmet:1=1	-	-	COG armour vest with flat back panel (no pack); Hat 1 = cowboy hat (1 = none, bandana under it is not gear)
+models/gearsofwar/dom.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/dom_classic.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/dom_commando.mdl	Vest,Rucksack	-	-	-	plate carrier with pouches; backpack with bedroll and knife; headband not gear
+models/gearsofwar/dom_gow3.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/hoffman.mdl	Helmet,Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); military cap in the mesh
+models/gearsofwar/hoffman_gow3.mdl	Vest,Rucksack	Helmet:1=1	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); Hat 1 = military cap (1 = none)
+models/gearsofwar/jace.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/jack.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	not humanoid: Jack, a floating repair drone	robot drone; if kept, every slot built-in (rule 4)
+models/gearsofwar/kim.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/loomis.mdl	Vest	-	-	-	Loomis armoured uniform with chest plate, flat back (like batch-1 colonel without the helmet)
+models/gearsofwar/marcus.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); do-rag (not gear)
+models/gearsofwar/marcus_classic.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); do-rag (not gear)
+models/gearsofwar/marcus_gow2.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); do-rag (not gear)
+models/gearsofwar/marcus_gow3.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); do-rag (not gear)
+models/gearsofwar/marcus_noarmor.mdl	-	-	-	-	tank top, no gear
+models/gearsofwar/onyx_female.mdl	Helmet,Gasmask,Vest	-	-	-	Onyx guard: closed beaked helmet; slim armoured suit with flat back (like batch-1 colonel)
+models/gearsofwar/onyx_male.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Onyx guard: closed beaked helmet; COG armour shell with back unit with lights (like batch-1 commander)
+models/gearsofwar/paduk.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/paduk_aftermath.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/prescott.mdl	Vest	-	-	-	armoured vest over a coat, back panel, like batch-1 captain; no helmet
+models/gearsofwar/redshirt2_gow3.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); closed full-face helmet in the mesh (Helmet bodypart, if any, has one choice)
+models/gearsofwar/redshirt_cog.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); closed full-face helmet in the mesh (Helmet bodypart, if any, has one choice)
+models/gearsofwar/redshirt_gow3.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); closed full-face helmet in the mesh (Helmet bodypart, if any, has one choice)
+models/gearsofwar/redshirt_gow3_gold.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); closed full-face helmet in the mesh (Helmet bodypart, if any, has one choice)
+models/gearsofwar/sam.mdl	Vest,Rucksack	-	-	-	Gears COG armour shell with raised back unit (Rucksack per batch-1 convention); bare head
+models/gearsofwar/sofia.mdl	Vest	-	-	-	Onyx-style armoured bodysuit with chest plates, flat back; no helmet
+models/gearsofwar/uir_soldier_female.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	UIR armour shell: closed helmet with skull mask and hoses, raised armour back (like batch-1 uir)
+models/gearsofwar/uir_soldier_male.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	UIR armour shell: closed helmet with skull mask and hoses, raised armour back (like batch-1 uir)
+models/player/stanmcg/enforcer/enforcer_blue_playermodel.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	robot with a disc head and booster (rule 4); bag/shoulder bodygroups irrelevant
+models/player/stanmcg/enforcer/enforcer_custom_clean_playermodel.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	robot with a disc head and booster (rule 4); bag/shoulder bodygroups irrelevant
+models/player/stanmcg/enforcer/enforcer_custom_playermodel.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	robot with a disc head and booster (rule 4); bag/shoulder bodygroups irrelevant
+models/player/stanmcg/enforcer/enforcer_red_playermodel.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	robot with a disc head and booster (rule 4); bag/shoulder bodygroups irrelevant
+models/valk/gearsofwar/cog/ncog/ncog_male.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	COG trooper: all 3 helmet choices closed full-face, no bare choice; armour shell with back unit
+models/valk/gearsofwar/cog/trooper/carmine_anthony.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	COG trooper: all 3 helmet choices closed full-face, no bare choice; armour shell with back unit
+models/valk/gearsofwar/cog/trooper/carmine_lizz.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	COG trooper: all 4 helmet choices closed full-face, no bare choice; armour shell with back unit
+models/valk/gearsofwar/cog/trooper/trooper_engineer.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	COG trooper: all 3 helmet choices closed full-face, no bare choice; armour shell with back unit
+models/valk/gearsofwar/cog/trooper/troopermarcus.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	COG trooper: all 3 helmet choices closed full-face; armour shell with back unit; Packs/ChestPacks/Flap = belt/chest pouches and groin flap (not slots)
+models/stalker_renegade/stalker_bandit_3_face_1.mdl	Helmet,Rucksack	-	-	-	flat cap, cloth face mask (not gear), leather coat, backpack
+models/stalker_renegade/stalker_bandit_3_face_2.mdl	Helmet,Rucksack	-	-	-	white flat cap, cloth face mask, white coat with a bandolier (not Vest), backpack
+models/stalker_renegade/stalker_bandit_7.mdl	Helmet,Vest	-	-	-	beanie with goggles, cloth face mask; chest harness with pouches; butt pack on the belt not counted
+models/stalker_renegade/stalker_bandit_8.mdl	Helmet,Gasmask,Rucksack	-	-	-	beanie, gas mask, white coat, backpack
+models/stalker_renegade/stalker_renegade_1.mdl	Vest,Rucksack	-	-	-	balaclava; chest rig; backpack
+models/stalker_renegade/stalker_renegade_1_2.mdl	Helmet,Vest	-	-	-	beanie, cloth face mask; chest rig; no pack
+models/stalker_renegade/stalker_renegade_1a_face.mdl	Vest	-	-	-	camo hood up hugging the head (top only 0.4 above the bare head) treated like the batch-1 camo hood, not Helmet (doubt); faces: balaclavas / beanie+mask under the hood; chest rig; butt pack not counted
+models/stalker_renegade/stalker_renegade_1a_merc.mdl	Gasmask,Vest	-	-	-	same tight camo hood (not Helmet, doubt), gas mask, armour vest
+models/stalker_renegade/stalker_renegade_1b_face.mdl	Vest	-	-	-	tight camo hood (not Helmet, doubt); faces balaclavas / beanie+mask under the hood; chest rig; butt pack not counted
+models/stalker_renegade/stalker_renegade_1b_merc.mdl	Gasmask,Vest	-	-	-	tight camo hood (not Helmet, doubt), gas mask, armour vest (white = missing texture?)
+models/stalker_renegade/stalker_renegade_1c_face.mdl	Vest	-	Helmet:1=1	-	no hood; Model 1: 0/2 = balaclavas, 1 = beanie + cloth mask; chest rig; butt pack not counted
+models/stalker_renegade/stalker_renegade_1c_merc.mdl	Gasmask,Vest	-	-	-	GP-5 rubber hood gas mask (hugs the head, not Helmet); armour vest
+models/stalker_renegade/stalker_renegade_3.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	sealed suit: hood with full dark visor, breathing air tank on the back (rule 4); chest rig
+models/stalker_renegade/stalker_renegade_3a.mdl	Helmet,Gasmask,Vest	-	-	-	padded helmet, gas mask, armour vest (white = missing texture?)
+models/stalker_renegade/stalker_renegade_4.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask, vest + chest rig, light exoskeleton frame on arms/legs: no back power unit (pouches only), so Rucksack left free (rule-4 exception, doubt)
+models/stalker_renegade/stalker_renegade_4a.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask, vest + chest rig, light exoskeleton frame on arms/legs: no back power unit (pouches only), so Rucksack left free (rule-4 exception, doubt)
+models/stalker_renegade/stalker_renegade_5.mdl	Rucksack	-	-	-	long white coat with hood up (1 unit off the head, 2.3 at the back; not Helmet, doubt), beanie and face cloth/balaclava under it; backpack
+models/stalker_renegade/stalker_renegade_leader.mdl	Vest	-	-	-	bare head; armour vest
+models/stalker_renegade/stalker_renegade_tech.mdl	-	-	-	-	jacket, no gear (renders untextured white)
+models/stalker_renegade/stalker_renegade_trader.mdl	Vest	-	-	-	bare head; armour vest with pouches
+models/stalker_isg/light_isg.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask, plate carrier with pouches; no pack
+models/stalker_isg/stalker_isg_1_helm_battle.mdl	Helmet,Vest	Gasmask:1=1	-	-	ISG suit: helmet and armour in the mesh; Model 1: 0 = gas mask, 1 = 'nogas' (goggles + balaclava); small hydration-style pack on the upper back not counted (doubt)
+models/stalker_isg/stalker_isg_1_helm_tactic.mdl	Helmet,Vest	Gasmask:1=1	-	-	ISG suit: helmet and armour in the mesh; Model 1: 0 = gas mask, 1 = 'nogas' (goggles + balaclava); small hydration-style pack on the upper back not counted (doubt)
+models/stalker_isg/stalker_isg_1a.mdl	Vest	-	Gasmask:1=3	-	ISG suit: tight hood (not Helmet, doubt); Model 1: 0-2 = goggles/balaclava/beanie under the hood, 3 = 'merc' gas mask; chest pouches; flat hydration panel or belt pouch on the back
+models/stalker_isg/stalker_isg_1a_sci.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	sealed suit: hood with full dark visor, air tank on the back (rule 4)
+models/stalker_isg/stalker_isg_1b.mdl	Vest	-	Gasmask:1=3	-	ISG suit: tight hood (not Helmet, doubt); Model 1: 0-2 = goggles/balaclava/beanie under the hood, 3 = 'merc' gas mask; chest pouches; flat hydration panel or belt pouch on the back
+models/stalker_isg/stalker_isg_1b_sci.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	sealed suit: hood with full dark visor, air tank on the back (rule 4)
+models/stalker_isg/stalker_isg_1c.mdl	Vest	-	Gasmask:1=3	-	ISG suit: tight hood (not Helmet, doubt); Model 1: 0-2 = goggles/balaclava/beanie under the hood, 3 = 'merc' gas mask; chest pouches; flat hydration panel or belt pouch on the back
+models/stalker_isg/stalker_isg_1c_sci.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	sealed suit: hood with full dark visor, air tank on the back (rule 4)
+models/stalker_isg/stalker_isg_exoskeleton.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	exoskeleton: helmet with goggles and breathing mask, armour, back power unit (rule 4)
+models/stalker_isg/stalker_isg_exoskeleton_2.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	exoskeleton: helmet with goggles and breathing mask, armour, back power unit (rule 4)
+models/stalker_isg/stalker_isg_leader.mdl	Vest	-	-	-	bare head; armoured vest with radio, flat back
+models/stalker_isg/stalker_isg_merc.mdl	Gasmask,Vest	-	-	-	tight hood (not Helmet, doubt), gas mask, chest rig; pouches only on the back
+models/stalker_isg/stalker_isg_military.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask, armour; pouch panel on the vest back, not a pack
+models/stalker_isg/stalker_isg_nosorog.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Nosorog heavy armour: blast collar with visor slit over the face, exo struts and back unit (rule 4)

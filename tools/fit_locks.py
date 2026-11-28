@@ -135,7 +135,8 @@ def apply(locks):
     blocked, slots = builtin_gear.builtin(), builtin_gear.item_slots()
     locks = {c: {m: f for m, f in per.items() if not builtin_gear.is_blocked(c, m, blocked, slots)} for c, per in locks.items()}
     changed = 0
-    p_fc, p_sh, p_fd = LUA / "cl_fits_compat.lua", LUA / "sh_compat_data.lua", LUA / "cl_fits_data.lua"
+    import fits_compat_io
+    p_fc, p_sh, p_fd = fits_compat_io.SRC, LUA / "sh_compat_data.lua", LUA / "cl_fits_data.lua"
     fc, sh, fd = (p.read_text(encoding="utf-8") for p in (p_fc, p_sh, p_fd))
     models = [m.lower() for m in re.findall(r'^    "([^"]+)",$', fc.split("local F")[0], re.M)]
     for cls, per in locks.items():
@@ -171,6 +172,8 @@ def apply(locks):
     for path, text in ((p_fc, fc), (p_sh, sh), (p_fd, fd)):
         if path.read_text(encoding="utf-8") != text:
             path.write_text(text, encoding="utf-8", newline="\n")
+            if path == p_fc:
+                fits_compat_io.pack()  # (the game's file, packed)
     import carry_data  # carry positions of the long guns ("carry:<weapon>:<mode>") -> cl_carry_data.lua
     return changed + _apply_extensions(locks) + carry_data.apply_locks(locks)
 

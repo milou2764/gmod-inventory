@@ -25,44 +25,11 @@ VIEW = {"sling_up": 200, "sling_down": 180, "front_hang": 20}
 
 
 def carry_data():
-    sets, aliases, cur, wcls, stack, cur_s = {}, {}, None, None, {}, None
-    num = lambda s: [float(x) for x in s.split(",")]
-    section = None
-    for line in DATA.read_text(encoding="utf-8").splitlines():
-        if line.startswith("AdvInv.CarryOffsets"):
-            section = "o"
-        elif line.startswith("AdvInv.CarryAliases"):
-            section = "a"
-        elif line.startswith("AdvInv.CarryStack"):
-            section = "s"
-        elif line.startswith("AdvInv."):
-            section = None
-        if section == "o":
-            m = re.match(r'    \["([^"]+)"\] = \{', line)
-            if m:
-                cur = sets.setdefault(m.group(1), {})
-                continue
-            m = re.match(r"        (\w+) = \{$", line)
-            if m:
-                wcls = cur.setdefault(m.group(1), {})
-                continue
-            m = re.match(r'\s*(\w+) = \{ "([^"]+)", V\(([^)]*)\), A\(([^)]*)\), V\(([^)]*)\) \},', line)
-            if m:
-                wcls[m.group(1)] = {"bone": m.group(2), "pos": np.array(num(m.group(3))),
-                                    "ang": num(m.group(4)), "out": np.array(num(m.group(5)))}
-        elif section == "s":
-            m = re.match(r'    \["([^"]+)"\] = \{', line)
-            if m:
-                cur_s = stack.setdefault(m.group(1), {})
-                continue
-            m = re.match(r'\s*\["([^"]+)"\] = (-?[\d.]+),', line)
-            if m:
-                cur_s[m.group(1)] = float(m.group(2))
-        elif section == "a":
-            m = re.match(r'\s*\["([^"]+)"\] = "([^"]+)",', line)
-            if m:
-                aliases[m.group(1)] = m.group(2)
-    return sets, aliases, stack
+    import carry_data as cd
+    d = cd.read_full(DATA)
+    sets = {name: {cls: {mode: {"bone": e["bone"], "pos": np.array(e["pos"]), "ang": e["ang"], "out": np.array(e["out"])}
+                         for mode, e in per.items()} for cls, per in s.items()} for name, s in d["sets"].items()}
+    return sets, d["aliases"], d["stack"]
 
 
 def weapon_mesh(path, e, bones, push=0.0):

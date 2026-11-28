@@ -1,0 +1,120 @@
+models/stalker_soldier/stalker_soldier_4_helm_tactic_nogas.mdl	Helmet,Vest	-	-	-	STALKER soldier: tactical helmet, goggles, balaclava (no gas mask), armour vest with pouches; hip pouches only, no pack; untextured in render
+models/stalker_soldier/stalker_soldier_4_skat.mdl	Helmet,Vest	-	-	-	SKAT-style helmet, goggles over a balaclava (same face as soldier_6's nogas choice; doubt: could be read as a mask), armour vest with pouches; no pack; untextured in render
+models/stalker_soldier/stalker_soldier_5.mdl	Helmet,Vest	-	-	-	ghillie suit with the ghillie hood up over the head (taken as a bulky hood = Helmet, doubt), chest rig with pouches; face hidden by strands, no gas mask seen (doubt); untextured in render
+models/stalker_soldier/stalker_soldier_5_beret.mdl	Helmet,Vest	-	-	-	beret, face scarf (not gear), chest rig with pouches; no pack
+models/stalker_soldier/stalker_soldier_6_helm_battle.mdl	Helmet,Vest	Gasmask:1=1	-	-	battle helmet and armour vest with pouches and radio in the mesh; Mask bodygroup 1 (0 = M50 gas mask, 1 = nogas: goggles + balaclava)
+models/stalker_soldier/stalker_soldier_6_helm_tactic_nogas.mdl	Helmet,Vest	-	-	-	tactical helmet, goggles, balaclava, armour vest with pouches, belt pouches; no pack
+models/stalker_soldier/stalker_soldier_9_proto.mdl	Helmet,Gasmask,Vest	-	-	-	helmet with gas mask, plate carrier, light exoskeleton frame on the limbs; flat plate-carrier back with a small spine box, so Rucksack not built-in (judgment call)
+models/stalker_soldier/stalker_soldier_exoseva.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	exoskeleton SEVA (rule 4): sealed hood with closed black visor, chest pouches, exo frame, air tank on the back
+models/stalker_soldier/stalker_soldier_nauchniy.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	helmet, gas mask with hose, vest with pouches, air tank and radio on the back
+models/stalker_soldier/stalker_soldier_voenny.mdl	Helmet,Vest,Rucksack	-	-	-	steel helmet, balaclava, chest rig with pouches, backpack
+models/stalker_soldier/yan_army_cook.mdl	Helmet,Vest	-	-	-	helmet, balaclava, chest rig/vest with pouches; flat back
+models/stalker_soldier/yan_army_mechanic.mdl	Helmet,Gasmask,Vest	-	-	-	loose camo jacket hood pulled up (taken as bulky hood = Helmet, doubt), GP-5 gas mask, vest with pouches; flat back
+models/metro_exodus/sam/2019/metro_exodus_sam.mdl	Vest	Helmet:0=0	Gasmask:0=1	-	Metro Exodus Sam: plate carrier in the body (ammo pouch bodygroups 5-7 are only its pouches); helmet bodygroup 0 (0 = bare head, 1 = hazmat helmet with gas mask); hood lies on the shoulders; flat back
+models/player/metro 2033/spartan 1/spartan_balaclava_1.mdl	Vest	Helmet:2=0;Helmet:1=0;Rucksack:4=0	Gasmask:2=1,3,4,5,7,8,10,12	-	Metro Spartan: armour vest in the body (Gear bodygroup 3 = pouch sets on it); Helmet bodygroup 2 (0 = none; 1-12 helmets and a beanie): the face-covering choices (closed mask, respirator, closed visor) give conditional Gasmask; Helmet Flashlight 1 is a lamp on the helmet, cleared with it; Backpack 4 (0 = none)
+models/player/metro 2033/spartan 2/spartan_balaclava_2.mdl	Vest	Helmet:2=0;Helmet:1=0;Rucksack:4=0	Gasmask:2=1,3,4,5,7,8,10,12	-	same as spartan 1 (same bodyparts and choice order)
+models/player/metro 2033/spartan 3/spartan_balaclava_3.mdl	Vest	Helmet:2=0;Helmet:1=0;Rucksack:4=0	Gasmask:2=1,3,4,5,7,8,10,12	-	same as spartan 1 (same bodyparts and choice order)
+models/stalker_nebo/stalker_barman_nebo.mdl	Helmet,Vest	-	-	-	cap, cloth face mask, tactical vest with pouches; flat back
+models/stalker_nebo/stalker_nebo2ab_2.mdl	Helmet,Gasmask,Vest	-	-	-	helmet with ear cups in the mesh; Mask bodygroup 1 = three gas masks/respirators, no bare face; plate carrier with pouches; flat back
+models/stalker_nebo/stalker_nebo3ab_3.mdl	Helmet,Gasmask,Vest	-	-	-	as nebo2ab_2: helmet in the mesh, Mask bodygroup 1 = three gas masks, no bare face; tactical vest
+models/stalker_nebo/stalker_nebo_1.mdl	Helmet,Vest	-	-	-	loose camo jacket hood up over a beanie, cloth face mask, tactical vest; butt pack on the belt (not a pack)
+models/stalker_nebo/stalker_nebo_1_backpack_helm_battle.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	battle helmet, gas mask, tactical vest, backpack
+models/stalker_nebo/stalker_nebo_1_backpack_helm_tactic.mdl	Vest,Rucksack	Helmet:1=3	Gasmask:1=0	-	Mask bodygroup 1 carries the helmet: 0 = helmet + M40 gas mask, 1 = helmet + respirator hanging on the chest, 2 = helmet + goggles, 3 = none (balaclava head); tactical vest and backpack in the mesh
+models/stalker_nebo/stalker_nebo_1_proto.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	exoskeleton with a raised back power unit (rule 4), camo hood up, gas mask, tactical vest
+models/stalker_nebo/stalker_nebo_2_backpack_helm_battle.mdl	Helmet,Vest	Gasmask:1=1	-	-	battle helmet and plate carrier in the mesh; Mask bodygroup 1 (0 = gas mask, 1 = none: balaclava); no backpack despite the name
+models/stalker_nebo/stalker_nebo_2_backpack_helm_tactical.mdl	Helmet,Gasmask,Vest	-	-	-	tactical helmet, gas mask, plate carrier; no backpack despite the name
+models/stalker_nebo/stalker_nebo_2_backpack_helm_tactical_nogas.mdl	Helmet,Vest	-	-	-	tactical helmet, balaclava, plate carrier; no backpack despite the name
+models/stalker_nebo/stalker_nebo_2_face_1.mdl	-	-	-	-	bare head, field jacket, belt with canteen; head texture missing in render
+models/stalker_nebo/stalker_nebo_2_face_2.mdl	-	-	-	-	bare head, anorak with the hood down; head texture missing in render
+models/stalker_nebo/stalker_nebo_2_face_3.mdl	-	-	-	-	bare head, field jacket; head and trousers untextured in render
+models/stalker_nebo/stalker_nebo_2_face_4.mdl	-	-	-	-	bare head, field jacket, belt; head texture missing in render
+models/stalker_nebo/stalker_nebo_3_balloon_helm_battle.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	battle helmet, gas mask, tactical vest, backpack
+models/stalker_nebo/stalker_nebo_3_balloon_helm_tactical.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	tactical helmet, gas mask, tactical vest, backpack
+models/stalker_nebo/stalker_nebo_3_helm_battle.mdl	Helmet,Vest	Gasmask:1=1	-	-	battle helmet and tactical vest in the mesh; Mask bodygroup 1 (0 = gas mask, 1 = nogas: goggles + balaclava); small pouch on the vest back, no pack
+models/stalker_nebo/stalker_nebo_3_helm_tactical.mdl	Helmet,Vest	Gasmask:1=1	-	-	tactical helmet and tactical vest in the mesh; Mask bodygroup 1 (0 = gas mask, 1 = nogas: goggles + balaclava)
+models/stalker_nebo/stalker_nebo_4_backpack_hood.mdl	Helmet,Vest,Rucksack	-	-	-	camo hood up over a beanie, cloth face mask, chest rig, backpack (untextured in render)
+models/stalker_nebo/stalker_nebo_4_helm.mdl	Helmet,Vest	Gasmask:1=1	-	-	tactical helmet in both choices of Mask bodygroup 1 (0 = M40 gas mask, 1 = goggles + respirator hanging on the chest); chest rig with X straps, butt pack on the belt
+models/stalker_nebo/stalker_nebo_a.mdl	Helmet,Vest	-	-	-	camo hood up, goggles, cloth face mask, tactical vest, butt pack on the belt
+models/stalker_nebo/stalker_nebo_b.mdl	Helmet,Gasmask,Vest	-	-	-	battle helmet, gas mask, plate carrier with pouches, belt pouches; no pack
+models/stalker_nebo/stalker_nebo_exo_1.mdl	Helmet,Gasmask,Vest	-	-	-	helmet with gas mask, plate carrier, light exoskeleton frame (like soldier_9_proto); flat back with a small spine box, so Rucksack not built-in (judgment call)
+models/stalker_nebo/stalker_nebo_military.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	helmet, gas mask, tactical vest, backpack
+models/stalker_nebo/stalker_nebo_r.mdl	Helmet,Rucksack	-	-	-	beanie, cloth face mask, backpack (untextured in render), belt with canteen; no vest
+models/stalker_nebo/stalker_nebo_r2.mdl	Helmet,Vest	-	-	-	beanie, cloth face mask, chest rig with pouches (X straps on the back), belt
+models/stalker_nebo/stalker_nebo_r_gas.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	beanie, gas mask, tactical vest, backpack (untextured in render)
+models/stalker_nebo/stalker_nebo_r_mas2.mdl	Helmet	-	-	-	camo hood up, cloth face mask; only a belt with pouches, no harness (not taken as Vest, doubt); pouches untextured in render
+models/stalker_nebo/stalker_nebo_r_mask.mdl	Helmet	-	-	-	camo hood up, cloth face mask; only a belt with pouches and butt pack, no harness (not taken as Vest, doubt)
+models/stalker_nebo/stalker_nebo_s.mdl	Helmet,Vest	-	-	-	beanie, cloth face mask, armour vest with pouches
+models/stalker_nebo/stalker_nebo_s_gp5.mdl	Helmet,Gasmask,Vest	-	-	-	anorak hood up, gas mask with hose, armour vest
+models/stalker_nebo/stalker_nebo_s_mas2.mdl	Helmet,Vest	-	-	-	anorak hood up, cloth face mask, armour vest
+models/stalker_nebo/stalker_nebo_s_mas3.mdl	Helmet,Vest	-	-	-	anorak hood up, goggles, cloth face mask, armour vest
+models/stalker_nebo/stalker_nebo_s_mask.mdl	Helmet,Vest	-	-	-	anorak hood up, cloth face mask, armour vest
+models/stalker_nebo/stalker_nebo_s_merc.mdl	Helmet,Gasmask,Vest	-	-	-	anorak hood up, gas mask, armour vest
+models/stalker_nebo/stalker_nebo_s_old.mdl	Helmet,Gasmask,Vest	-	-	-	anorak hood up, gas mask, armour vest
+models/stalker_nebo/stalker_nebo_seva_1_2.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	SEVA-style sealed hood with closed black visor, tactical vest, air tank on the back
+models/stalker_nebo/stalker_nebo_seva_3.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	SEVA-style sealed hood with closed black visor, plate carrier, air tank on the back
+models/stalker_nebo/stalker_nebo_skat.mdl	Helmet,Gasmask,Vest	-	-	-	battle helmet, gas mask (untextured in render), plate carrier with collar; flat back
+models/stalker_nebo/stalker_nebo_smask.mdl	Vest	Helmet:1=1	-	-	hood bodygroup 1 (0 = anorak hood up with goggles over a balaclava, 1 = balaclava + goggles, hood down); plate carrier with a flat pouch on the back
+models/stalker_nebo/stalker_nebo_tropnik.mdl	Helmet,Vest	-	-	-	camo hood up, goggles, cloth face mask, chest rig
+models/stalker_nebo/stalker_neboa2.mdl	Helmet,Vest	-	-	-	camo hood up, balaclava, tactical vest, butt pack on the belt
+models/stalker_nebo/stalker_nebob2.mdl	Helmet,Gasmask,Vest	-	-	-	battle helmet, gas mask (untextured in render), plate carrier, belt pouches; no pack
+models/stalker_nebo/stalker_radexo4a.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	helmet with gas mask, plate carrier with shoulder pads, backpack; no exoskeleton frame seen despite the name
+models/stalker_nebo/stalker_trader_nebo.mdl	-	-	-	-	bare head, field jacket, belt; head texture missing in render
+models/stalker/nebo.mdl	Helmet,Gasmask,Vest	-	-	-	Clear Sky style: both helmet bodygroup choices = cloth hood up with gas mask (hood taken as Helmet, doubt: fairly close-fitting); armour vest with pouches; Holster/Pouch/Canteen bodygroups are not slots; flat back
+models/dejtriyev/cochdbandit/bandit1a.mdl	-	Helmet:2=0;Gasmask:5=0;Rucksack:6=0	-	-	bandit: Head 2 (cap, hat, ushanka, tanker helmet), Protivogas 5 (gas mask), Rykzak 6 (backpack); jackets only, no armour; Ghillie 1 (hooded ghillie cape, 0 = none) given no slot (owner decides); OnFace balaclava/bandana not gear
+models/dejtriyev/cochdbandit/bandit1c.mdl	-	Helmet:3=0;Gasmask:5=0;Vest:6=0;Vest:8=0;Rucksack:7=0	-	-	bandit: Head 3 (cap, tanker helmet), Protivogas 5, Razgryzka 6 (chest rig), Rykzak 7 (backpack), Exo 8 (light exoskeleton frame with spine unit, put under Vest: judgment call); jackets only; Ghillie 2 given no slot
+models/dejtriyev/cochdbandit/bandit2a.mdl	-	Helmet:1=0;Gasmask:5=0;Vest:6=0;Vest:8=0;Rucksack:7=0	Vest:4=1,2	-	bandit: Head 1 (headband, steel helmet, beanie), Protivogas 5 (1 = on the face, 2 = hanging at the hip), Razgryzka 6 (chest rig), Rykzak 7, Exo 8 (under Vest, judgment call); Kyrtkapants 4 = 1 and 2 are body-armour vests over the jacket (2 untextured in render); Ghillie 3 given no slot
+models/dejtriyev/cochdbandit/bandit4a.mdl	-	Helmet:2=0;Helmet:4=0;Rucksack:6=0	Rucksack:5=3	-	bandit in long coats: Head 2 (tanker helmet), Kapyshon 4 (loose hood pulled up, taken as Helmet), Rykzak 6; Kyrtkapants 5 = 3 (white coat) has a backpack in the mesh; no vests; Ghillie 3 given no slot
+models/dejtriyev/cochdbandit/bandit_tr.mdl	-	Helmet:9=0;Vest:8=0;Rucksack:7=0	-	-	bandit: Head 9 (tanker helmet), Rykzakrazg 7 (backpack with shoulder harness, no pouches), Exo 8 (under Vest, judgment call); Respirator 6 hangs at the hip, not on the face (no slot); Ochki = glasses; Ghillie 3 given no slot
+models/clsksuit/male_cs1.mdl	Helmet,Gasmask,Vest	-	-	-	Clear Sky style suit: helmet with gas mask, armour vest with pouches; flat back
+models/clsksuit/male_cs2.mdl	Helmet,Gasmask,Vest	-	-	-	helmet with goggles and respirator, vest with pouches; flat back
+models/clsksuit/male_cs3.mdl	Helmet,Vest,Rucksack	-	-	-	cloth hood up (taken as Helmet), cloth face mask (not gear), chest rig, bag on the back
+models/clsksuit/male_cs4.mdl	Helmet,Gasmask,Vest	-	-	-	helmet with goggles and gas mask, vest with pouches, leg armour; flat back
+models/player/h&h/bos/powerarmor/clinton.mdl	Vest,Rucksack	Helmet:1=1	Gasmask:1=0	-	Fallout 3 T-45 power armour (rule 4: armour shell = Vest, raised back unit = Rucksack); hair bodygroup 1 (0 = closed PA helmet, 1 = hair): helmet removable, not built-in, because a bare-head choice exists (judgment call)
+models/player/h&h/bos/powerarmor/eisenhower.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO3 T-45 power armour (Vest, raised back unit = Rucksack); hair bodygroup 3: 0/1 = closed PA helmet (flashlight off/on), 2 = padded under-armour cap, 3 = hair (none)
+models/player/h&h/bos/powerarmor/female02.mdl	Vest,Rucksack	Helmet:3=2	Gasmask:3=0,1	-	FO3 T-45 power armour; hair bodygroup 3: 0/1 = closed PA helmet, 2-11 hairstyles (2 used as none)
+models/player/h&h/bos/powerarmor/male01.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO3 T-45 power armour; hair bodygroup 3: 0/1 = closed PA helmet, 2 = under-armour cap, 4 = headwrap, 3 = cleancut (none)
+models/player/h&h/bos/powerarmor/male02.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO3 T-45 power armour; hair bodygroup 3: 0/1 = closed PA helmet, 2 = under-armour cap, 3 = buzzcut (none)
+models/player/stalker_anomaly/isg/stalker_isg_1a_face_2.mdl	Helmet,Vest	-	-	-	STALKER Anomaly ISG: cap with headset, cloth face mask, plate carrier, belt pouches and butt pack; no pack
+models/player/h&h/bos/fieldscribe/bojangles.mdl	Vest,Rucksack	Helmet:3=1	-	-	FO4 field scribe: chest rig with pouches and a big backpack in the body; hair bodygroup 3 (0 = field-scribe cap with goggles, 1 = hair)
+models/player/h&h/bos/fieldscribe/male01.mdl	Vest,Rucksack	Helmet:3=1	-	-	FO4 field scribe: chest rig and backpack in the body; hair bodygroup 3 (0 = cap, 2 = bandana, 3/4 = baseball caps, 5 = headwrap, 1 = cleancut used as none); head texture missing in render
+models/player/h&h/bos/fieldscribe/male02.mdl	Vest,Rucksack	Helmet:3=1	-	-	FO4 field scribe: chest rig and backpack in the body; hair bodygroup 3 (0 = cap, 1 = buzzcut)
+models/player/h&h/bos/fieldscribe/mamadu.mdl	Vest,Rucksack	Helmet:3=1	-	-	FO4 field scribe: chest rig and backpack in the body; hair bodygroup 3 (0 = cap, 1 = hair)
+models/player/h&h/bos/fieldscribe/messo.mdl	Vest,Rucksack	Helmet:3=1	-	-	FO4 field scribe: chest rig and backpack in the body; hair bodygroup 3 (0 = cap, 1 = hair)
+models/player/h&h/bos/fieldscribe/murphy.mdl	Vest,Rucksack	Helmet:3=1	-	-	FO4 field scribe: chest rig and backpack in the body; hair bodygroup 3 (0 = cap, 1 = hair)
+models/player/h&h/bos/fieldscribe/powers.mdl	Vest,Rucksack	Helmet:3=1	-	-	FO4 field scribe: chest rig and backpack in the body; hair bodygroup 3 (0 = cap, 1 = hair)
+models/player/h&h/bos/powerarmor/knight/anders.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour (Vest, raised back unit = Rucksack: judgment call); hair bodygroup 3: 0/1 = closed PA helmet (flashlight off/on), 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/arm.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/bill.mdl	Vest,Rucksack	Helmet:3=4	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = baseball cap, 4 = hair (none)
+models/player/h&h/bos/powerarmor/knight/dally.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/dorn.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/female02.mdl	Vest,Rucksack	Helmet:3=2	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2-11 hairstyles (2 used as none)
+models/player/h&h/bos/powerarmor/knight/lachmann.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/law.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/male01.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 4 = bandana, 5/6 = caps, 7 = headwrap, 3 = cleancut (none)
+models/player/h&h/bos/powerarmor/knight/male02.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = buzzcut (none)
+models/player/h&h/bos/powerarmor/knight/mcsmith.mdl	Vest,Rucksack	Helmet:3=4	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = cap, 4 = hair (none)
+models/player/h&h/bos/powerarmor/knight/ohanrahan.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/pluto.mdl	Vest,Rucksack	Helmet:3=2	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = hair (none)
+models/player/h&h/bos/powerarmor/knight/powers.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/redd.mdl	Vest,Rucksack	Helmet:3=4	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = bandana, 4 = hair (none)
+models/player/h&h/bos/powerarmor/knight/rodrik.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/shephard.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/smith.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/springfield.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/knight/toons.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 knight power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/paladin/arm.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 paladin power armour (Vest, raised back unit = Rucksack: judgment call); hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/paladin/clinton.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 paladin power armour; hair 3: 0/1 = PA helmet, 2 = officer hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/paladin/clinton_aged.mdl	Vest,Rucksack	Helmet:3=2	Gasmask:3=0,1	-	FO4 T-60 paladin power armour; hair 3: 0/1 = PA helmet, 2/3 = hair (2 used as none)
+models/player/h&h/bos/powerarmor/paladin/eisenhower.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 paladin power armour; hair 3: 0/1 = PA helmet, 2 = officer hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/paladin/female02.mdl	Vest,Rucksack	Helmet:3=2	Gasmask:3=0,1	-	FO4 T-60 paladin power armour; hair 3: 0/1 = PA helmet, 2-11 hairstyles (2 used as none)
+models/player/h&h/bos/powerarmor/paladin/law.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 paladin power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/paladin/male01.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 paladin power armour; hair 3: 0/1 = PA helmet, 2 = officer hood, 4 = bandana, 5/6 = caps, 7 = headwrap, 3 = cleancut (none)
+models/player/h&h/bos/powerarmor/paladin/male02.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 paladin power armour; hair 3: 0/1 = PA helmet, 2 = officer hood, 3 = buzzcut (none)
+models/player/h&h/bos/powerarmor/paladin/redd.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 paladin power armour; hair 3: 0/1 = PA helmet, 2 = bandana, 3 = hair (none)
+models/player/h&h/bos/powerarmor/paladin/shephard.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 paladin power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/powerarmor/paladin/springfield.mdl	Vest,Rucksack	Helmet:3=3	Gasmask:3=0,1	-	FO4 T-60 paladin power armour; hair 3: 0/1 = PA helmet, 2 = BoS hood, 3 = hair (none)
+models/player/h&h/bos/scribe/bojangles.mdl	-	-	-	-	FO4 scribe robe; hair only (no hat), reading glasses are not gear
+models/player/h&h/bos/scribe/mamadu.mdl	-	-	-	-	FO4 scribe robe; hair only (no hat)
+models/player/h&h/bos/scribe/messo.mdl	-	-	-	-	FO4 scribe robe; hair only (no hat)
+models/player/h&h/combatmedic/male01.mdl	-	Helmet:3=0	-	-	Fallout combat medic: coat with a bandolier strap, belt pouches and hip bag (no vest), one shoulder pad; hair bodygroup 3 (1/2 = cowboy hats, 0 = cleancut = none); head texture missing in render
+models/player/h&h/desertranger/dallas.mdl	Vest	Helmet:2=1	Gasmask:2=0	-	NCR desert ranger: chest armour under the duster (as batch 1 veteran ranger); hair bodygroup 2 (0 = ranger helmet with closed respirator face, 1 = hair = none, 2 = cowboy hat); no pack

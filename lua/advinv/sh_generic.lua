@@ -65,11 +65,28 @@ for _, class in ipairs({
     "wep_jack_gmod_hands", "wep_jack_gmod_eztoolbox", "wep_jack_gmod_ezmedkit", "wep_jack_gmod_ezbucket",
     "wep_jack_gmod_ezdesignator", "wep_jack_gmod_ezaxe", "wep_jack_gmod_ezpickaxe", "wep_jack_gmod_ezshovel",
     "wep_jack_gmod_ezspade", "wep_jack_gmod_ezmeleebase",
+    -- hands, gas mask actions, visions, maps and menus of Workshop addons (Metro and S.T.A.L.K.E.R. packs:
+    -- Vortigaunt powers, Metro gas mask, S.T.A.L.K.E.R. gas mask, Predator bio-mask, PDA), and a health kit
+    "vort_hands", "vort_swep", "vortigaunt_extract", "vortigaunt_lion", "metro_gasmask_deploy",
+    "metro_gasmask_filter_swap", "metro_gasmask_holster", "metro_gasmask_wipe", "weapon_m2033_gasmask",
+    "stalker_gas_mask_sunrise", "predator_biomask", "pda_spawnmenu", "dm_pda_map", "tfa_codww2k_healthkit",
 }) do
     if I.WeaponBlacklist[class] == nil then I.WeaponBlacklist[class] = true end
 end
 
 I.WeaponCategory = I.WeaponCategory or {}
+for class, cat in pairs({
+    d_dynamo = "SecondaryWep", -- (Metro's hand dynamo: no hold type, a small thing)
+}) do
+    if I.WeaponCategory[class] == nil then I.WeaponCategory[class] = cat end
+end
+-- guitars (S.T.A.L.K.E.R. guitars, Workshop 2769685038): held like a S.L.A.M., carried on the back
+for _, f in ipairs({ "", "_bandit", "_csky", "_darkstalker", "_dolg", "_ecolog", "_freedom", "_greh", "_isg",
+    "_killer", "_military", "_mirotvorec", "_monolith", "_mstitel", "_renegate", "_ryskuspecnaz", "_sby",
+    "_slizni", "_stalker", "_veter", "_voenstal", "_zakat" }) do
+    local class = f == "" and "guitar" or "guitar_stalker" .. f
+    if I.WeaponCategory[class] == nil then I.WeaponCategory[class] = "PrimaryWep" end
+end
 
 I.PickupWhitelist = I.PickupWhitelist or {}
 for class, d in pairs({
@@ -102,13 +119,35 @@ local WEAPON_MASS = { PrimaryWep = 80, SecondaryWep = 20, RocketLauncher = 100 }
 function I.SwepAmmo(swep)
     if not swep then return end
     if swep.ARC9 and isstring(swep.Ammo) and swep.Ammo ~= "" then return swep.Ammo end
+    if swep.ArcticTacRP then return I.TacRPAmmo(swep) end
     return swep.Primary and swep.Primary.Ammo
 end
 
 function I.SwepClipSize(swep)
     if not swep then return end
     if swep.ARC9 and isnumber(swep.ClipSize) then return swep.ClipSize end
+    if swep.ArcticTacRP then
+        local live = swep.Primary and tonumber(swep.Primary.ClipSize)
+        if live and live ~= 0 then return live end -- (a weapon entity: its attachments counted)
+        if swep.PrimaryGrenade then return -1 end
+        return tonumber(swep.ClipSize) or -1
+    end
     return swep.Primary and swep.Primary.ClipSize
+end
+
+-- TacRP: a weapon's stored table has its ammunition in SWEP.Ammo (Ammo_Expanded with
+-- tacrp_expandedammotypes), a grenade weapon its quick grenade's; Primary stays empty until a weapon
+-- entity sets it up (with what its attachments change).
+function I.TacRPAmmo(swep)
+    local live = swep.Primary and swep.Primary.Ammo
+    if isstring(live) and live ~= "" and string.lower(live) ~= "none" then return live end
+    if swep.PrimaryGrenade then
+        local q = TacRP and TacRP.QuickNades and TacRP.QuickNades[swep.PrimaryGrenade]
+        return q and q.Ammo or nil
+    end
+    local ex = GetConVar("tacrp_expandedammotypes")
+    if ex and ex:GetBool() and isstring(swep.Ammo_Expanded) and swep.Ammo_Expanded ~= "" then return swep.Ammo_Expanded end
+    if isstring(swep.Ammo) and swep.Ammo ~= "" then return swep.Ammo end
 end
 
 -- Slot of a weapon that has no registered item: its own AdvInvCategory, I.WeaponCategory, else a guess
@@ -116,21 +155,52 @@ end
 local function guessCategory(class, swep)
     if I.WeaponCategory[class] then return I.WeaponCategory[class] end
     if swep and swep.AdvInvCategory then return swep.AdvInvCategory end
+    -- (EFT Supply's food, drinks and medicine set their hold type only once made: small things)
+    if swep and swep.EFTSUPPLYHUD then return "SecondaryWep" end
     -- (some bases, CW 2.0, set their hold type only when deployed: NormalHoldType; ArcCW names it
-    -- HoldtypeActive)
-    local hold = swep and string.lower(swep.HoldType or swep.NormalHoldType or swep.HoldtypeActive or "") or ""
+    -- HoldtypeActive; NC SWEPs RaisedHoldType; ASTW2 HoldType_Aim, HoldType_Hipfire)
+    local hold = swep and string.lower(swep.HoldType or swep.NormalHoldType or swep.HoldtypeActive
+        or swep.RaisedHoldType or swep.HoldType_Aim or swep.HoldType_Hipfire or "") or ""
     local ammo = string.lower(tostring(I.SwepAmmo(swep) or ""))
     -- a launcher: what it fires (rockets, missiles, warheads), or the rocket launcher's hold type with
     -- no magazine at all. Not the hold type alone: many weapons use it, ARC9's third-person-IK packs
     -- (ARC9 Escape From Tarkov...) for all of theirs, pistols too, M9K for its sniper rifles
     local clip = tonumber(I.SwepClipSize(swep)) or -1
+    -- (the RPG-7's PG-7 / OG-7 rounds: "ammo_og-7b" of the S.T.A.L.K.E.R. Anomaly pack)
     if ammo:find("rpg", 1, true) or ammo:find("rocket", 1, true) or ammo:find("missile", 1, true)
-        or ammo:find("warhead", 1, true) or (hold == "rpg" and clip < 1) then
+        or ammo:find("warhead", 1, true) or ammo:find("pg%-?7") or ammo:find("og%-?7")
+        or (hold == "rpg" and clip < 1) then
         return "RocketLauncher"
     end
     -- (not SWEP.Slot in general: many weapons set it on the client only, the server would guess
     -- another slot; ARC9's and Sandstorm SWEPs' weapons declare it with the rest: 0 and 1 are hand
     -- weapons. A Sandstorm pistol may have a rifle's hold type: Ready or Not's MP17)
+    -- TacRP: its type (a launcher: the M320, the M79...) and its menu slot (0-1 sidearms, 2-3 long
+    -- guns; 4, equipment: by hold type below)
+    if swep and swep.ArcticTacRP then
+        if isstring(swep.SubCatType) and string.find(string.lower(swep.SubCatType), "launcher", 1, true) then
+            return "RocketLauncher"
+        end
+        local s = tonumber(swep.Slot)
+        if s and s <= 1 then return "SecondaryWep" end
+        if s and s <= 3 then return "PrimaryWep" end
+    end
+    -- a type of its own (NC SWEPs and other bases in TacRP's manner: SWEP.SubCatType "1Pistol",
+    -- "2Shotgun", "4Assault Rifle"...; ARC9's SWEP.Class "Assault Rifle", before its menu slot, which
+    -- some packs get wrong: Fallout 4's assault rifle in slot 1; "Special", "Equipment": by menu slot or
+    -- hold type below)
+    local sub = swep and (isstring(swep.SubCatType) and swep.SubCatType or swep.ARC9 and isstring(swep.Class)
+        and swep.Class) or ""
+    sub = string.lower(sub)
+    if sub:find("launcher", 1, true) then return "RocketLauncher" end
+    if sub:find("pistol", 1, true) or sub:find("revolver", 1, true) or sub:find("magnum", 1, true)
+        or sub:find("akimbo", 1, true) or sub:find("melee", 1, true) or sub:find("knife", 1, true) then
+        return "SecondaryWep"
+    end
+    for _, w in ipairs({ "rifle", "shotgun", "submachine", "smg", "machine gun", "sniper", "marksman", "carbine",
+        "sporter", "battle" }) do
+        if sub:find(w, 1, true) then return "PrimaryWep" end
+    end
     local slot = swep and (swep.ARC9 or weapons.IsBasedOn(class, "weapon_sand_base")) and tonumber(swep.Slot)
     if slot then return slot <= 1 and "SecondaryWep" or "PrimaryWep" end
     if hold == "pistol" or hold == "revolver" or hold == "melee" or hold == "knife"

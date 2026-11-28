@@ -22,6 +22,37 @@ M = "advinv_milou_pmc_"
 DL = [f"models/dl/{m}_p.mdl" for m in ("gre1", "gre2", "gre3", "policeman1", "policeman2", "policeman3", "soldier1", "soldier2",
                                          "tear_soldier1", "tear_soldier2", "tear_soldier3")]
 D = "advinv_milou_dlsec_"
+# CSS Enhanced Special Forces, SEB & SWAT (3387382988): two operators with the same eleven bodyparts;
+# their gear differs by colour (olive SEB, black SWAT: each side's materials) except the gas mask
+# (shared materials): one pack for it on both, one pack per side for the rest.
+CSSSF = "advinv_milou_csssf_"
+CSS_SEB, CSS_SWAT = "models/css_seb_swat/css_seb.mdl", "models/css_seb_swat/css_swat.mdl"
+
+
+def _csssf_items(side, colour_en, colour_fr):
+    S = side.upper()
+    vest = [("vest", "vest"), ("vest_patch", "vest_patch")]
+    return [
+        {"class": f"{CSSSF}{side}_helmet", "slot": "Helmet", "name": (f"{S} MICH helmet ({colour_en})", f"Casque MICH {S} ({colour_fr})"),
+         "mass": 14, "armor": 70, "show": [("headwear", "helmet")]},
+        {"class": f"{CSSSF}{side}_helmet_nvg", "slot": "Helmet",
+         "name": (f"{S} MICH helmet with night vision goggles ({colour_en})", f"Casque MICH {S} et jumelles de vision nocturne ({colour_fr})"),
+         "mass": 17, "armor": 70, "show": [("headwear", "helmet"), ("helmet_attach", "helmet_attach")]},
+        {"class": f"{CSSSF}{side}_headset", "slot": "Radio", "name": (f"{S} tactical headset ({colour_en})", f"Casque audio tactique {S} ({colour_fr})"),
+         "mass": 2, "show": [("headphones", "headphones")]},
+        {"class": f"{CSSSF}{side}_glasses", "slot": "NVGs", "name": (f"{S} ballistic glasses", f"Lunettes balistiques {S}"),
+         "mass": 1, "show": [("facewear", "glasses")]},
+        {"class": f"{CSSSF}{side}_plate_carrier", "slot": "Vest", "name": (f"{S} plate carrier ({colour_en})", f"Porte-plaques {S} ({colour_fr})"),
+         "mass": 40, "armor": 90, "load": 10, "show": vest},
+        {"class": f"{CSSSF}{side}_plate_carrier_mags", "slot": "Vest",
+         "name": (f"{S} plate carrier and magazine pouches ({colour_en})", f"Porte-plaques {S} et porte-chargeurs ({colour_fr})"),
+         "mass": 44, "armor": 90, "load": 20, "show": vest + [("mags", "mags")]},
+        # (the radio, holster and leg pouches hang from the belt and the thigh: bonemerged, they follow the legs)
+        {"class": f"{CSSSF}{side}_plate_carrier_kit", "slot": "Vest",
+         "name": (f"{S} plate carrier, pouches, radio and holster ({colour_en})", f"Porte-plaques {S}, poches, radio et étui ({colour_fr})"),
+         "mass": 50, "armor": 90, "load": 30, "show": vest + [("mags", "mags"), ("gear", "gear"), ("lowr_gear", "lowr_gear")], "rigged": True},
+    ]
+
 
 PACKS = {
     "ww1_french": {
@@ -338,5 +369,35 @@ PACKS = {
             {"class": "advinv_milou_eftpmc_paca", "slot": "Vest", "name": ("PACA soft armour and Bank Robber chest rig", "Gilet souple PACA et porte-chargeurs Bank Robber"),
              "mass": 25, "armor": 50, "load": 15, "show": [("Armour", "eft_paca")]},
         ],
+    },
+    "css_sf": {
+        "key": "css_sf",
+        "title": "CSS Enhanced Special Forces",
+        "wid": "3387382988",
+        "author": "milou2764 (gear of the CSS Enhanced Special Forces SEB & SWAT playermodels)",
+        "category": ("Inventory: CSS special forces gear", "Inventaire : équipement des forces spéciales CSS"),
+        "models": [CSS_SEB, CSS_SWAT],
+        "items": [
+            {"class": CSSSF + "gasmask", "slot": "Gasmask", "name": ("Full-face gas mask", "Masque à gaz intégral"), "mass": 6,
+             "show": [("facewear", "gasmask")]},
+        ],
+    },
+    "css_sf_seb": {
+        "key": "css_sf_seb",
+        "title": "CSS Enhanced Special Forces (SEB)",
+        "wid": "3387382988",
+        "author": "milou2764 (gear of the CSS Enhanced Special Forces SEB & SWAT playermodels)",
+        "category": ("Inventory: CSS special forces gear", "Inventaire : équipement des forces spéciales CSS"),
+        "models": [CSS_SEB],
+        "items": _csssf_items("seb", "olive", "olive"),
+    },
+    "css_sf_swat": {
+        "key": "css_sf_swat",
+        "title": "CSS Enhanced Special Forces (SWAT)",
+        "wid": "3387382988",
+        "author": "milou2764 (gear of the CSS Enhanced Special Forces SEB & SWAT playermodels)",
+        "category": ("Inventory: CSS special forces gear", "Inventaire : équipement des forces spéciales CSS"),
+        "models": [CSS_SWAT],
+        "items": _csssf_items("swat", "black", "noir"),
     },
 }

@@ -120,6 +120,8 @@ function I.UnderbarrelRounds(wep)
             if wep.networkM203Chamber and IsValid(o) and o:IsPlayer() then wep:networkM203Chamber() end
         end
     end
+    -- (TacRP: its Clip2 is the second pistol of a pair, kept with the item by sv_tacrp.lua)
+    if wep.ArcticTacRP then return end
     local n = wep:Clip2()
     if not (n and n > 0) then return end
     local ammo = wep.ArcCW and wep.GetBuff_Override and wep:GetBuff_Override("UBGL_Ammo") or nil
@@ -180,6 +182,17 @@ end
 
 function I.ApplyWeaponExtra(wep, data)
     if not (IsValid(wep) and isstring(data) and data ~= "") then return end
+    -- a base set up in full when given (adapter.immediate, TacRP): at once, no window where the
+    -- weapon is without its attachments (a bigger magazine drawn then lost its extra rounds)
+    for _, a in ipairs(I.WeaponDataAdapters) do
+        local okMatch, matches = pcall(a.match, wep)
+        if okMatch and matches and a.immediate then
+            wep.AdvInvExtraPending = nil
+            if hook.Run("AdvInv_ApplyWeaponData", wep, data) then return end
+            pcall(a.load, wep, data)
+            return
+        end
+    end
     wep.AdvInvExtraPending = data -- until they are on, its attachments are these (I.WeaponExtra)
     timer.Simple(0.2, function() -- the weapon base sets itself up first
         if not IsValid(wep) then return end

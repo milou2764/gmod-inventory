@@ -1,0 +1,120 @@
+models/stalker_isg/stalker_isg_outfit.mdl	Helmet,Vest	-	-	-	ISG outfit: loose hood up (counted Helmet), goggles on hood + balaclava, chest rig; only a small pouch on the back
+models/stalker_isg/stalker_isg_proto.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	ISG prototype exoskeleton: helmet, respirator + goggles, chest rig, raised back power unit (rule 4)
+models/stalker_isg/stalker_isg_radiationsuit.mdl	Helmet,Gasmask,Vest	-	-	-	ISG radiation suit: helmet, half-face respirator + goggles, armoured torso; flat back panel (no Rucksack)
+models/stalker_isg/stalker_isg_radiationsuit_2.mdl	Helmet,Gasmask,Vest	-	-	-	ISG radiation suit (variant): helmet, half-face respirator + goggles, armoured torso; flat back panel
+models/stalker_isg/stalker_isg_scientific.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	ISG scientific: sealed SEVA-type hood with dark visor, plate carrier, air tank on the back (rule 4)
+models/stalker_isg/stalker_isg_tech.mdl	Helmet,Vest	-	-	-	ISG tech: beanie, plate carrier; flat back
+models/stalker_ecologist/stalker_ecolog.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	orange hazmat suit: sealed hood + mask, SCBA tank on the back; Vest only by rule 4 (SCBA harness, no armour) - owner may drop Vest
+models/stalker_ecologist/stalker_ecolog_exo.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Ecologist exoskeleton: loose hood up, gas mask, plate carrier; exo spine frame + low power unit on the back counted Rucksack by rule 4 (doubt: frame is fairly flat)
+models/stalker_ecologist/stalker_ecolog_exolight.mdl	Helmet,Gasmask,Vest	-	-	-	Ecologist exolight: helmet with ear cups, gas mask, vest with pouches; mesh back panel, no exo frame, no pack
+models/stalker_ecologist/stalker_ecolog_exoseva.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Ecologist exo SEVA: sealed hood + visor, exo arms, vest, air tank on the back
+models/stalker_ecologist/stalker_ecolog_guard.mdl	Gasmask,Vest,Rucksack	-	-	-	Ecologist guard: full-head rubber gas mask hugging the head (not counted Helmet - doubt), vest, SCBA tank on the back
+models/stalker_ecologist/stalker_ecolog_guard_ab_tactical.mdl	Helmet,Vest	-	-	-	helmet with goggles, balaclava (open face), plate carrier
+models/stalker_ecologist/stalker_ecolog_guard_abc.mdl	Helmet,Gasmask,Vest	-	-	-	loose hood up, half-face twin-filter respirator, plate carrier; belt pouches only at the back
+models/stalker_ecologist/stalker_ecolog_guard_abc_gp5.mdl	Helmet,Gasmask,Vest	-	-	-	loose hood up, GP-5 gas mask with hose, plate carrier
+models/stalker_ecologist/stalker_ecolog_guard_abc_mas2.mdl	Helmet,Vest	-	-	-	loose hood up, cloth face mask (not gear), plate carrier
+models/stalker_ecologist/stalker_ecolog_guard_abc_mas3.mdl	Helmet,Vest	-	-	-	loose hood up, goggles + cloth face mask, plate carrier
+models/stalker_ecologist/stalker_ecolog_guard_abc_mask.mdl	Helmet,Vest	-	-	-	loose hood up, balaclava, plate carrier
+models/stalker_ecologist/stalker_ecolog_guard_abc_merc.mdl	Helmet,Gasmask,Vest	-	-	-	loose hood up, full gas mask, plate carrier
+models/stalker_ecologist/stalker_ecolog_guard_abc_old.mdl	Helmet,Gasmask,Vest	-	-	-	loose hood up, full gas mask, plate carrier
+models/stalker_ecologist/stalker_ecolog_guard_c_seva.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	SEVA-type sealed hood + visor, vest, air tank on the back
+models/stalker_ecologist/stalker_ecolog_medic.mdl	Helmet,Vest	-	-	-	Ecologist medic: beanie, cloth face mask, vest
+models/stalker_ecologist/stalker_ecolog_tookarev.mdl	-	-	-	-	Ecologist Tookarev: anorak, glasses, hood down on the shoulders; no gear
+models/stalker_ecologist/stalker_ecologist_merc0.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	SEVA-type sealed hood + visor, plate carrier, air tank on the back
+models/stalker_ecologist/stalker_ecologist_merc1.mdl	Helmet,Gasmask,Vest	-	-	-	helmet with ear cups, gas mask, vest
+models/stalker_ecologist/stalker_ecologist_merc2.mdl	Helmet,Gasmask,Vest	-	-	-	camo hood up (loose), gas mask, vest
+models/stalker_ecologist/stalker_ecologist_proto.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Ecologist proto exoskeleton: helmet, gas mask, chest rig, back power unit (rule 4)
+models/stalker_ecologist/stalker_eneutral_zarya_zol_ecolog.mdl	Gasmask,Vest,Rucksack	-	-	-	Zarya: gas mask with mesh head harness (tight, not counted Helmet - doubt), vest, backpack
+models/stalker_lazarus/lazarus_ecolog.mdl	Helmet,Vest,Rucksack	-	-	-	Lazarus: beanie + goggles, cloth mask, respirator hanging on the chest (not worn: no Gasmask), vest, backpack
+models/stalker_ucheniy/stalker_nauchniy_exo.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	scientist exoskeleton: helmet, gas mask, vest, back power unit (rule 4)
+models/stalker_lazarus/lazarus_merc.mdl	Helmet,Vest,Rucksack	-	-	-	Lazarus merc: beanie + goggles, cloth mask, respirator hanging on the chest (not worn), chest rig, backpack
+models/stalker_merc/killer_leshiy.mdl	Gasmask,Vest	-	-	-	Leshiy: full gas mask on bare head, chest rig; hood down; radio on the back (no pack)
+models/stalker_merc/merc_black.mdl	Helmet,Vest	-	-	-	merc: FAST helmet with headset, cloth mask, glasses, vest
+models/stalker_merc/merc_meshanik.mdl	Helmet,Vest	-	-	-	merc mechanic: loose hood up over beanie, cloth mask, chest rig
+models/stalker_merc/merc_rasvet.mdl	Helmet,Vest,Rucksack	-	-	-	merc Rassvet exoskeleton: cap, plate carrier, raised back power unit; face bare so no Gasmask (rule 4 exception)
+models/stalker_merc/merc_trader.mdl	Helmet,Vest	-	-	-	merc trader: beanie, cloth mask, chest rig
+models/stalker_merc/stalke_mercenary1_2.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	SEVA-type sealed hood + visor, vest, air tank; Suit bodypart 1 = two full-suit variants with the same gear
+models/stalker_merc/stalke_mercenary3_4.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	SEVA-type sealed hood + visor, plate carrier, air tank on the back
+models/stalker_merc/stalker_ki_antigas.mdl	Helmet,Gasmask,Vest	-	-	-	loose hood up, full gas mask, vest
+models/stalker_merc/stalker_ki_head_2.mdl	Helmet,Vest	-	-	-	beanie, chest rig
+models/stalker_merc/stalker_ki_head_5.mdl	Helmet,Vest	-	-	-	cap, cloth mask, vest
+models/stalker_merc/stalker_ki_mask.mdl	Helmet,Vest	-	-	-	loose hood up over beanie, cloth mask, vest
+models/stalker_merc/stalker_merc2a.mdl	Helmet,Vest,Rucksack	-	-	-	FAST helmet with headset, balaclava, plate carrier, backpack
+models/stalker_merc/stalker_merc2b.mdl	Helmet,Vest	-	-	-	helmet + goggles, balaclava, vest; slim hydration/radio pack on the vest back not counted Rucksack (doubt)
+models/stalker_merc/stalker_merc2c.mdl	Helmet,Vest	-	-	-	helmet + goggles, balaclava, vest; slim hydration/radio pack on the vest back not counted Rucksack (doubt)
+models/stalker_merc/stalker_merc4a.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	merc exoskeleton: helmet with NVG mount, gas mask, armour, raised back frame (rule 4)
+models/stalker_merc/stalker_merc4nosorog.mdl	Helmet,Gasmask,Vest	-	-	-	Nosorog heavy armour: helmet, raised collar face shield + mask, armour shell with exo arms; flat back, no unit (no Rucksack)
+models/stalker_merc/stalker_merc_0.mdl	Helmet,Vest,Rucksack	-	-	-	loose hood up, goggles, balaclava, chest rig, backpack
+models/stalker_merc/stalker_merc_1_helm_battle.mdl	Helmet,Vest	Gasmask:1=1	-	-	helmet in mesh; Mask bodypart 1 (0=gas mask, 1=nogas: balaclava + goggles); chest rig
+models/stalker_merc/stalker_merc_1_helm_tactic.mdl	Helmet,Vest	Gasmask:1=1	-	-	helmet in mesh; Mask bodypart 1 (0=gas mask, 1=nogas: balaclava + goggles); chest rig
+models/stalker_merc/stalker_merc_1_mask.mdl	Helmet,Vest	-	-	-	loose hood up, goggles, balaclava, vest
+models/stalker_merc/stalker_merc_2.mdl	Helmet,Gasmask,Vest	-	-	-	loose hood up, full gas mask, vest; slim hydration/radio pack on the back not counted Rucksack (doubt)
+models/stalker_merc/stalker_merc_2_balloon_helm_tactic.mdl	Helmet,Vest	Gasmask:1=1	-	-	helmet in mesh; Mask bodypart 1 (0=gas mask, 1=nogas: balaclava + goggles); vest
+models/stalker_merc/stalker_merc_2_balloon_on_helm_battle.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, half-face respirator + goggles in the mesh, vest
+models/stalker_merc/stalker_merc_2_face_2.mdl	Helmet	-	-	-	loose hood up over beanie; belt only, no vest
+models/stalker_merc/stalker_merc_2_helm_battle.mdl	Helmet,Vest,Rucksack	Gasmask:1=1	-	-	helmet in mesh; Mask bodypart 1 (1=empty: balaclava); chest rig, backpack
+models/stalker_merc/stalker_merc_2_helm_tactic.mdl	Helmet,Vest,Rucksack	Gasmask:1=1	-	-	helmet in mesh; Mask bodypart 1 (1=empty: balaclava); chest rig, backpack
+models/stalker_merc/stalker_merc_2a_gp5.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	loose hood up, GP-5 gas mask with hose, vest, small backpack
+models/stalker_merc/stalker_merc_4_skat.mdl	Helmet,Vest	-	-	-	SKAT: helmet, balaclava, heavy vest with pouches front and back (no pack)
+models/stalker_merc/stalker_merc_6.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, half-face respirator + goggles, plate carrier
+models/stalker_merc/stalker_merc_aztec.mdl	Helmet,Vest,Rucksack	-	-	-	Aztec: beanie + headset, glasses, balaclava, plate carrier, small backpack
+models/stalker_merc/stalker_merc_berill.mdl	Helmet,Vest	Gasmask:1=1	-	-	Berill: helmet in mesh; Mask bodypart 1 (1=empty: balaclava); plate carrier
+models/stalker_merc/stalker_merc_exo_proto.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	merc proto exoskeleton: helmet, gas mask, chest rig, back power unit (rule 4)
+models/stalker_merc/stalker_merc_exoseva.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	merc exo SEVA: sealed hood + visor, exo arms, vest, air tank
+models/stalker_merc/stalker_merc_medic_2.mdl	Helmet,Vest	-	-	-	merc medic: helmet, glasses, vest
+models/stalker_merc/stalker_merc_military.mdl	Helmet,Vest	-	-	-	merc military: helmet + goggles, balaclava, heavy vest with back pouches (no pack)
+models/stalker_merc/stalker_merc_novice.mdl	Helmet,Vest	-	-	-	merc novice: cap, cloth mask, chest rig
+models/stalker_merc/stalker_merc_novice_9.mdl	Helmet,Vest	-	-	-	merc novice: beanie + goggles, cloth mask, chest rig
+models/stalker_merc/stalker_merc_plash.mdl	Helmet,Gasmask,Rucksack	-	-	-	merc raincoat: beanie, gas mask, long coat with ammo bandolier (not counted Vest - doubt), sling bag on the back (counted Rucksack - doubt)
+models/stalker_merc/stalker_merc_ps5m.mdl	Helmet,Vest	-	-	-	beanie + goggles, cloth mask, plate carrier
+models/stalker_merc/stalker_merc_sun1.mdl	Helmet,Gasmask,Vest	-	-	-	loose hood up, gas mask, vest; slim hydration/radio pack on the back not counted Rucksack (doubt)
+models/stalker_merc/stalker_merc_sun1_merc.mdl	Helmet,Gasmask,Vest	-	-	-	helmet with ear cups, gas mask, vest; slim hydration/radio pack on the back not counted Rucksack (doubt)
+models/stalker_merc/stalker_mercen2ab_mask.mdl	Helmet,Vest	-	-	-	loose hood up over beanie, balaclava, vest
+models/stalker_merc/stalker_mercen2c_mask.mdl	Helmet,Vest	-	-	-	loose hood up, goggles, balaclava, vest
+models/stalker_merc/stalker_mercen_2_mask.mdl	Helmet,Vest	-	-	-	loose hood up, balaclava, vest
+models/stalker_merc/stalker_mercexo.mdl	Helmet,Gasmask,Vest	-	-	-	mercexo (no exo frame): helmet with ear cups, gas mask, plate carrier with collar; slim pack on the back not counted Rucksack (doubt)
+models/exodus/sparta/metro_exodus_sparta_costume.mdl	Helmet,Gasmask,Vest	Rucksack:10=1	-	-	Metro Exodus Spartan: closed helmet + gas mask (hazmat_head) and armour in single-choice bodyparts; Bag bodypart 10 (1=empty); ammo pouches 7/8 and water 11 have empty choices but Vest is built-in anyway
+models/stalker_hero/army_degtyarev_military.mdl	Vest	-	-	-	Degtyarev: bare head, vest
+models/stalker_hero/army_tarasov.mdl	Helmet,Vest	-	-	-	Tarasov: helmet + goggles, balaclava, vest
+models/stalker_soldier/esc_army_barmen.mdl	Helmet	-	-	-	army barman: beanie; uniform and belt only
+models/stalker_soldier/esc_army_mechanic.mdl	Gasmask,Vest,Rucksack	-	-	-	army mechanic: rubber gas mask, top of the head open (not Helmet), Y-harness webbing with pouches, backpack
+models/stalker_soldier/esc_army_secret_trader.mdl	Helmet,Vest	-	-	-	cap, cloth mask, vest
+models/stalker_soldier/light_voen.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask, vest; butt pack only at the back
+models/stalker_soldier/solder_captain.mdl	Helmet,Vest	-	-	-	captain: beret, chest rig
+models/stalker_soldier/solder_mechanic.mdl	Helmet,Vest	-	-	-	cap with headset, cloth mask, vest
+models/stalker_soldier/solder_trader.mdl	Helmet,Vest	-	-	-	beret, cloth mask, vest
+models/stalker_soldier/soldier_balaklava.mdl	Vest,Rucksack	-	-	-	balaclava (not gear), vest, backpack
+models/stalker_soldier/soldier_bandana.mdl	Vest	-	-	-	bandana tied on the head (treated as headband, not Helmet - doubt), scarf mask, vest
+models/stalker_soldier/soldier_bandana_1.mdl	Helmet,Vest	-	-	-	beanie, scarf mask, vest
+models/stalker_soldier/soldier_bandana_2.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	beanie, gas mask, vest, backpack
+models/stalker_soldier/soldier_bandana_3.mdl	Helmet,Vest	-	-	-	helmet, scarf mask, vest
+models/stalker_soldier/soldier_bandana_4.mdl	Helmet,Vest,Rucksack	-	-	-	helmet, scarf mask, vest, backpack
+models/stalker_soldier/soldier_bandana_5.mdl	Vest	-	-	-	bandana (headband, not Helmet - doubt), scarf mask, chest rig
+models/stalker_soldier/soldier_bandana_6.mdl	Helmet,Vest	-	-	-	helmet, scarf mask, chest rig
+models/stalker_soldier/soldier_mask_green.mdl	Helmet,Vest,Rucksack	-	-	-	beanie + goggles, cloth mask, vest, backpack
+models/stalker_soldier/soldier_obichniy.mdl	Helmet,Vest	-	-	-	helmet, goggles, printed face mask, vest
+models/stalker_soldier/stalker_militari.mdl	Helmet,Vest	-	-	-	helmet + goggles, face mask, vest; NVG bodypart 1 not classified
+models/stalker_soldier/stalker_military_exo.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	military exoskeleton: helmet, gas mask, raised back frame (rule 4)
+models/stalker_soldier/stalker_neutral_reinforced.mdl	Helmet,Gasmask,Vest	-	-	-	helmet with ear cups, gas mask, plate carrier; butt pack only at the back
+models/stalker_soldier/stalker_soldier1a.mdl	Helmet,Vest	-	-	-	beanie, vest
+models/stalker_soldier/stalker_soldier1b.mdl	Helmet,Vest	-	-	-	helmet, scarf mask, chest rig + vest
+models/stalker_soldier/stalker_soldier1c.mdl	Helmet,Vest	-	-	-	helmet, chest rig + vest
+models/stalker_soldier/stalker_soldier1d.mdl	Helmet,Vest	-	-	-	beanie, balaclava, chest rig + vest
+models/stalker_soldier/stalker_soldier1e.mdl	Vest	-	-	-	bandana (headband, not Helmet - doubt), scarf mask, vest
+models/stalker_soldier/stalker_soldier1f.mdl	Vest	-	-	-	bandana (headband, not Helmet - doubt), cloth mask, vest
+models/stalker_soldier/stalker_soldier1g.mdl	Helmet,Vest	-	-	-	helmet, scarf mask, vest
+models/stalker_soldier/stalker_soldier3_beret.mdl	Helmet,Vest	-	-	-	beret, chest rig; butt pack only at the back
+models/stalker_soldier/stalker_soldier4_5a.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask; chestrig bodypart 1 = two vests (smersh / vest), Vest in both
+models/stalker_soldier/stalker_soldier4nosorog.mdl	Helmet,Gasmask,Vest	-	-	-	Nosorog heavy armour: helmet, raised collar face shield + mask, armour shell with exo arms; flat back (no Rucksack)
+models/stalker_soldier/stalker_soldier5_beret.mdl	Helmet,Vest	-	-	-	beret, vest
+models/stalker_soldier/stalker_soldier_1.mdl	Helmet,Vest,Rucksack	-	-	-	helmet, cloth mask, vest, backpack
+models/stalker_soldier/stalker_soldier_1_helm_battle.mdl	Helmet,Vest,Rucksack	Gasmask:1=1	-	-	helmet in mesh; Mask bodypart 1 (0=M50, 1=empty: balaclava); vest, backpack
+models/stalker_soldier/stalker_soldier_2.mdl	Helmet,Vest	-	-	-	helmet, goggles, printed face mask, vest
+models/stalker_soldier/stalker_soldier_2_face_1.mdl	Helmet,Vest	-	-	-	helmet, vest with pouches at the back (no pack)
+models/stalker_soldier/stalker_soldier_2_helm_battle.mdl	Helmet,Vest,Rucksack	Gasmask:1=1	-	-	helmet in mesh; Mask bodypart 1 (0=M50, 1=empty: balaclava); vest, backpack
+models/stalker_soldier/stalker_soldier_2_helm_tactic.mdl	Helmet,Vest,Rucksack	Gasmask:1=1	-	-	helmet in mesh; Mask bodypart 1 (0=PMK, 1=empty: balaclava); vest, backpack
+models/stalker_soldier/stalker_soldier_3.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask, vest
+models/stalker_soldier/stalker_soldier_3_beret.mdl	Helmet,Vest	-	-	-	beret, chest rig
+models/stalker_soldier/stalker_soldier_4.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask, vest
+models/stalker_soldier/stalker_soldier_4_helm_battle.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	helmet; Mask bodypart 1: 0=M50, 1=nogas is NOT bare (it shows a half-face respirator), so Gasmask built-in for both; vest, backpack
+models/stalker_soldier/stalker_soldier_4_helm_tactic.mdl	Helmet,Gasmask,Vest	-	-	-	helmet, gas mask, vest

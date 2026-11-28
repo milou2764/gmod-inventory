@@ -1,0 +1,118 @@
+models/player/h&h/desertranger/dallas_desertcamo.mdl	Vest	Helmet:2=1	Gasmask:2=0	-	FNV desert ranger combat armour (chest armour under the duster); hair bodygroup 2: 0 = closed ranger helmet with gas mask, 1 = hair, 2 = cowboy hat
+models/player/h&h/desertranger/kobrakilla/male01.mdl	Vest	Helmet:3=1	Gasmask:3=0	-	FNV desert ranger combat armour under the duster; hair bodygroup 3: 0 = closed ranger helmet with gas mask, 1 = clean-cut hair, 2-4 hats; beard 5=1 is a cloth face mask (not gear)
+models/player/h&h/desertranger/loscazadores/female02.mdl	Vest	Helmet:2=1	Gasmask:2=0	-	FNV desert ranger combat armour under the duster; hair bodygroup 2: 0 = closed ranger helmet with gas mask, 1+ = hair; mask bodygroup 3 is a cloth face mask (not gear)
+models/player/h&h/desertranger/loscazadores/male01.mdl	Vest	Helmet:3=1	Gasmask:3=0	-	FNV desert ranger combat armour under the duster; hair bodygroup 3: 0 = closed ranger helmet with gas mask, 1 = clean-cut hair, 2-4 hats
+models/player/h&h/desertranger/male01.mdl	Vest	Helmet:3=1	Gasmask:3=0	-	FNV desert ranger combat armour under the duster; hair bodygroup 3: 0 = closed ranger helmet with gas mask, 1 = clean-cut hair, 2-4 hats
+models/player/h&h/desertranger/randallclark/male01.mdl	Vest	Helmet:3=1	Gasmask:3=0	-	FNV desert ranger combat armour under the duster; hair bodygroup 3: 0 = closed ranger helmet with gas mask, 1 = clean-cut hair, 2-4 hats
+models/player/h&h/desertranger/shark/male01.mdl	Vest	Helmet:3=1	Gasmask:3=0	-	FNV desert ranger combat armour under the duster; hair bodygroup 3: 0 = closed ranger helmet with gas mask, 1 = clean-cut hair, 2-4 hats
+models/player/h&h/leatherarmor/female02.mdl	Vest	-	-	-	FNV leather armour (chest plate, pauldron, harness) treated as body armour (doubt); hair bodygroup has hair only; scarf/cloth mask not gear
+models/player/h&h/leatherarmor/male01.mdl	Vest	Helmet:3=0	-	-	FNV leather armour (chest plate, pauldron, harness) treated as body armour (doubt); hair bodygroup 3: 0 = clean-cut hair, 1-3 hats
+models/player/h&h/renegade/male01.mdl	Vest	Helmet:3=0	-	-	black ballistic vest over a T-shirt in the mesh; hair bodygroup 3: 0 = clean-cut hair, 1-3 hats
+models/player/h&h/revenant/male01.mdl	Vest	Helmet:3=0	-	-	leather jacket over a metal chest plate, shoulder pauldrons: treated as armour (doubt: could be clothing); hair bodygroup 3: 0 = clean-cut hair, 1-2 cowboy hats
+models/player/h&h/riotgear/elite/male01.mdl	Vest	Helmet:3=1	Gasmask:3=0	-	FNV elite riot gear: armour under the duster; hair bodygroup 3: 0 = closed riot helmet with gas mask, 1 = clean-cut hair, 2-3 cowboy hats
+models/player/h&h/sheriffduster/male01.mdl	-	Helmet:3=0	-	-	duster coat, no armour; hair bodygroup 3: 0 = clean-cut hair, 1-3 hats
+models/player/stalker_cs/compiled 0.34/clearsky_collar.mdl	Vest	Helmet:4=0;Gasmask:3=0	Helmet:1=2;Gasmask:1=2	-	Clear Sky armour vest in the mesh; helmet bodygroup 4, mask bodygroup 3; head choice 2 = head with helmet and gas mask
+models/player/stalker_cs/compiled 0.34/clearsky_commandos.mdl	Vest	Helmet:2=0	Helmet:1=0;Gasmask:1=0	-	Clear Sky plate carrier in the mesh; head choice 0 (default) = head with helmet and gas mask, 1-2 bare heads; helmet bodygroup 2; 'pack' bodygroup 5 is a belt pouch, not a rucksack
+models/player/stalker_cs/compiled 0.34/clearsky_heavy.mdl	Vest	Helmet:0=1;Helmet:1=1;Helmet:2=0;Gasmask:3=0	Gasmask:0=0;Gasmask:1=3	-	Clear Sky heavy: plate carrier in the mesh; body 0 has helmet + gas mask and no head, body 1 = nohelmet (needs head 1=1 too, else headless); head choice 3 = helmet + gas mask head; helmet bodygroup 2, mask bodygroup 3
+models/player/stalker_cs/compiled 0.34/clearsky_heavyassault.mdl	Vest	Helmet:0=1;Helmet:1=1;Helmet:2=0	Gasmask:0=0;Gasmask:1=3	-	Clear Sky heavy assault: plate carrier, leg armour; body 0 has helmet + gas mask and no head, body 1 = nohelmet (needs head 1=1 too, else headless); head choice 3 = helmet + gas mask head; no mask bodygroup
+models/player/stalker_cs/compiled 0.34/clearsky_heavyhood.mdl	Helmet,Vest	Gasmask:2=0	-	-	Clear Sky: armour vest with pouches; loose cloth hood pulled up in the body mesh counted as Helmet (doubt: not tight like a balaclava, stands off the head); mask bodygroup 2
+models/player/stalker_cs/compiled 0.34/clearsky_hood.mdl	Helmet,Vest	Gasmask:2=0	-	-	Clear Sky: armour vest; loose cloth hood pulled up in the body mesh counted as Helmet (doubt, same as heavyhood); mask bodygroup 2
+models/player/stalker_cs/compiled 0.34/clearsky_lebedev.mdl	Vest	-	-	-	Clear Sky armour vest in the mesh, bare head
+models/player/stalker_cs/compiled 0.34/clearsky_turtleneck.mdl	Vest	Gasmask:3=0	Helmet:1=2,3,4;Gasmask:1=2,3,4	-	Clear Sky armour vest; head choices 2-4 = heads with helmet and gas mask, 0-1 bare; mask bodygroup 3
+models/gore/ncr/10ofspades.mdl	Helmet,Vest	Gasmask:1=0;Rucksack:3=3	-	-	red beret in the head mesh; NCR trooper armour vest in the mesh (mantle, knife); Mask 1 (facewrap/gas mask); gear 3 = sniper cloak / radio pack / backpack on the back (3 none)
+models/gore/ncr/airborn_plainf.mdl	Vest	Helmet:2=4;Gasmask:4=0;Rucksack:3=0	-	-	NCR jacket with Y-strap web gear and a belt of ammo pouches in the mesh counted as Vest (doubt: webbing, no armour); Hat 2 (cap/berets/helmet, 4 none); mask 4 (facewrap/gas mask/ranger respirator); Gear 3 = backpack / sniper cloak / radio pack (0 none)
+models/gore/ncr/airborn_plainm.mdl	Vest	Helmet:2=4;Gasmask:4=0;Rucksack:3=0	-	-	NCR jacket with Y-strap web gear and a belt of ammo pouches in the mesh counted as Vest (doubt: webbing, no armour); Hat 2 (4 none); mask 4 (facewrap/gas mask/ranger respirator); Gear 3 = backpack / sniper cloak / radio pack (0 none)
+models/gore/ncr/airbornem.mdl	Vest	Helmet:2=2;Gasmask:5=3;Rucksack:1=0	-	-	NCR combat armour in the mesh; Helmet 2 (helmet/cap, 2 none); Mask 5 (0 facewrap, 1 gas mask, 2 ranger respirator, 3 none); gear 1 = radio pack / backpack (0 none)
+models/gore/ncr/airbornem_02.mdl	Vest	Helmet:2=2;Gasmask:5=3;Rucksack:1=0	-	-	NCR combat armour in the mesh; Helmet 2 (helmet/beret, 2 none); Mask 5 (3 none); gear 1 = radio pack / backpack (0 none)
+models/gore/ncr/airbornem_officer.mdl	Helmet,Vest	Gasmask:5=3;Rucksack:1=2	-	-	NCR combat armour; Helmet 2 has only berets/helmet (no bare choice); Mask 5 (3 none); gear 1 = radio pack / sniper cloak (2 none)
+models/gore/ncr/airbornem_sniper.mdl	Helmet,Vest	Gasmask:5=3;Rucksack:1=2	-	-	NCR combat armour; Helmet 2 has only berets/cap (no bare choice); Mask 5 (3 none); gear 1 = radio pack / sniper cloak (2 none)
+models/gore/ncr/airbornf.mdl	Vest	Helmet:2=4;Gasmask:5=3;Rucksack:1=3	-	-	NCR combat armour (female); Helmet 2 (4 none); Mask 5 (3 none); gear 1 = radio / backpack / sniper cloak (3 none)
+models/gore/ncr/airbornf_officer.mdl	Vest	Helmet:2=4;Gasmask:5=3;Rucksack:1=3	-	-	NCR combat armour (female); Helmet 2 (4 none); Mask 5 (3 none); gear 1 = radio / backpack / sniper cloak (3 none)
+models/gore/ncr/boone.mdl	Helmet,Vest	Gasmask:1=0;Rucksack:3=3	-	-	red beret in the head mesh; NCR trooper armour vest in the mesh; Mask 1 (facewrap/gas mask); gear 3 = sniper cloak / radio / backpack (3 none)
+models/gore/ncr/colone_female.mdl	Helmet	Gasmask:1=0	-	-	NCR officer uniform (belt and cross strap, no armour); Helmet 3 has only berets/cap (no bare choice); Mask 1 (facewrap/gas mask)
+models/gore/ncr/dark_trooper.mdl	Vest	Helmet:2=4;Gasmask:3=2;Rucksack:5=0	Gasmask:2=1	-	NCR trooper armour vest with shoulder guards in the mesh; Helmet 2: 0 helmet, 1 helmet with ranger-style gas mask, 2-3 berets, 4 none; Mask 3 (facewrap/gas mask, 2 none); Backpack 5; Pouches/Bandoleer extras
+models/gore/ncr/dark_trooperf.mdl	Vest	Helmet:2=4;Gasmask:3=2;Rucksack:5=0	Gasmask:2=1	-	NCR trooper armour vest (female); Helmet 2: 0 helmet, 1 helmet with gas mask, 2-3 berets, 4 none; Mask 3 (2 none); Backpack 5
+models/gore/ncr/desert_rangerf.mdl	Helmet,Gasmask,Vest	Rucksack:1=0	-	-	NCR desert ranger: armour under the duster; closed ranger helmet with gas mask is the only Helmet choice; gear 1 = backpack / radio / sniper cloak (0 none)
+models/gore/ncr/desertrangerm.mdl	Helmet,Gasmask,Vest	Rucksack:2=0	-	-	NCR desert ranger: armour under the duster; closed ranger helmet with gas mask (single choice, bodypart named Mask); gear 2 has no empty: 0 = chest bandolier (nothing on the back), 1 sniper cloak, 2 radio, 3 backpack
+models/gore/ncr/general.mdl	-	Helmet:2=2;Gasmask:3=0	-	-	general uniform, no armour; Hat 2 (cap/beret, 2 none); mask 3 (facewrap/gas mask)
+models/gore/ncr/hayes.mdl	Helmet,Vest	Gasmask:1=0;Rucksack:3=0	-	-	green beret in the head mesh; NCR trooper armour vest in the mesh; Mask 1; gear 3 (0 none; sniper cloak/radio/backpack)
+models/gore/ncr/mccredie.mdl	Helmet,Vest	Gasmask:1=0;Rucksack:2=0	-	-	brodie helmet in the head mesh; NCR trooper armour vest with bandolier; Mask 1; gear 2 (0 none; radio/backpack)
+models/gore/ncr/militarypolice_f.mdl	-	Helmet:2=3;Gasmask:3=0;Rucksack:1=0	-	-	MP shirt and belt, no armour; Helmet 2 (MP helmet/cap/beret, 3 none); Mask 3; gear 1 (0 none)
+models/gore/ncr/militarypolicem.mdl	-	Helmet:2=3;Gasmask:3=0;Rucksack:1=0	-	-	MP shirt and belt, no armour; Helmet 2 (MP helmet/beret/cap, 3 none); Mask 3; gear 1 (0 none)
+models/gore/ncr/mojave_1streconf.mdl	Vest	Helmet:2=4;Gasmask:3=0;Rucksack:1=0	-	-	NCR trooper armour vest (mantle); Helmet 2 (4 none); Mask 3 (0 none); gear 1 (0 none)
+models/gore/ncr/mojave_1streconf_02.mdl	Vest	Helmet:2=4;Gasmask:3=0;Rucksack:1=0	-	-	NCR trooper armour vest with bandolier; Helmet 2 (4 none); Mask 3 (0 none); gear 1 (0 none)
+models/gore/ncr/mojave_1streconm.mdl	Vest	Helmet:3=3;Gasmask:1=0;Rucksack:4=3	-	-	NCR trooper armour vest (mantle); helmet 3 (3 none); Mask 1 (0 none); gear 4 (3 none)
+models/gore/ncr/mojave_bandoleer.mdl	Vest	Helmet:2=4;Gasmask:3=0;Rucksack:1=0	-	-	NCR trooper armour vest with bandolier; Helmet 2 (4 none); Mask 3; gear 1 (0 none)
+models/gore/ncr/mojave_bandoleerf.mdl	Vest	Helmet:2=4;Gasmask:3=0;Rucksack:1=0	-	-	NCR trooper armour vest with bandolier (female); Helmet 2 (4 none); Mask 3; gear 1 (0 none)
+models/gore/ncr/mojave_boyd.mdl	Helmet,Vest	Gasmask:2=0;Rucksack:1=0	-	-	green beret in the head mesh; NCR trooper armour vest (mantle); Mask 2; gear 1 (0 none)
+models/gore/ncr/mojave_facewrapf.mdl	Vest	Helmet:2=4;Rucksack:1=0	-	-	NCR trooper armour vest; cloth face wrap in the body mesh (not gear); Helmet 2 (4 none); gear 1 (0 none); no mask bodygroup
+models/gore/ncr/mojave_facewrapm.mdl	Vest	Helmet:2=4;Rucksack:3=0	-	-	NCR trooper armour vest; cloth face wrap in the body mesh (not gear); helmet 2 (4 none); gear 3 (0 none)
+models/gore/ncr/mojave_officerf.mdl	Vest	Helmet:2=4;Gasmask:3=0;Rucksack:1=0	-	-	NCR trooper armour vest (mantle); Helmet 2 (4 none); Mask 3; gear 1 (0 none)
+models/gore/ncr/mojave_officerm.mdl	Vest	Helmet:3=3;Gasmask:1=0;Rucksack:4=3	-	-	NCR trooper armour vest (mantle); helmet 3 (3 none); Mask 1; gear 4 (3 none)
+models/gore/ncr/mojave_trooperf.mdl	Vest	Helmet:2=4;Gasmask:3=0;Rucksack:1=0	-	-	NCR trooper armour vest; Helmet 2 (4 none); Mask 3; gear 1 (0 none)
+models/gore/ncr/mojave_trooperm.mdl	Vest	Helmet:3=4;Gasmask:1=0;Rucksack:4=0	-	-	NCR trooper armour vest; helmet 3 (4 none); mask 1; gear 4 (0 none)
+models/gore/ncr/moore.mdl	-	Gasmask:1=0	-	-	NCR officer uniform (belt and cross strap, no armour), bare head; Mask 1
+models/gore/ncr/ncr_scoutf.mdl	Vest	Helmet:2=4;Gasmask:3=2;Rucksack:5=0	Gasmask:2=1	-	NCR scout armour vest with pouches; Helmet 2: 0 helmet, 1 helmet with gas mask (same parts as dark_trooper, not rendered separately), 2-3 berets, 4 none; Mask 3 (2 none); Backpack 5
+models/gore/ncr/ncr_scoutm.mdl	Vest	Helmet:2=4;Gasmask:3=2;Rucksack:5=0	Gasmask:2=1	-	NCR scout armour vest with pouches; Helmet 2: 0 helmet, 1 helmet with gas mask, 2-3 berets, 4 none; Mask 3 (2 none); Backpack 5
+models/gore/ncr/ohanrahan.mdl	Helmet,Vest	Gasmask:1=0;Rucksack:3=3	-	-	boonie/cowboy hat in the head mesh; NCR trooper armour vest; Mask 1; gear 3 (3 none)
+models/gore/ncr/oliver.mdl	Helmet	-	-	-	general uniform with the peaked cap in the mesh (sunglasses too); no armour
+models/gore/ncr/patrol_rangerf.mdl	Vest	Helmet:2=3;Rucksack:3=3;Gasmask:4=0	-	-	NCR ranger patrol armour (chest plates, shoulder pads); Hat 2 (ranger hat/beret/helmet, 3 none); Gear 3 (3 none); mask 4
+models/gore/ncr/patrol_rangerm.mdl	Vest	Helmet:2=3;Rucksack:3=3;Gasmask:4=0	-	-	NCR ranger patrol armour (chest plates, shoulder pads); Hat 2 (3 none); Gear 3 (3 none); mask 4
+models/gore/ncr/pointdaxter.mdl	Helmet,Vest	Gasmask:1=0;Rucksack:3=0	-	-	green beret in the head mesh; NCR trooper armour vest; Mask 1; gear 3 (0 none)
+models/gore/ncr/razz.mdl	Vest	Rucksack:1=0	-	-	NCR trooper armour vest; mohawk, cloth face wrap in the body mesh (not gear); gear 1 (0 none)
+models/gore/ncr/reconf.mdl	Helmet,Vest	Gasmask:4=3;Rucksack:1=3	-	-	desert ranger armour under the duster; Helmet 2 has only helmets/beret (no bare choice); Mask 4 (3 none); gear 1 (3 none)
+models/gore/ncr/reconf_officer.mdl	Helmet,Vest	Gasmask:4=3;Rucksack:1=3	-	-	desert ranger armour under the duster; Helmet 2 has only berets (no bare choice); Mask 4 (3 none); gear 1 (3 none)
+models/gore/ncr/reconm.mdl	Helmet,Vest	Gasmask:4=3;Rucksack:1=3	-	-	desert ranger armour under the duster; Helmet 2 has only helmets/beret (no bare choice); Mask 4 (3 none); gear 1 (3 none)
+models/gore/ncr/reconm_officer.mdl	Helmet,Vest	Gasmask:4=3;Rucksack:1=2	-	-	desert ranger armour under the duster; Helmet 2 has only berets (no bare choice); Mask 4 (3 none); gear 1 (2 none)
+models/gore/ncr/talon_1strecon.mdl	Vest	Helmet:2=3;Gasmask:3=0;Rucksack:5=0	Gasmask:2=1	-	leather recon armour vest with mantle; Helmet 2: 0 beret, 1 recon helmet with built-in gas mask, 2 beret, 3 none; Mask 3 (0 none); Backpack 5
+models/gore/ncr/talon_1streconf.mdl	Vest	Helmet:2=3;Gasmask:3=2;Rucksack:5=0	Gasmask:2=2	-	leather recon armour vest with mantle (female); Helmet 2: 0-1 berets, 2 recon helmet with gas mask, 3 none; Mask 3 (2 none); Backpack 5
+models/gore/ncr/talon_specops.mdl	Vest	Helmet:2=1;Gasmask:3=0;Rucksack:5=0	Gasmask:2=0	-	leather recon armour vest with mantle; Helmet 2: 0 recon helmet with gas mask, 1 none; Mask 3 (0 none); Backpack 5
+models/gore/ncr/talon_specopsf.mdl	Vest	Helmet:2=1;Gasmask:3=0;Rucksack:5=0	Gasmask:2=0	-	leather recon armour vest with mantle (female); Helmet 2: 0 recon helmet with gas mask, 1 none; Mask 3 (0 none); Backpack 5
+models/gore/ncr/vargas.mdl	Helmet,Vest	Gasmask:1=0;Rucksack:3=3	-	-	red beret in the head mesh; NCR trooper armour vest; Mask 1; gear 3 (3 none)
+models/player/fallout_3/slow_t45d.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Fallout T-45d power armour (rule 4), raised back unit
+models/player/fallout_3/slow_t51b.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Fallout T-51b power armour (rule 4), raised back unit
+models/arty/s.t.a.l.k.e.r 2/characters/faction/loner/trainee/grunt_pm.mdl	Gasmask,Vest	Helmet:6=3;Rucksack:4=1;Rucksack:3=1	-	-	STALKER 2 loner suit: armoured chest in the mesh; Gasmask bodygroup 5 has two gas masks, no bare face; Hood 6 (hood up, 3 none); Tank 4 on the back + Hose 3 removed together
+models/arty/s.t.a.l.k.e.r 2/characters/faction/svoboda/trainee/grunt_pm.mdl	Gasmask,Vest	Helmet:8=2;Rucksack:3=1;Rucksack:4=1	-	-	STALKER 2 Svoboda suit: armoured chest yoke in the mesh; Gasmask bodygroup 5 has two gas masks, no bare face; Hood 8 (2 none); Tank 3 on the back + Hose 4 removed together
+models/florensio/bloodlines2/iao/operator.mdl	Gasmask,Vest	-	-	-	Bloodlines 2 IAO operator: head choice 0 is the only head and wears a gas mask (choice 1 = no head at all); tight cap under the mask not a Helmet; coat with pouch vest
+models/florensio/bloodlines2/iao/operator_melee.mdl	Gasmask,Vest	-	-	-	IAO melee: full-head mask with lenses on the only head (choice 1 = no head); treated as a tight mask, not a Helmet (doubt); Armor bodypart = armour vest, single choice
+models/florensio/bloodlines2/iao/operator_ranger.mdl	Helmet,Gasmask,Vest	-	-	-	IAO ranger: poncho hood pulled up (bulky) in the single Poncho bodypart; gas mask on the only head (choice 1 = no head); pouch vest
+models/wassim/hazmatkrettle.mdl	Gasmask	Helmet:2=1;Vest:4=1	-	-	hazmat suit with fitted hood + GP-7 gas mask (single choice); not sealed-suit rule 4: the model wears its own SSh-40 helmet (bodygroup 2) and chest rig (bodygroup 4) over it; fitted hood not counted as Helmet
+models/hydroholic/foreverwinter/euruskaheavy_eup_slv_v2.mdl	Vest,Rucksack	Helmet:1=0;Helmet:5=1	Gasmask:1=4	-	Forever Winter Euruska heavy armour: armoured torso/arms and a raised back unit with hoses in the mesh; headgroup 1 (beanie/tanker/etc., 0 none; 4 = closed face plate); scarf 5 is a fur roll on top of the head, removed with the Helmet; doubt: the head sits inside a hood-like armour collar ring (if counted as a hood up, Helmet should be built-in)
+models/hydroholic/foreverwinter/euruskaheavy_eup_slv_v3.mdl	Vest,Rucksack	Helmet:1=0;Helmet:5=1	Gasmask:1=4	-	same suit as v2 (same bodypart list, not rendered separately); headgroup 1 (0 none, 4 closed face plate); scarf 5 removed with the Helmet; same hood-ring doubt as v2
+models/eft/pmc/arena/champion_jp.mdl	-	Vest:0=1;Vest:2=2;Helmet:3=1;Helmet:4=1;Helmet:5=1	-	-	EFT Arena champion: Armor 0 = chest rig/armour (patches 2 go with it); Helmet 3 = open-face helmet (spikes 4 and tape 5 go with it); Facecover 6 is a balaclava (not gear); bolt cutter 1 on the back is not a pack
+models/tfw/europa/europanconscript_pm.mdl	Vest	Helmet:2=1;Helmet:6=1;Rucksack:7=1	-	-	Forever Winter Europan conscript: chest rig with pouches and a tall padded collar around the head in the torso mesh; helmet 2 (helmetcig 6 = cards in the band, removed with it); pack 7 = frame backpack; frame 3 is glasses, frame2 4 a wire headset (left alone)
+models/ninja/ll/ganze.mdl	Helmet,Gasmask,Vest	-	-	-	single mesh: spiked helmet with goggles, gas mask with hose, vest with pouches; no pack on the back
+models/devcon/mrp/act/player/bandit_light_2.mdl	-	-	-	-	single mesh: balaclava (not gear), leather jacket; nothing to block
+models/devcon/mrp/act/player/bandit_vest.mdl	-	-	-	-	single mesh: balaclava, canvas utility vest with flat flap pockets treated as clothing (doubt: could count as a chest rig)
+models/devcon/mrp/act/player/bandit_vest2.mdl	-	-	-	-	single mesh: balaclava, knitted sweater vest and scarf (clothing)
+models/devcon/mrp/act/player/bandit_veteran.mdl	Helmet	-	-	-	single mesh: blue hoodie hood pulled up over a balaclava, loose (counted as Helmet, doubt); leather coat
+models/devcon/mrp/act/player/darkone.mdl	Helmet,Gasmask,Vest,Rucksack	-	-	-	Metro Dark One creature (rule 4)
+models/devcon/mrp/act/player/female_01.mdl	-	-	-	-	single mesh: civilian woman, hoodie with the hood down
+models/devcon/mrp/act/player/female_02.mdl	-	-	-	-	single mesh: civilian woman, jacket
+models/devcon/mrp/act/player/green_coat.mdl	-	-	-	-	single mesh: balaclava, coat with fur collar
+models/devcon/mrp/act/player/longlostblake.mdl	-	-	-	-	single mesh: civilian woman, corset top
+models/devcon/mrp/act/player/loyalist.mdl	-	-	-	-	single mesh: balaclava, coat with suspenders
+models/devcon/mrp/act/player/master_stalker.mdl	Helmet,Gasmask,Vest	-	-	-	single mesh: black hood pulled up (counted as Helmet, doubt: knit-looking but stands off the head), gas mask, vest with pouches front and back; back is a flat pouch panel + radio, not a pack
+models/devcon/mrp/act/player/mercenary.mdl	Vest	-	-	-	single mesh: balaclava, improvised metal plate armour front and back
+models/devcon/mrp/act/player/ranger_2.mdl	Helmet,Gasmask,Vest	-	-	-	single mesh: Metro ranger helmet with goggles and gas mask, MOLLE plate carrier; no pack
+models/devcon/mrp/act/player/redline_co.mdl	Helmet	-	-	-	single mesh: peaked officer cap, greatcoat with Sam Browne straps (not a Vest)
+models/devcon/mrp/act/player/redline_nco.mdl	Vest	-	-	-	single mesh: balaclava, camo load-bearing vest with rows of pouches
+models/devcon/mrp/act/player/redline_nco_hat.mdl	Helmet,Vest	-	-	-	single mesh: peaked cap over a balaclava, camo load-bearing vest with pouches
+models/devcon/mrp/act/player/redline_soldier.mdl	-	-	-	-	single mesh: balaclava, jumpsuit with chest harness straps and belt (no pouches); no pack
+models/devcon/mrp/act/player/reich_enlisted.mdl	Vest	-	-	-	single mesh: balaclava, plate carrier
+models/devcon/mrp/act/player/reich_guard.mdl	Helmet,Gasmask,Vest	-	-	-	single mesh: fur-trimmed parka hood up, gas mask, plate carrier
+models/devcon/mrp/act/player/reich_nco_surface.mdl	Helmet,Gasmask,Vest	-	-	-	single mesh: helmet, gas mask with goggles, plate carrier
+models/devcon/mrp/act/player/reich_officer.mdl	Helmet	-	-	-	single mesh: peaked cap over a balaclava, greatcoat with Y-straps and belt (no pouches, not a Vest)
+models/devcon/mrp/act/player/reich_offizier.mdl	Helmet	-	-	-	single mesh: peaked cap over a balaclava, greatcoat with Y-straps and belt (not a Vest)
+models/devcon/mrp/act/player/reich_offizier_jake.mdl	Helmet	-	-	-	single mesh: peaked cap, greatcoat with Y-straps and a belt with two hip pouches (treated as an officer belt, not a Vest; doubt)
+models/devcon/mrp/act/player/reich_stalker.mdl	Helmet,Gasmask,Vest	-	-	-	single mesh: fur-trimmed parka hood up, gas mask, vest with pouches
+models/devcon/mrp/act/player/stalker.mdl	Helmet,Gasmask,Vest	-	-	-	single mesh: fur-trimmed hood up, gas mask, padded armour vest
+models/devcon/mrp/act/player/stalker_novice.mdl	Helmet,Gasmask	-	-	-	single mesh: parka hood up, gas mask; parka without vest
+models/devcon/mrp/act/player/stealth_light.mdl	-	-	-	-	single mesh: balaclava, leather jacket with two crossed straps (no pouches)
+models/devcon/mrp/act/player/stealth_light2.mdl	-	-	-	-	single mesh: balaclava, leather jacket over a ribbed sweater
+models/devcon/mrp/act/player/trenchcoat_black.mdl	-	-	-	-	single mesh: balaclava, trenchcoat over a sweater
+models/devcon/mrp/act/player/trenchcoat_brown.mdl	-	-	-	-	single mesh: balaclava, coat with belt and Y-strap (no pouches)
+models/devcon/mrp/act/player/white_jacket.mdl	-	-	-	-	single mesh: balaclava, jacket
+models/dizcordum/dizcordum.mdl	Vest,Rucksack	Helmet:1=0;Gasmask:2=0	Gasmask:1=3	-	chest rig with pouches in the body; Gear 3 has no empty (0 = gas tank, 1 = backpack on the back); Headgear 1: 0 hair, 1 beanie, 2 helmet visor up, 3 helmet visor down (face shield); Facegear 2: 1 cloth half mask, 2 respirator
+models/dizcordum/dizcordum_coat.mdl	Helmet	Vest:3=0;Rucksack:3=0;Gasmask:2=0	-	-	parka hood pulled up in the body mesh (bulky); Gear 3: 0 = belt only, 1 webbing + small pack, 2 chest rig + radio pack, 3 vest + radio + butt pack; Facegear 2
+models/dizcordum/dizcordum_exo.mdl	Vest,Rucksack	Helmet:3=0;Gasmask:2=0	Gasmask:3=3	-	armoured suit (plates stay with EXO 1 off) and radio pack on the back in the base mesh; EXO frame bodygroup 1; Headgear 3: 0 hair, 1 beanie, 2 helmet visor up, 3 visor down (face shield); Facegear 2

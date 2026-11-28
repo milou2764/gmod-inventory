@@ -257,7 +257,7 @@ prise en main (pistolets, armes de mêlée et grenades : arme de poing ; RPG : l
 reste : arme principale) ; `SWEP.AdvInvCategory` et `SWEP.AdvInvMass` sur l'arme le remplacent. Le
 physgun, le toolgun, l'appareil photo, les mains et les outils de DarkRP sont exclus.
 
-## Autres bases d'armes (ARC9, ArcCW, TFA, CW 2.0, Sandstorm, M9K...)
+## Autres bases d'armes (ARC9, ArcCW, TacRP, TFA, CW 2.0, Sandstorm, M9K...)
 
 Les armes de n'importe quelle base deviennent des armes génériques (voir plus haut). Leurs
 munitions :
@@ -273,7 +273,8 @@ munitions :
 Accessoires : une arme garde ses données en plus à travers l'inventaire (retirée, rangée, déposée,
 rééquipée, enregistrée). Intégré, sans essai sur toutes les versions de ces bases : ARC9 (code de
 préréglage), TFA (accessoires choisis), CW 2.0 (accessoires), Sandstorm SWEPs (accessoires et leurs
-motifs), ArcCW (accessoires montés). N'importe quelle base : hooks
+motifs), ArcCW (accessoires montés), TacRP (accessoires, mode de tir, second pistolet d'une paire).
+N'importe quelle base : hooks
 (serveur) `AdvInv_WeaponData(wep)` -> une chaîne, et `AdvInv_ApplyWeaponData(wep, data)`
 -> true une fois fait. Les armes aux données différentes ne s'empilent pas.
 
@@ -313,6 +314,52 @@ pistolets de Ready or Not ; `lua/advinv/sv_sandswep.lua`) :
 - ses boîtes de munitions se prennent avec Utiliser (pas en marchant dessus) ; ses grenades sont des
   objets grenades (un type de munitions chacune, le réglage par défaut d'ArcCW) ;
 - les 28 armes longues de Counter-Strike+ ont leurs positions de port sur chaque playermodel ajusté.
+
+**TacRP** (Tactical RP Weapons et ses packs : ExoOps, Scavenger's Spoils... ; `lua/advinv/sv_tacrp.lua`,
+`sh_tacrp.lua` ; écrit d'après son code, pas encore essayé en jeu) :
+
+- ses armes vont dans l'emplacement que dit leur type (pistolets et pistolets-mitrailleurs compacts dans
+  l'emplacement d'arme de poing, fusils, fusils à pompe, mitraillettes et mitrailleuses dans l'emplacement
+  principal, le RPG-7, le Stinger, le M202, le M79 et le M320 dans celui des lance-roquettes ; le
+  détonateur de C4 dans celui des armes de poing), avec leurs vraies munitions et taille de chargeur
+  (TacRP les range ailleurs que dans les champs habituels) ;
+- les accessoires, le mode de tir et le second chargeur d'une paire restent avec l'objet ; qui l'équipe
+  les reçoit tout de suite, quoi que disent l'inventaire d'accessoires de TacRP, sa règle d'établi ou la
+  configuration sauvegardée du client ; décharger donne des boîtes des munitions que ses accessoires
+  lui font utiliser ;
+- les munitions que TacRP rend (un chargeur retiré par un accessoire), son sac et sa caisse de munitions,
+  les remboursements des accessoires de munitions de surplus et le carreau d'un couteau lancé vont dans
+  des boîtes de munitions ; ramasser une arme d'une classe déjà tenue ne donne pas de chargeur gratuit ;
+- ses grenades (aveuglante, fumigène, gaz, thermite, charge de brèche, grenade de soin) sont des objets
+  grenades ; le lancer rapide n'en lance une que s'il y en a une, et une grenade dégoupillée à la mort
+  est retirée des objets. Sa grenade à fragmentation utilise les grenades du jeu (objets grenades de
+  Half-Life 2) ; les charges de C4 restent des boîtes de munitions ;
+- les modèles « à la ceinture » de TacRP ne sont pas dessinés pour les armes que l'inventaire dessine
+  sur le corps.
+- Laisser `tacrp_infiniteammo`, `tacrp_infinitelaunchers` et `tacrp_infinitegrenades` à 0 (la console
+  du serveur prévient) : un chargeur infini se remplit de rien, et l'inventaire garderait ces munitions
+  dans ses objets.
+
+**Emplacements des autres packs** (lus dans leur code, comme du texte) : le choix de l'emplacement lit
+le type de prise en main sous les noms que lui donnent les bases (CW 2.0 `NormalHoldType`, ArcCW
+`HoldtypeActive`, NC SWEPs `RaisedHoldType`, ASTW2 `HoldType_Aim` / `HoldType_Hipfire`) et le type
+propre de l'arme quand elle en a un (`SubCatType` : « 1Pistol », « 4Assault Rifle », « 5Sniper
+Rifle »... des NC SWEPs et de TacRP ; la `Class` d'ARC9, qui l'emporte sur son emplacement de menu : les
+pistolets-mitrailleurs compacts vont dans l'emplacement d'arme de poing, les lance-grenades dans celui
+des lance-roquettes). Un RPG-7 qui tire des roquettes PG-7 / OG-7 est un lance-roquettes, quel que soit
+le nom de sa munition. Vérifié sur les packs d'armes de la collection Metro /
+S.T.A.L.K.E.R. / Fallout (Workshop 2876037581 : ARC9, ArcCW, TFA, ASTW2, Draconic, NC SWEPs, environ
+700 armes). Aussi :
+
+- pas des armes d'inventaire (elles restent des armes ordinaires) : les mains et pouvoirs de
+  Vortigaunt, les gestes du masque à gaz de Metro et les armes masque à gaz GP-9 / S.T.A.L.K.E.R., le
+  bio-masque du Predator, les PDA et la carte du PDA, la trousse de soin de Call of Duty WW2 ;
+- les guitares (guitares de S.T.A.L.K.E.R.) se portent dans le dos, la dynamo à main de Metro dans
+  l'emplacement d'arme de poing ;
+- la nourriture, les boissons et les médicaments d'EFT Supply (Workshop 3845009964) sont des objets de
+  l'emplacement d'arme de poing qui gardent leurs utilisations (les 4 d'une trousse AI-2) et ne se
+  déchargent jamais : `AdvInv.NoUnload[classe] = true` fait de même pour d'autres armes dont le
+  chargeur contient des utilisations.
 
 ## Advanced Crafting System
 
@@ -416,6 +463,9 @@ n'est livré) :
 | [PMC Pack Redux (Playermodels & NPCs)](https://steamcommunity.com/sharedfiles/filedetails/?id=1769231405) | 8 soldats de SMP |
 | [Dying Light Security forces playermodels and ragdolls](https://steamcommunity.com/sharedfiles/filedetails/?id=3551549411) | 11 membres des forces de sécurité (GRE, police, soldats, T.E.A.R.) |
 | [ESCAPE FROM TARKOV - PMC PLAYERMODELS [REDUX]](https://steamcommunity.com/sharedfiles/filedetails/?id=2568198284) | 9 opérateurs (6 USEC, 3 BEAR) |
+| [CSS ENHANCED SPECIAL FORCES /// SEB & SWAT /// PLAYERMODEL](https://steamcommunity.com/sharedfiles/filedetails/?id=3387382988) | 2 opérateurs (SEB, SWAT) |
+| [Enhanced Citizens v4](https://steamcommunity.com/sharedfiles/filedetails/?id=677125227) | 23 citoyens (hommes et femmes, rebelles et réfugiés) |
+| [Collection du Workshop 2876037581](https://steamcommunity.com/sharedfiles/filedetails/?id=2876037581) (Metro, S.T.A.L.K.E.R., Fallout...) | 1 081 playermodels de 78 de ses addons : Metro 2033, Last Light et Exodus, S.T.A.L.K.E.R. (factions d'Anomaly, Clear Sky, S.T.A.L.K.E.R. 2), Fallout (armures assistées, NCR, Légion de César, Confrérie), Gears of War, Army of Two, Escape From Tarkov, The Division... (la liste : `tools/playermodels_workshop.txt`) |
 
 Tout autre playermodel utilise l'ajustement par défaut de chaque objet (fait sur male_07). La liste
 des modèles ajustés est `tools/playermodels.txt` (Garry's Mod) et `tools/playermodels_workshop.txt` ;
@@ -441,7 +491,9 @@ porte-chargeurs AK, sac, chapeau de brousse, chapeau conique), *PMC gear* (casqu
 lunettes ou visière, masques à gaz, vision nocturne, casque audio, sacs, ceinturons), *Dying Light gear*
 (casque de combat, casquette, masque à gaz, demi-masque, masques, cagoule, lunettes, harnais et sacoche
 T.E.A.R.) et *Escape From Tarkov PMC gear* (casques, casquettes, cagoules, masque à gaz, casque radio,
-lunettes, six gilets, deux sacs). Chacune ne
+lunettes, six gilets, deux sacs) et *CSS special forces gear* (casques MICH avec ou sans vision
+nocturne, casques radio, lunettes balistiques, un masque à gaz, gilets porte-plaques nus, avec
+chargeurs ou en équipement complet, dans l'olive du SEB ou le noir du SWAT). Chacune ne
 contient que du Lua et demande cet addon, sur le serveur et chez les joueurs. Sur ses propres playermodels l'objet est montré par leur bodygroup ; sur tout autre,
 une copie ajustée à ce corps ; par terre, l'équipement seul.
 
@@ -458,6 +510,11 @@ sur un autre sac à dos, et l'inventaire le dit.
   du pilote rebelle, l'équipe au sol de Rogue One, et les corps blindés de l'équipage de Rogue One et
   de la tenue de sécurité de Vault-Tec (seulement ces choix de bodygroup).
 - Sacs à dos : les rebelles et les médecins.
+- Les playermodels de la collection (Workshop 2876037581) : armures assistées, exosquelettes,
+  combinaisons étanches et créatures ont les quatre intégrés ; gilets pare-balles, porte-chargeurs,
+  capuches relevées, casquettes et sacs du maillage sont intégrés là où ils sont ; casques, masques à
+  gaz, gilets et sacs en bodygroups s'enlèvent sous les nôtres (chaque modèle examiné :
+  `lua/advinv/sh_modelgear.lua`, bloc généré).
 
 Un joueur qui prend un tel playermodel (ou une telle tenue) en portant le nôtre le récupère : dans son
 inventaire, ou à ses pieds s'il n'a pas la place ou si l'objet contient quelque chose (un gilet ou un
@@ -478,6 +535,15 @@ munitions) devient autant d'objets qu'elle a de grenades. Les grenades d'un équ
 équipement : reprises à la mort au lieu de rester sur le corps, pas sauvegardées, redonnées à
 l'apparition suivante. Les grenades se lâchent depuis l'inventaire (`/drop` de DarkRP et le
 lâcher de CW 2.0 ne les prennent pas).
+
+Les consommables d'autres addons qui marchent de la même façon (une arme à tenir, un type de munitions
+à elle, une munition par utilisation) sont aussi des objets comme les grenades : les consommables de No
+More Room in Hell (Workshop 3297936273 : bandage, trousse de premiers soins, thérapie génique, pilules
+Phalanx) et S.T.A.L.K.E.R. 2 Consumables (Workshop 3426614364 : trousses de soin, bandage, antirad,
+pilules, nourriture et boissons) ; de même pour les grenades des packs d'armes qui ont une munition à
+elles (la grenade de Metro 2033 Weapon, la F1 et la RGD-5 de S.T.A.L.K.E.R. STCoP, la grenade, la mine et
+les boulons du pack TFA S.T.A.L.K.E.R.). D'autres (partagé) :
+`AdvInv.ConsumableWeapons["classe_arme"] = "type de munitions"` (`lua/advinv/sh_consumables_ext.lua`).
 
 ## Utiliser des objets, décharger les armes
 

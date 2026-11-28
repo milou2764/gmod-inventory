@@ -64,10 +64,16 @@ function I.RegisteredAmmoBox(ammo)
 end
 hook.Add("AdvInv_ItemsInitialized", "AdvInv_AmmoBoxes", function() boxFor = nil end)
 
--- Ammunition type of a weapon item (nil for weapons without one).
-function I.WeaponAmmo(id, c)
+-- Ammunition type of a weapon item (nil for weapons without one). x: the item's saved data, when an
+-- adapter recorded the ammunition its attachments made it use ("am": TacRP).
+function I.WeaponAmmo(id, c, x)
     local info = I.Info(id, c)
     if not info.isWeapon then return end
+    if isstring(x) and string.find(x, '"am"', 1, true) then
+        local t = util.JSONToTable(x)
+        local am = istable(t) and t.am
+        if isstring(am) and am ~= "" and game.GetAmmoID(am) ~= -1 then return am end
+    end
     local t = I.DefTable(id, c)
     local ammo = t and t.Ammo
     if (not ammo or ammo == "") and info.weaponClass then
@@ -78,6 +84,18 @@ function I.WeaponAmmo(id, c)
 end
 
 -- Can this weapon be unloaded (rounds in it, and a box for its ammunition)?
-function I.CanUnload(id, c, rounds)
-    return (rounds or 0) > 0 and I.AmmoBoxFor(I.WeaponAmmo(id, c)) ~= nil
+-- Weapons whose magazine holds uses, not munitions (EFT Supply's food, drinks and medicine: 4 uses of an
+-- AI-2 kit): never unloaded into boxes nothing could load again. Servers add theirs:
+-- AdvInv.NoUnload["weapon_class"] = true.
+I.NoUnload = I.NoUnload or {}
+function I.UsesInMagazine(c)
+    if not isstring(c) then return false end
+    if I.NoUnload[c] ~= nil then return I.NoUnload[c] == true end
+    local swep = weapons.GetStored(c)
+    return swep ~= nil and swep.EFTSUPPLYHUD == true
+end
+
+function I.CanUnload(id, c, rounds, x)
+    return (rounds or 0) > 0 and not (I.IsGeneric(id) and I.UsesInMagazine(c))
+        and I.AmmoBoxFor(I.WeaponAmmo(id, c, x)) ~= nil
 end

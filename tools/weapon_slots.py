@@ -91,13 +91,34 @@ def guess(f):
     """The inventory's guess (sh_generic.lua guessCategory)."""
     if f.get("AdvInvCategory"):
         return f["AdvInvCategory"]
-    hold = str(f.get("HoldType") or f.get("NormalHoldType") or f.get("HoldtypeActive") or "").lower()
-    arc9 = bool(f.get("ARC9"))
-    ammo = str((f.get("Ammo") if arc9 and f.get("Ammo") else f.get("Primary.Ammo")) or "").lower()
-    clip = f.get("ClipSize") if arc9 and isinstance(f.get("ClipSize"), float) else f.get("Primary.ClipSize")
+    if f.get("EFTSUPPLYHUD"):
+        return "SecondaryWep"
+    hold = str(f.get("HoldType") or f.get("NormalHoldType") or f.get("HoldtypeActive")
+               or f.get("RaisedHoldType") or f.get("HoldType_Aim") or f.get("HoldType_Hipfire") or "").lower()
+    arc9 = bool(f.get("ARC9")) or str(f.get("Base") or "").lower().startswith("arc9")  # (base not in the pack)
+    tacrp = bool(f.get("ArcticTacRP"))
+    ammo = str((f.get("Ammo") if (arc9 or tacrp) and f.get("Ammo") else f.get("Primary.Ammo")) or "").lower()
+    clip = f.get("ClipSize") if (arc9 or tacrp) and isinstance(f.get("ClipSize"), float) else f.get("Primary.ClipSize")
     clip = clip if isinstance(clip, float) else -1
-    if any(w in ammo for w in ("rpg", "rocket", "missile", "warhead")) or (hold == "rpg" and clip < 1):
+    if any(w in ammo for w in ("rpg", "rocket", "missile", "warhead")) or re.search(r"[po]g-?7", ammo)             or (hold == "rpg" and clip < 1):
         return "RocketLauncher"
+    if tacrp:  # (its type, then its menu slot: 0-1 sidearms, 2-3 long guns)
+        if "launcher" in str(f.get("SubCatType") or "").lower():
+            return "RocketLauncher"
+        if isinstance(f.get("Slot"), float):
+            if f["Slot"] <= 1:
+                return "SecondaryWep"
+            if f["Slot"] <= 3:
+                return "PrimaryWep"
+    # (NC SWEPs and others: SubCatType "1Pistol", "4Assault Rifle"...; ARC9: Class, before its menu slot)
+    sub = str(f.get("SubCatType") or (f.get("Class") if arc9 and isinstance(f.get("Class"), str) else "") or "").lower()
+    if "launcher" in sub:
+        return "RocketLauncher"
+    if any(w in sub for w in ("pistol", "revolver", "magnum", "akimbo", "melee", "knife")):
+        return "SecondaryWep"
+    if any(w in sub for w in ("rifle", "shotgun", "submachine", "smg", "machine gun", "sniper", "marksman",
+                              "carbine", "sporter", "battle")):
+        return "PrimaryWep"
     if arc9 and isinstance(f.get("Slot"), float):
         return "SecondaryWep" if f["Slot"] <= 1 else "PrimaryWep"
     return "SecondaryWep" if hold in SECONDARY_HOLDS else "PrimaryWep"
@@ -113,7 +134,7 @@ KIND = [  # (words, expected slot): what a weapon says it is
 
 
 def expected(f, cls):
-    texts = [str(f.get(k) or "") for k in ("Type", "Trivia_Class", "SubCategory", "Category", "PrintName")]
+    texts = [str(f.get(k) or "") for k in ("Type", "Trivia_Class", "SubCatType", "SubCategory", "Category", "PrintName")]
     for t in texts:
         low = t.lower()
         if not low:
@@ -147,7 +168,7 @@ def main():
         g = guess(f)
         e, why = expected(f, cls)
         if e and e != g:
-            bad.append((origin[cls], cls, g, e, why, f.get("HoldType") or f.get("NormalHoldType") or f.get("HoldtypeActive"),
+            bad.append((origin[cls], cls, g, e, why, f.get("HoldType") or f.get("NormalHoldType") or f.get("HoldtypeActive") or f.get("RaisedHoldType") or f.get("HoldType_Aim") or f.get("HoldType_Hipfire"),
                         f.get("Primary.Ammo") or f.get("Ammo"), f.get("Primary.ClipSize") or f.get("ClipSize"), f.get("Slot")))
     print(f"{counted} weapons, {len(bad)} where the guess disagrees with what the weapon says it is")
     for o, cls, g, e, why, hold, ammo, clip, slot in bad:

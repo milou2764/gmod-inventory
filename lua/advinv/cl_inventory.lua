@@ -214,7 +214,7 @@ local function tooltip(item)
     if info.isBox then lines[#lines + 1] = I.L("tip_rounds", item.r or 0, info.boxRounds) end
     if info.isWeapon and (info.clipSize or 0) > 0 then lines[#lines + 1] = I.L("tip_clip", item.r or 0, info.clipSize) end
     if info.isWeapon then
-        local ammo = I.WeaponAmmo(item.id, item.c)
+        local ammo = I.WeaponAmmo(item.id, item.c, item.x)
         if ammo then lines[#lines + 1] = I.L("tip_ammo", ammo) end
         local conf = I.CarryConfig(item.id, item.c)
         if conf then
@@ -336,7 +336,7 @@ local function itemMenu(src)
     if src.holder == LocalPlayer() and I.UseOf(src.item) then
         menu:AddOption(I.L("menu_use"), function() useItem(src) end):SetIcon("icon16/heart.png")
     end
-    if info.isWeapon and I.CanUnload(src.item.id, src.item.c, src.item.r) then
+    if info.isWeapon and I.CanUnload(src.item.id, src.item.c, src.item.r, src.item.x) then
         menu:AddOption(I.L("menu_unload"), function() unloadItem(src) end):SetIcon("icon16/arrow_undo.png")
     end
     local sub, parent = menu:AddSubMenu(I.L("menu_store_in"))

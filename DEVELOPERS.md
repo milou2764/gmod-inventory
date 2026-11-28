@@ -239,7 +239,11 @@ wearer's own torso (`AdvInv.CarryRestOnBody`): moved along the mode's outward di
 `Config.CarryGap` off the playermodel's mesh as drawn (its bodygroups, over its idle loop; arms left
 out), pulled in by at most `Config.CarryRestPull` (`Config.CarryRestOnBody = false` turns it off). Each body is measured once, in the background
 (`Config.CarryRestBudget` seconds a frame); until then the template places the gun. Exact positions per playermodel:
-`tools/fit_carry.py` writes `cl_carry_data.lua`; tune in game with `advinv_carry_tune`
+`tools/fit_carry.py` writes `cl_carry_data.lua`, packed (1,300 playermodels in 0.9 MB instead of
+18 MB of Lua: every set's positions as fixed-size records in one LZMA blob, decompressed once and
+decoded set by set the first time a playermodel of that set needs it; `tools/carry_data.py` reads and
+writes it for the other tools; `AdvInv.CarryOffsets[set]` and `AdvInv.CarryStack[set]` work as
+before, `AdvInv.CarrySetNames()` lists the packed sets); tune in game with `advinv_carry_tune`
 (`advinv_carry_cycle` cycles through the modes). Hooks: `CanChangeCarryMode`,
 `OnCarryModeChanged`.
 
@@ -286,9 +290,18 @@ AdvInv.PickupWhitelist["my_medkit"] = { name = "Medkit", model = "models/...", m
                                                        -- a world entity taken with Use (ID 103)
 AdvInv.PickupConvert["item_ammo_smg1"] = "advinv_ammo_smg1"  -- becomes that registered item
 AdvInv.Consumables["my_medkit"] = { health = 40 }      -- what using it does
+AdvInv.ConsumableWeapons["my_bandage"] = "my_bandage_ammo"  -- a consumable weapon used up one round
+                                                       -- per use: grenade-like items (sh_consumables_ext.lua)
+AdvInv.NoUnload["my_ration_swep"] = true               -- its magazine holds uses: never unloaded
 ```
 
-A SWEP can also declare `SWEP.AdvInvCategory` and `SWEP.AdvInvMass`.
+A SWEP can also declare `SWEP.AdvInvCategory` and `SWEP.AdvInvMass`. Without them, the slot is
+guessed (`sh_generic.lua` guessCategory): launcher ammunition, TacRP's type and menu slot, a kind
+named by `SWEP.SubCatType` ("1Pistol", "4Assault Rifle") or ARC9's `SWEP.Class`, the ARC9 / Sandstorm
+menu slot, then the hold type under any of its
+names (`HoldType`, `NormalHoldType`, `HoldtypeActive`, `RaisedHoldType`, `HoldType_Aim`,
+`HoldType_Hipfire`). `tools/weapon_slots.py FOLDER...` runs the same guess on extracted packs (their
+Lua read as text) and lists the weapons it puts in a slot their own type contradicts.
 
 ## Grenades
 
@@ -376,7 +389,33 @@ MDL_EXTRA_DIRS="<extracted addons, ; separated>" python fit_items.py all.txt   (
 ```
 
 Only the numbers are written (`lua/advinv/cl_fits_*.lua`, `cl_bodyfit_data.lua`,
-`cl_carry_data.lua`); the models are only read. Playermodel paths are matched in lowercase.
+`cl_carry_data.lua`); the models are only read. Playermodel paths are matched in lowercase. Two of
+them are packed for 1,300 playermodels: `cl_carry_data.lua` (above, Carry modes) and
+`cl_fits_compat.lua`, made by `tools/fits_compat_io.py` from the tools' source
+`tools/data/fits_compat.lua` (what `fit_compat.py` writes and `fit_locks.py` patches): each
+playermodel's fits of the compatible items are merged into `AdvInv.Fits[playermodel]` the first time
+one of them is looked up (4 MB of Lua and 1.5 million tables at load otherwise).
+
+### Many Workshop playermodels at once (`tools/workshop_review/`)
+
+For a whole collection (Workshop 2876037581: 1,081 playermodels), each model's own gear is classified
+from pictures, then turned into rules:
+
+1. `fetch.py ids.txt items.json out_root` downloads and extracts each item into its own folder (steamcmd
+   anonymous; its Lua is never run; archives over 2 GB, which gmad refuses, by `gma_extract.py`);
+2. `scan_pms.py tools out_root scan.tsv` lists the playermodels (`AddValidModel` read as text, else
+   `models/player`, else models that include the player animations) with their bodyparts;
+3. `sheets.py tools scan.tsv out_dir` draws contact sheets of every model "bare" (each bodypart that
+   has an empty choice set to it), front and back; `look.py` a close look at any selection;
+4. reviewers (people or agents) follow `BRIEF.md` and write one TSV line per model: built-in slots,
+   removable bodygroups (`Slot:bodypart=none`), slots built in only for some choices, skips;
+5. `apply_review.py addon scan.tsv items.json summary.txt reviews/*.tsv` appends the models to
+   `playermodels_workshop.txt`, their measuring selection to `playermodel_bodygroups.txt`, and
+   rewrites the generated block of `lua/advinv/sh_modelgear.lua` (`def` for removable gear, `builtin`
+   for built-in gear). Edit a review TSV and run it again, never the block.
+
+The reviews of that collection are in `reviews/`, its scan in `playermodels_scan.tsv`, its item titles
+in `items_2876037581.json`. Then refit (above) on the whole list.
 
 ### Fit editor: approving every pair by hand
 
@@ -457,8 +496,10 @@ end)
 ```
 
   Or add an adapter: `table.insert(AdvInv.WeaponDataAdapters, { match = fn(wep), save = fn(wep),
-  load = fn(wep, data) })`. `load` runs 0.2 s after the weapon is given; a weapon lying in the
-  world keeps its data in `ent.AdvInvExtra`.
+  load = fn(wep, data) })`. `load` runs 0.2 s after the weapon is given (`immediate = true`: at once,
+  for a base that sets a weapon up in full when given, TacRP); a weapon lying in the world keeps its
+  data in `ent.AdvInvExtra`. If the data records the ammunition the attachments make the weapon use
+  (JSON field `am`), unloading the stored item gives boxes of it (`AdvInv.WeaponAmmo(id, c, x)`).
 - **A base's own "dropped weapon" entity**: tell the inventory what item it is (server), then it is
   taken with Use like a weapon:
 
